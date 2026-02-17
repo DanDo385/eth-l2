@@ -1,0 +1,14 @@
+[profile.default]
+src = "contracts"
+out = "forge-out"
+libs = ["lib"]
+solc = "0.8.26"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+fs_permissions = [{ access = "read-write", path = "./out" }]
+
+[rpc_endpoints]
+l1 = "http://127.0.0.1:8545"
+op_l2 = "http://127.0.0.1:9545"
+zk_l2 = "http://127.0.0.1:10545"

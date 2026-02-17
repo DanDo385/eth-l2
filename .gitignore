@@ -1,0 +1,9 @@
+node_modules/
+.next/
+forge-out/
+cache/
+lib/
+out/
+*.pid
+.env
+.DS_Store
