@@ -1,0 +1,8 @@
+{
+  "batchId": 1,
+  "l1TxHash": "0x705cbadf4cce23f14a8baf208a9be745e2b8f55e5378f355820196786e8babf8",
+  "l1GasUsed": "0x3d513",
+  "status": "invalidated",
+  "challengeTxHash": "0xeae56f75e64b320029de70ae906f81e7a977b11673e3e71872759d743cf34df1",
+  "resolutionTxHash": "0x13d082b7088388c03a78061dd1b1d43771f1fa81d073bc6402c7fd9394658b25"
+}

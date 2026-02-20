@@ -47,8 +47,13 @@ analyze:
 
 # === Artifacts for Next.js ===
 artifacts:
-	@mkdir -p public
+	@mkdir -p public public/op/batches public/op/disputes public/op/receipts public/zk/batches public/zk/receipts
 	@cp out/report.json public/report.json 2>/dev/null || echo "No report.json yet — run 'make analyze' first"
+	@cp out/op/batches/*.json public/op/batches/ 2>/dev/null || true
+	@cp out/op/disputes/*.json public/op/disputes/ 2>/dev/null || true
+	@cp out/op/receipts/*.json public/op/receipts/ 2>/dev/null || true
+	@cp out/zk/batches/*.json public/zk/batches/ 2>/dev/null || true
+	@cp out/zk/receipts/*.json public/zk/receipts/ 2>/dev/null || true
 	@echo "Artifacts copied to public/"
 
 # === Full pipeline (non-tmux) ===

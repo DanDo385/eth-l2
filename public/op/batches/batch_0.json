@@ -1,0 +1,12 @@
+{
+  "batchId": 0,
+  "l2BlockStart": 63,
+  "l2BlockEnd": 85,
+  "txCount": 19,
+  "prevStateRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "postStateRoot": "0xef1346fcc6d1420dc6de1117dfdae44f0e139c2b689821e609d69f0bab99f151",
+  "correctStateRoot": "0xef1346fcc6d1420dc6de1117dfdae44f0e139c2b689821e609d69f0bab99f151",
+  "batchDataHash": "0xfd767f48a6659e9ae9752f49dd3e8e0a069ed6690254163dcf314a404eb0835e",
+  "isBad": false,
+  "timestamp": 1771366379
+}
