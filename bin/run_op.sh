@@ -24,11 +24,8 @@ echo "--- Phase 1: Generating trades on OP-L2 ---"
 declare -a ALL_TX_HASHES
 declare -a ALL_TRADE_IDS
 TRADE_GLOBAL_IDX=0
-# Track nonces per trader
-declare -A TRADER_NONCES
-for addr in "${TRADER_ADDRS[@]}"; do
-  TRADER_NONCES["$addr"]=0
-done
+# Track nonces per trader (by index; bash 3 compatible)
+TRADER_NONCES=(0 0 0 0 0 0)
 
 for block in $(seq 1 "$BLOCKS"); do
   # Deterministic number of trades per block
@@ -43,7 +40,7 @@ for block in $(seq 1 "$BLOCKS"); do
 
     TRADER_IDX=$(( 16#${PARAM_HASH:2:2} % ${#TRADER_ADDRS[@]} ))
     TRADER="${TRADER_ADDRS[$TRADER_IDX]}"
-    NONCE=${TRADER_NONCES["$TRADER"]}
+    NONCE=${TRADER_NONCES[$TRADER_IDX]}
 
     # amountIn: 1-100 ether range
     AMT_RAW=$(( 16#${PARAM_HASH:4:4} ))
@@ -64,7 +61,7 @@ for block in $(seq 1 "$BLOCKS"); do
     TX_HASH=$(echo "$TX_RESULT" | jq -r '.transactionHash')
     ALL_TX_HASHES+=("$TX_HASH")
     ALL_TRADE_IDS+=("$TRADE_GLOBAL_IDX")
-    TRADER_NONCES["$TRADER"]=$((NONCE + 1))
+    TRADER_NONCES[$TRADER_IDX]=$((NONCE + 1))
     TRADE_GLOBAL_IDX=$((TRADE_GLOBAL_IDX + 1))
 
     echo "  Block $block, Trade $tx_idx: trader=$TRADER nonce=$NONCE tx=$TX_HASH"
