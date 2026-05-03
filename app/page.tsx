@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { fetchReport, fetchOpBatches, fetchOpDisputes, MOCK_LAYER3_TRADES } from "./lib/data";
+import { fetchReport, fetchOpBatches, fetchOpDisputes, MOCK_LAYER3_TRADES } from "./data/demoData";
 import { L1Mainnet } from "./components/L1Mainnet";
 import { L2Optimistic } from "./components/L2Optimistic";
 import { L2ZK } from "./components/L2ZK";
 import { TransactionFlow } from "./components/TransactionFlow";
 import { BatchCompaction } from "./components/BatchCompaction";
 import { ChallengeFlow } from "./components/ChallengeFlow";
+import { FraudProofWar } from "./components/FraudProofWar";
+import { DeepWeedsDemoDirector } from "./components/DeepWeedsDemoDirector";
 import type { Report, OpBatch, OpDispute } from "./types";
 
 const TRADERS = ["0x3C44...93BC", "0x90F7...b906", "0x15d3...6A65", "0x9965...04dc", "0x14dC...5FEe"];
@@ -86,6 +88,8 @@ export default function Home() {
         </p>
       </motion.header>
 
+      <DeepWeedsDemoDirector />
+
       {/* Top: Layer3 trades */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
@@ -110,6 +114,7 @@ export default function Home() {
           <L2Optimistic batches={opBatches} disputes={opDisputes} report={report} />
           <BatchCompaction />
           <ChallengeFlow />
+          <FraudProofWar dispute={opDisputes[0]} />
         </div>
       </div>
 

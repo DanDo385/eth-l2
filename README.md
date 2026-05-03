@@ -2,6 +2,15 @@
 
 A local lab for **L2 rollup mechanics**: Optimistic (OP) and ZK-style pipelines with L1 contracts, TradeEngine on L2, dispute games, and a Next.js frontend for visualization.
 
+## Portfolio demo package
+
+- Loom guide: [`DEMO_GUIDE.md`](./DEMO_GUIDE.md)
+- Portfolio tag: `deep-weeds`
+- Recommended video length: 150-180 seconds
+- Best GIF loop: trade → bad batch → bisection → opcode mismatch → resolved invalid
+- Thumbnail hook: `CATCH THE LYING SEQUENCER`
+
+
 ## Prerequisites
 
 - **Foundry** (forge, cast, anvil): `brew install foundry` or [getfoundry.sh](https://getfoundry.sh)
