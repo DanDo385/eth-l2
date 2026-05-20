@@ -224,14 +224,21 @@ func (c *Challenger) traceDiff(ctx context.Context, batch *store.BatchInfo) (*tr
 		return nil, fmt.Errorf("trace lying tx: %w", err)
 	}
 
-	// Replay same calldata through HonestSwapEngine via storage slot override.
+	// Use the block before the tx was mined so the storage state (nonces, balances)
+	// matches what the engine saw when it originally executed the swap.
+	receipt, err := c.l2Client.EC.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("get receipt: %w", err)
+	}
+	blockTag := fmt.Sprintf("0x%x", receipt.BlockNumber.Uint64()-1)
+
 	honestResult, err := trace.HonestReplay(
 		ctx,
 		c.l2Client.EC,
 		common.HexToAddress(c.l2Addrs.SwapRouter),
 		common.HexToAddress(c.l2Addrs.HonestSwapEngine),
 		lyingTx.Data(),
-		"latest",
+		blockTag,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("honest replay: %w", err)

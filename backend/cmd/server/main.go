@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/dando385/eth-l2/backend/internal/engine"
 	"github.com/dando385/eth-l2/backend/internal/server"
@@ -23,15 +24,13 @@ func main() {
 	// Fan events from the active session bus to all WebSocket clients.
 	// Re-subscribed whenever the session starts/stops via the Bus() accessor.
 	go func() {
-		// Simple approach: poll for an active bus and run until context done.
-		// The bus changes on Start/Stop, so we re-run Hub.Run each session.
-		// A production system would use an observer; for the demo this is fine.
 		for {
 			bus := sess.Bus()
-			if bus != nil {
-				// Run blocks until ctx is done or bus closes.
-				hub.Run(context.Background(), bus)
+			if bus == nil {
+				time.Sleep(50 * time.Millisecond)
+				continue
 			}
+			hub.Run(context.Background(), bus)
 		}
 	}()
 
