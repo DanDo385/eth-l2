@@ -91,11 +91,13 @@ contract DisputeGameTest is Test {
             dispute.bisect(0, bytes32(uint256(i + 10)), uint64(i));
         }
 
-        // Resolve: batch is invalid, challenger wins
-        dispute.resolve(0, false);
+        // Resolve: batch is invalid, challenger wins, with a divergence commitment
+        bytes32 divergence = keccak256("step=5,op=SSTORE,slot=0xabc,honest=997,claimed=1994");
+        dispute.resolve(0, false, divergence);
 
         g = dispute.getGame(0);
         assertTrue(g.status == DataTypes.DisputeStatus.RESOLVED_INVALID);
+        assertEq(g.divergencePoint, divergence);
 
         // Batch should be finalized as invalid
         OptimisticPortalMock.SubmittedBatch memory b = portal.getBatch(0);
@@ -116,11 +118,12 @@ contract DisputeGameTest is Test {
         }
 
         uint256 seqBalBefore = sequencer.balance;
-        dispute.resolve(0, true);
+        dispute.resolve(0, true, bytes32(0));
         uint256 seqBalAfter = sequencer.balance;
 
         g = dispute.getGame(0);
         assertTrue(g.status == DataTypes.DisputeStatus.RESOLVED_VALID);
+        assertEq(g.divergencePoint, bytes32(0));
 
         // Sequencer should receive challenger's bond
         assertEq(seqBalAfter - seqBalBefore, 0.1 ether);
@@ -128,14 +131,28 @@ contract DisputeGameTest is Test {
 
     function test_resolve_tooEarly() public {
         vm.expectRevert("game still active");
-        dispute.resolve(0, false);
+        dispute.resolve(0, false, keccak256("x"));
     }
 
     function test_resolve_afterTimeout() public {
         vm.warp(block.timestamp + 61);
-        dispute.resolve(0, false);
+        bytes32 divergence = keccak256("post-timeout-divergence");
+        dispute.resolve(0, false, divergence);
 
         DisputeGameMock.Game memory g = dispute.getGame(0);
         assertTrue(g.status == DataTypes.DisputeStatus.RESOLVED_INVALID);
+        assertEq(g.divergencePoint, divergence);
+    }
+
+    function test_resolve_invalidRequiresDivergence() public {
+        vm.warp(block.timestamp + 61);
+        vm.expectRevert("invalid resolution requires divergence");
+        dispute.resolve(0, false, bytes32(0));
+    }
+
+    function test_resolve_validRejectsDivergence() public {
+        vm.warp(block.timestamp + 61);
+        vm.expectRevert("valid resolution has no divergence");
+        dispute.resolve(0, true, keccak256("nonzero"));
     }
 }

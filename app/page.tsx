@@ -1,135 +1,110 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { fetchReport, fetchOpBatches, fetchOpDisputes, MOCK_LAYER3_TRADES } from "./data/demoData";
-import { L1Mainnet } from "./components/L1Mainnet";
-import { L2Optimistic } from "./components/L2Optimistic";
-import { L2ZK } from "./components/L2ZK";
-import { TransactionFlow } from "./components/TransactionFlow";
-import { BatchCompaction } from "./components/BatchCompaction";
-import { ChallengeFlow } from "./components/ChallengeFlow";
-import { FraudProofWar } from "./components/FraudProofWar";
-import { DeepWeedsDemoDirector } from "./components/DeepWeedsDemoDirector";
-import type { Report, OpBatch, OpDispute } from "./types";
+import { useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 
-const TRADERS = ["0x3C44...93BC", "0x90F7...b906", "0x15d3...6A65", "0x9965...04dc", "0x14dC...5FEe"];
+import { AppStoreProvider, useAppStore } from "./lib/store";
+import { parseUrlHash } from "./lib/url";
+import { apiPost } from "./lib/ws";
 
-export default function Home() {
-  const [report, setReport] = useState<Report | null>(null);
-  const [opBatches, setOpBatches] = useState<OpBatch[]>([]);
-  const [opDisputes, setOpDisputes] = useState<OpDispute[]>([]);
-  const [trades, setTrades] = useState<import("./types").Layer3Trade[]>(MOCK_LAYER3_TRADES);
-  const [simulating, setSimulating] = useState(false);
+import { ControlPanel } from "./components/ControlPanel";
+import { AccountSidebar } from "./components/AccountSidebar";
+import { BlockchainCanvas } from "./components/BlockchainCanvas";
+import { BlockInspector } from "./components/BlockInspector";
+import { OpcodeRace } from "./components/OpcodeRace";
+import { ZkInspect } from "./components/ZkInspect";
+import { Scoreboard } from "./components/Scoreboard";
+import { DemoGallery } from "./components/DemoGallery";
 
-  const simulateTrade = useCallback(() => {
-    setSimulating(true);
-    const id = trades.length;
-    const newTrade = {
-      id,
-      trader: TRADERS[id % TRADERS.length],
-      amountIn: `${Math.floor(Math.random() * 50) + 5} L3`,
-      amountOut: `${Math.floor(Math.random() * 5000) + 500} L3`,
-      nonce: 0,
-      status: "pending" as const,
-      chain: (id % 2 === 0 ? "op" : "zk") as "op" | "zk",
-    };
-    setTrades((prev) => [...prev, newTrade]);
-    const t1 = setTimeout(() => {
-      setTrades((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: "l2_executing" as const } : t))
-      );
-    }, 300);
-    const t2 = setTimeout(() => {
-      setTrades((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: "batched" as const } : t))
-      );
-    }, 800);
-    const t3 = setTimeout(() => {
-      setTrades((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: "finalized" as const, batchId: 0 } : t))
-      );
-      setSimulating(false);
-    }, 1500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [trades.length]);
+function Inner() {
+  const { state, dispatch } = useAppStore();
 
+  // Auto-start from URL hash on first connect
   useEffect(() => {
-    (async () => {
-      const [r, batches, disputes] = await Promise.all([
-        fetchReport(),
-        fetchOpBatches(),
-        fetchOpDisputes(),
-      ]);
-      setReport(r ?? null);
-      setOpBatches(batches);
-      setOpDisputes(disputes);
-    })();
-  }, []);
+    if (!state.connected) return;
+    const p = parseUrlHash();
+    if (p.autostart) {
+      apiPost("/api/start", { seed: p.seed, speed: p.speed });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.connected]);
 
-  const finalizedCount = opBatches.filter((b) => !b.isBad).length;
+  function handleBatchClick(batchId: number) {
+    dispatch({ type: "INSPECT_BATCH", batchId });
+  }
+
+  function handleOpcodeRace(batchId: number) {
+    dispatch({ type: "SHOW_OPCODE_RACE", batchId });
+  }
 
   return (
-    <main className="min-h-screen p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-zinc-100">
+    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+      <header className="border-b border-zinc-800 px-6 py-3 flex items-center gap-4">
+        <h1 className="text-lg font-bold tracking-tight">
           Rollup Mechanics Lab
         </h1>
-        <p className="text-zinc-500 mt-1">
-          L1 vs L2 Optimistic vs L2 ZK · Layer3 token trades
-        </p>
-      </motion.header>
-
-      <DeepWeedsDemoDirector />
-
-      {/* Top: Layer3 trades */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-sm text-zinc-500">Layer3 token trades</span>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={simulateTrade}
-            disabled={simulating}
-            className="px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium border border-emerald-500/40 hover:bg-emerald-500/30 disabled:opacity-50"
-          >
-            {simulating ? "Processing…" : "Simulate Trade"}
-          </motion.button>
+        <span className="text-xs text-zinc-600">
+          Optimistic · ZK · Fraud proofs
+        </span>
+        <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
+          <span
+            className={`w-1.5 h-1.5 rounded-full inline-block ${
+              state.connected ? "bg-emerald-400" : "bg-red-500"
+            }`}
+          />
+          {state.connected
+            ? state.running
+              ? "running"
+              : "idle"
+            : "disconnected"}
         </div>
-        <TransactionFlow trades={trades} />
+      </header>
+
+      <div className="grid grid-cols-[220px_1fr_240px] gap-4 p-4 h-[calc(100vh-49px)]">
+        {/* Left sidebar */}
+        <aside className="flex flex-col gap-4 overflow-y-auto">
+          <ControlPanel />
+          <DemoGallery />
+          <AccountSidebar />
+        </aside>
+
+        {/* Main canvas */}
+        <section className="flex flex-col gap-4 overflow-y-auto min-w-0">
+          <BlockchainCanvas onBatchClick={handleBatchClick} />
+          <Scoreboard />
+        </section>
+
+        {/* Right panel */}
+        <aside className="flex flex-col gap-4 overflow-y-auto">
+          <BlockInspector onShowOpcodeRace={handleOpcodeRace} />
+        </aside>
       </div>
 
-      {/* Middle: L2 OP and L2 ZK side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <L2ZK report={report} />
-        <div className="space-y-4">
-          <L2Optimistic batches={opBatches} disputes={opDisputes} report={report} />
-          <BatchCompaction />
-          <ChallengeFlow />
-          <FraudProofWar dispute={opDisputes[0]} />
-        </div>
-      </div>
-
-      {/* Bottom: L1 Mainnet (large) */}
-      <L1Mainnet report={report} opBatchCount={opBatches.length} finalizedCount={finalizedCount} />
-
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="mt-12 text-center text-sm text-zinc-600"
-      >
-        Run <code className="px-1.5 py-0.5 rounded bg-zinc-800">make start deploy op analyze artifacts</code>{" "}
-        then refresh for live data
-      </motion.footer>
+      {/* Overlays */}
+      <AnimatePresence>
+        {state.opcodeRaceData && (
+          <OpcodeRace
+            key="opcode-race"
+            data={state.opcodeRaceData}
+            onClose={() => dispatch({ type: "CLOSE_OPCODE_RACE" })}
+          />
+        )}
+        {state.zkInspectData && (
+          <ZkInspect
+            key="zk-inspect"
+            data={state.zkInspectData}
+            onClose={() => dispatch({ type: "CLOSE_ZK_INSPECT" })}
+          />
+        )}
+      </AnimatePresence>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <AppStoreProvider>
+      <Inner />
+    </AppStoreProvider>
   );
 }

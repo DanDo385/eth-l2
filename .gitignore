@@ -2,8 +2,10 @@ node_modules/
 .next/
 forge-out/
 cache/
-lib/
+/lib/
 out/
 *.pid
 .env
 .DS_Store
+test-results/
+tsconfig.tsbuildinfo

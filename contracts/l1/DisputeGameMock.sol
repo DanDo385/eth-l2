@@ -22,6 +22,7 @@ contract DisputeGameMock is IDisputeGame {
         bytes32 batchHeaderHash;
         uint64 deadline;
         bool isSequencerTurn;
+        bytes32 divergencePoint;
     }
 
     struct BisectionRound {
@@ -39,7 +40,12 @@ contract DisputeGameMock is IDisputeGame {
     event BisectionMove(
         uint64 indexed batchId, uint8 depth, address submitter, bytes32 claimedHash, uint64 position
     );
-    event GameResolved(uint64 indexed batchId, DataTypes.DisputeStatus result, address winner);
+    event GameResolved(
+        uint64 indexed batchId,
+        DataTypes.DisputeStatus result,
+        address winner,
+        bytes32 divergencePoint
+    );
 
     constructor(address _portal) {
         portal = _portal;
@@ -78,7 +84,8 @@ contract DisputeGameMock is IDisputeGame {
             maxDepth: depth,
             batchHeaderHash: batchHeaderHash,
             deadline: uint64(block.timestamp) + 60,
-            isSequencerTurn: true
+            isSequencerTurn: true,
+            divergencePoint: bytes32(0)
         });
 
         emit GameInitiated(batchId, challenger, sequencer, depth);
@@ -112,26 +119,30 @@ contract DisputeGameMock is IDisputeGame {
         emit BisectionMove(batchId, g.currentDepth - 1, msg.sender, claimedStateHash, position);
     }
 
-    function resolve(uint64 batchId, bool batchIsValid) external {
+    function resolve(uint64 batchId, bool batchIsValid, bytes32 divergencePoint) external {
         Game storage g = games[batchId];
         require(g.status == DataTypes.DisputeStatus.BISECTING, "not bisecting");
         require(g.currentDepth >= g.maxDepth || block.timestamp > g.deadline, "game still active");
 
         address winner;
         if (batchIsValid) {
+            require(divergencePoint == bytes32(0), "valid resolution has no divergence");
             g.status = DataTypes.DisputeStatus.RESOLVED_VALID;
             winner = g.sequencer;
             // Challenger bond slashed
             payable(g.sequencer).transfer(g.challengerBond);
         } else {
+            require(divergencePoint != bytes32(0), "invalid resolution requires divergence");
             g.status = DataTypes.DisputeStatus.RESOLVED_INVALID;
             winner = g.challenger;
             // Sequencer bond slashed (held by portal)
         }
 
+        g.divergencePoint = divergencePoint;
+
         IPortal(portal).finalizeBatch(batchId, batchIsValid);
 
-        emit GameResolved(batchId, g.status, winner);
+        emit GameResolved(batchId, g.status, winner, divergencePoint);
     }
 
     function getRounds(uint64 batchId) external view returns (BisectionRound[] memory) {
