@@ -75,6 +75,7 @@ export function OpcodeRace({ data, onClose }: Props) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const frozen = currentIdx >= divergenceIdx;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const divergencePanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setCurrentIdx(0);
@@ -91,6 +92,15 @@ export function OpcodeRace({ data, onClose }: Props) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [divergenceIdx]);
+
+  // Auto-scroll the divergence callout into view when the tape freezes.
+  useEffect(() => {
+    if (frozen && divergencePanelRef.current) {
+      setTimeout(() => {
+        divergencePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 150);
+    }
+  }, [frozen]);
 
   return (
     <motion.div
@@ -158,6 +168,7 @@ export function OpcodeRace({ data, onClose }: Props) {
         <AnimatePresence>
           {frozen && (
             <motion.div
+              ref={divergencePanelRef}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-xl border border-red-700 bg-red-950/40 p-4 space-y-2"

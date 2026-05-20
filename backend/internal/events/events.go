@@ -14,6 +14,7 @@ const (
 	DisputeResolved Type = "dispute_resolved"
 	ZkInspectReady  Type = "zk_inspect_ready"
 	SessionChanged  Type = "session_state_changed"
+	ErrorOccurred   Type = "error_occurred"
 )
 
 type Event struct {
@@ -57,6 +58,11 @@ type ZkInspectReadyPayload struct {
 	ProveMs     int64  `json:"proveMs"`
 	VerifyGas   uint64 `json:"verifyGas"`
 	Accepted    bool   `json:"accepted"`
+}
+
+type ErrorPayload struct {
+	Chain   string `json:"chain"`
+	Message string `json:"message"`
 }
 
 // --- Bus ---

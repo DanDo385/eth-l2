@@ -3,6 +3,7 @@ import type {
   AppState,
   BatchInfo,
   BatchPostedPayload,
+  ErrorPayload,
 } from "../types";
 
 const MAX_BLOCK_LOG = 60;
@@ -16,6 +17,7 @@ export const initialState: AppState = {
   inspectedBatch: null,
   opcodeRaceData: null,
   zkInspectData: null,
+  lastError: null,
   scoreboard: { opChallenges: 0, opResolved: 0, zkBatches: 0 },
 };
 
@@ -123,6 +125,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         case "session_state_changed":
           return { ...state, running: event.payload.running };
 
+        case "error_occurred":
+          return { ...state, lastError: event.payload as ErrorPayload };
+
         default:
           return state;
       }
@@ -157,6 +162,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "CLOSE_ZK_INSPECT":
       return { ...state, zkInspectData: null };
+
+    case "DISMISS_ERROR":
+      return { ...state, lastError: null };
 
     default:
       return state;

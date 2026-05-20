@@ -4,7 +4,7 @@ import { useAppStore } from "../lib/store";
 import { BlockBox } from "./BlockBox";
 import type { BatchInfo } from "../types";
 
-const LANE_WINDOW = 20; // how many recent blocks to show per lane
+const LANE_WINDOW = 20;
 
 const CHAIN_LABELS: Record<string, string> = {
   l1: "L1 Mainnet",
@@ -23,6 +23,7 @@ interface LaneProps {
   latestBlock: number;
   batches: Record<number, BatchInfo>;
   onBlockClick: (blockNum: number, batch?: BatchInfo) => void;
+  inspectedBatch: number | null;
 }
 
 function findBatchForBlock(
@@ -36,7 +37,7 @@ function findBatchForBlock(
   );
 }
 
-function Lane({ chain, latestBlock, batches, onBlockClick }: LaneProps) {
+function Lane({ chain, latestBlock, batches, onBlockClick, inspectedBatch }: LaneProps) {
   const start = Math.max(1, latestBlock - LANE_WINDOW + 1);
   const blocks = Array.from(
     { length: latestBlock - start + 1 },
@@ -58,12 +59,18 @@ function Lane({ chain, latestBlock, batches, onBlockClick }: LaneProps) {
       <div className="flex flex-wrap gap-1">
         {blocks.map((n) => {
           const batch = findBatchForBlock(n, chain, batches);
+          // Dim op-l2 blocks that don't belong to the currently inspected batch.
+          const dimmed =
+            chain === "op-l2" &&
+            inspectedBatch !== null &&
+            !(batch && batch.batchId === inspectedBatch);
           return (
             <BlockBox
               key={n}
               blockNum={n}
               batch={batch}
-              onClick={batch ? () => onBlockClick(n, batch) : undefined}
+              dimmed={dimmed}
+              onClick={batch && !dimmed ? () => onBlockClick(n, batch) : undefined}
             />
           );
         })}
@@ -95,6 +102,7 @@ export function BlockchainCanvas({ onBatchClick }: Props) {
           latestBlock={state.blocks[chain] ?? 0}
           batches={state.batches}
           onBlockClick={handleBlockClick}
+          inspectedBatch={state.inspectedBatch}
         />
       ))}
     </div>

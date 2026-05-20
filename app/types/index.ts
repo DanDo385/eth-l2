@@ -73,13 +73,19 @@ export interface ZkInspectPayload {
   accepted: boolean;
 }
 
+export interface ErrorPayload {
+  chain: string;
+  message: string;
+}
+
 export type WsEvent =
   | { type: "block_mined"; payload: BlockMinedPayload }
   | { type: "batch_posted"; payload: BatchPostedPayload }
   | { type: "batch_flagged"; payload: BatchFlaggedPayload }
   | { type: "dispute_resolved"; payload: DisputeResolvedPayload }
   | { type: "zk_inspect_ready"; payload: ZkInspectPayload }
-  | { type: "session_state_changed"; payload: { running: boolean } };
+  | { type: "session_state_changed"; payload: { running: boolean } }
+  | { type: "error_occurred"; payload: ErrorPayload };
 
 // ── App state ────────────────────────────────────────────────────────────────
 
@@ -99,6 +105,7 @@ export interface AppState {
   inspectedBatch: number | null;
   opcodeRaceData: DisputeResolvedPayload | null;
   zkInspectData: ZkInspectPayload | null;
+  lastError: ErrorPayload | null;
   scoreboard: {
     opChallenges: number;
     opResolved: number;
@@ -114,4 +121,5 @@ export type AppAction =
   | { type: "SHOW_OPCODE_RACE"; batchId: number }
   | { type: "CLOSE_OPCODE_RACE" }
   | { type: "SHOW_ZK_INSPECT"; payload: ZkInspectPayload }
-  | { type: "CLOSE_ZK_INSPECT" };
+  | { type: "CLOSE_ZK_INSPECT" }
+  | { type: "DISMISS_ERROR" };

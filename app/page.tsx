@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { AppStoreProvider, useAppStore } from "./lib/store";
 import { parseUrlHash } from "./lib/url";
@@ -28,6 +28,13 @@ function Inner() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.connected]);
+
+  // Auto-dismiss backend errors after 6 s
+  useEffect(() => {
+    if (!state.lastError) return;
+    const t = setTimeout(() => dispatch({ type: "DISMISS_ERROR" }), 6000);
+    return () => clearTimeout(t);
+  }, [state.lastError, dispatch]);
 
   function handleBatchClick(batchId: number) {
     dispatch({ type: "INSPECT_BATCH", batchId });
@@ -79,6 +86,28 @@ function Inner() {
           <BlockInspector onShowOpcodeRace={handleOpcodeRace} />
         </aside>
       </div>
+
+      {/* Error banner */}
+      <AnimatePresence>
+        {state.lastError && (
+          <motion.div
+            key="error-banner"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-red-950 border border-red-600 text-red-200 text-xs font-mono px-4 py-2 rounded-lg shadow-xl max-w-lg"
+          >
+            <span className="text-red-400 font-bold">[{state.lastError.chain}]</span>
+            <span className="flex-1 truncate">{state.lastError.message}</span>
+            <button
+              onClick={() => dispatch({ type: "DISMISS_ERROR" })}
+              className="text-red-500 hover:text-red-300 text-base leading-none ml-1"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Overlays */}
       <AnimatePresence>
