@@ -149,7 +149,9 @@ export function ZkInspect({ data, onClose }: Props) {
               </div>
               <div>
                 <p className="text-zinc-500">Status</p>
-                <p className="text-emerald-400 font-semibold">Valid ✓</p>
+                <p className={`font-semibold ${data.accepted ? "text-emerald-400" : "text-red-400"}`}>
+                  {data.accepted ? "Valid ✓" : "Invalid ✗"}
+                </p>
               </div>
             </motion.div>
           )}

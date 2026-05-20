@@ -70,6 +70,7 @@ export interface ZkInspectPayload {
   constraints: number;
   proveMs: number;
   verifyGas: number;
+  accepted: boolean;
 }
 
 export type WsEvent =

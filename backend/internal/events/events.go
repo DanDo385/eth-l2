@@ -51,11 +51,12 @@ type BatchFlaggedPayload struct {
 }
 
 type ZkInspectReadyPayload struct {
-	BatchID      uint64 `json:"batchId"`
-	L2EndBlock   uint64 `json:"l2EndBlock"`
-	Constraints  int    `json:"constraints"`
-	ProveMs      int64  `json:"proveMs"`
-	VerifyGas    uint64 `json:"verifyGas"`
+	BatchID     uint64 `json:"batchId"`
+	L2EndBlock  uint64 `json:"l2EndBlock"`
+	Constraints int    `json:"constraints"`
+	ProveMs     int64  `json:"proveMs"`
+	VerifyGas   uint64 `json:"verifyGas"`
+	Accepted    bool   `json:"accepted"`
 }
 
 // --- Bus ---
