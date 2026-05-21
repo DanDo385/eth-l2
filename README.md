@@ -16,12 +16,52 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 ```bash
 # Install dependencies (Foundry + pnpm + Playwright browsers)
 make install
+```
 
-# Start the Go backend + Next.js frontend together
+## Terminal setup (exact commands)
+
+You can run the project with **1 terminal** (fastest) or **2 terminals** (easier debugging).
+
+### Option A: 1 terminal (recommended)
+
+Open **1 terminal** in the repo root and run:
+
+```bash
 make dev
 ```
 
+This starts:
+- Go backend (`backend/cmd/server`)
+- Next.js frontend on port `3001`
+- Local Anvil chains (managed by the backend)
+
 Then open [http://localhost:3001](http://localhost:3001).
+
+### Option B: 2 terminals (best for debugging)
+
+Open **2 terminals** in the repo root.
+
+**Terminal 1 (backend + chains):**
+
+```bash
+make backend
+```
+
+**Terminal 2 (frontend):**
+
+```bash
+make frontend
+```
+
+Then open [http://localhost:3001](http://localhost:3001).
+
+### Running tests with terminals
+
+- `make test`, `make test-contracts`, and `make test-go` do **not** require dev servers.
+- `make test-e2e` works best with **3 terminals**:
+  - Terminal 1: `make backend`
+  - Terminal 2: `make frontend`
+  - Terminal 3: `make test-e2e`
 
 - Pick a **seed** in the control panel (or click a Demo Gallery card).
 - Press **Start** — chains are created, contracts deployed, and bots begin trading.
