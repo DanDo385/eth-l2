@@ -119,6 +119,7 @@ export function OpcodeRace({ data, onClose }: Props) {
           <h2 className="text-lg font-bold text-zinc-100">OpcodeRace</h2>
           <button
             onClick={onClose}
+            aria-label="Close opcode race"
             className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none"
           >
             ×

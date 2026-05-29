@@ -55,19 +55,22 @@ function Inner() {
         </span>
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
           <span
+            aria-hidden="true"
             className={`w-1.5 h-1.5 rounded-full inline-block ${
               state.connected ? "bg-emerald-400" : "bg-red-500"
             }`}
           />
-          {state.connected
+          <span aria-live="polite">
+            {state.connected
             ? state.running
               ? "running"
               : "idle"
             : "disconnected"}
+          </span>
         </div>
       </header>
 
-      <div className="grid grid-cols-[220px_1fr_240px] gap-4 p-4 h-[calc(100vh-49px)]">
+      <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr_240px] gap-4 p-4 min-h-[calc(100vh-49px)]">
         {/* Left sidebar */}
         <aside className="flex flex-col gap-4 overflow-y-auto">
           <ControlPanel />
@@ -101,6 +104,7 @@ function Inner() {
             <span className="flex-1 truncate">{state.lastError.message}</span>
             <button
               onClick={() => dispatch({ type: "DISMISS_ERROR" })}
+              aria-label="Dismiss error"
               className="text-red-500 hover:text-red-300 text-base leading-none ml-1"
             >
               ×

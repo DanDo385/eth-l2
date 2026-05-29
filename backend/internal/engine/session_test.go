@@ -1,7 +1,11 @@
 package engine
 
 import (
+	"encoding/json"
 	"testing"
+
+	"github.com/dando385/eth-l2/backend/internal/events"
+	"github.com/dando385/eth-l2/backend/internal/store"
 )
 
 // TestSessionInitialState verifies a new session starts idle with no live components.
@@ -122,5 +126,33 @@ func TestSessionTeardown_resetsState(t *testing.T) {
 	}
 	if sess.batchStore != nil {
 		t.Error("batchStore should be nil after teardown")
+	}
+}
+
+// TestPublishSessionState_syncsStoreAndBus verifies running state is propagated
+// to both /api/state snapshots and websocket session_state_changed events.
+func TestPublishSessionState_syncsStoreAndBus(t *testing.T) {
+	sess := NewSession("/repo")
+	sess.bus = events.NewBus()
+	sess.batchStore = store.New()
+
+	ch, unsub := sess.bus.Subscribe(1)
+	defer unsub()
+
+	sess.publishSessionState(true)
+	if !sess.batchStore.Snapshot().Running {
+		t.Fatal("expected store snapshot running=true after publishSessionState(true)")
+	}
+
+	ev := <-ch
+	if ev.Type != events.SessionChanged {
+		t.Fatalf("want event type %q, got %q", events.SessionChanged, ev.Type)
+	}
+	var payload events.SessionChangedPayload
+	if err := json.Unmarshal(ev.Payload, &payload); err != nil {
+		t.Fatalf("decode payload: %v", err)
+	}
+	if !payload.Running {
+		t.Fatal("expected websocket payload running=true")
 	}
 }

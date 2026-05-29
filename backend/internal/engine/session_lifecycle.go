@@ -68,6 +68,7 @@ func (s *Session) Start(ctx context.Context, seedVal uint64, speed int) error {
 	tickCtx, cancel := context.WithCancel(ctx)
 	s.cancel = cancel
 	s.st = stateRunning
+	s.publishSessionState(true)
 	go s.tickLoop(tickCtx)
 	go s.challenger.AutoChallenge(tickCtx)
 	return nil
@@ -117,6 +118,7 @@ func (s *Session) Pause() error {
 		return fmt.Errorf("session not running")
 	}
 	s.st = statePaused
+	s.publishSessionState(false)
 	return nil
 }
 
@@ -127,6 +129,7 @@ func (s *Session) Resume() error {
 		return fmt.Errorf("session not paused")
 	}
 	s.st = stateRunning
+	s.publishSessionState(true)
 	return nil
 }
 
@@ -139,6 +142,7 @@ func (s *Session) Stop() {
 		cancel()
 	}
 	s.mu.Lock()
+	s.publishSessionState(false)
 	s.teardown()
 	s.st = stateIdle
 	s.mu.Unlock()
@@ -176,4 +180,14 @@ func (s *Session) teardown() {
 	s.batchStore = nil
 	s.challenger = nil
 	s.bus = nil
+}
+
+// publishSessionState keeps store snapshots and websocket clients in sync with lifecycle state.
+func (s *Session) publishSessionState(running bool) {
+	if s.batchStore != nil {
+		s.batchStore.SetRunning(running)
+	}
+	if s.bus != nil {
+		s.bus.Publish(events.New(events.SessionChanged, events.SessionChangedPayload{Running: running}))
+	}
 }

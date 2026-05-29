@@ -8,8 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { appReducer, initialState } from "./reducer";
-import { openWs } from "./ws";
-import type { AppAction, AppState } from "../types";
+import { apiGet, openWs } from "./ws";
+import type { ApiStateSnapshot, AppAction, AppState } from "../types";
 
 interface StoreContext {
   state: AppState;
@@ -29,6 +29,26 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     );
     return cleanup;
   }, []);
+
+  useEffect(() => {
+    if (!state.connected) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiGet("/api/state");
+        if (!res.ok) return;
+        const snapshot = (await res.json()) as ApiStateSnapshot;
+        if (!cancelled) dispatch({ type: "HYDRATE_STATE", snapshot });
+      } catch {
+        // Ignore hydration errors; websocket events still drive live state.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.connected]);
 
   return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>;
 }

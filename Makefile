@@ -7,7 +7,7 @@ REPO_ROOT := $(shell pwd)
 # Start Go backend (manages its own anvil instances) + Next.js frontend in parallel.
 dev:
 	@trap 'kill 0' INT; \
-	  REPO_ROOT=$(REPO_ROOT) go run ./backend/cmd/server & \
+	  cd backend && REPO_ROOT=$(REPO_ROOT) go run ./cmd/server & \
 	  pnpm dev --port 3001 & \
 	  wait
 
@@ -17,7 +17,7 @@ frontend:
 
 # Backend only (Go server — spins up anvil chains automatically).
 backend:
-	REPO_ROOT=$(REPO_ROOT) go run ./backend/cmd/server
+	cd backend && REPO_ROOT=$(REPO_ROOT) go run ./cmd/server
 
 # ── Build & Test ─────────────────────────────────────────────────────────────
 

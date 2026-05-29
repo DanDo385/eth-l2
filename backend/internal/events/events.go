@@ -60,6 +60,10 @@ type ZkInspectReadyPayload struct {
 	Accepted    bool   `json:"accepted"`
 }
 
+type SessionChangedPayload struct {
+	Running bool `json:"running"`
+}
+
 type ErrorPayload struct {
 	Chain   string `json:"chain"`
 	Message string `json:"message"`

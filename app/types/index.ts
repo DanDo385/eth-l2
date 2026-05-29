@@ -113,10 +113,23 @@ export interface AppState {
   };
 }
 
+export interface ApiStateSnapshot {
+  running: boolean;
+  blocks: {
+    l1?: number;
+    opL2?: number;
+    zkL2?: number;
+    "op-l2"?: number;
+    "zk-l2"?: number;
+  };
+  batches: BatchInfo[];
+}
+
 export type AppAction =
   | { type: "WS_CONNECTED" }
   | { type: "WS_DISCONNECTED" }
   | { type: "WS_EVENT"; event: WsEvent }
+  | { type: "HYDRATE_STATE"; snapshot: ApiStateSnapshot }
   | { type: "INSPECT_BATCH"; batchId: number | null }
   | { type: "SHOW_OPCODE_RACE"; batchId: number }
   | { type: "CLOSE_OPCODE_RACE" }

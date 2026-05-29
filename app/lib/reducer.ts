@@ -1,4 +1,5 @@
 import type {
+  ApiStateSnapshot,
   AppAction,
   AppState,
   BatchInfo,
@@ -28,6 +29,32 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "WS_DISCONNECTED":
       return { ...state, connected: false, running: false };
+
+    case "HYDRATE_STATE": {
+      const snap = action.snapshot as ApiStateSnapshot;
+      const batches = Object.fromEntries(
+        (snap.batches ?? []).map((b) => [b.batchId, b]),
+      ) as Record<number, BatchInfo>;
+      const batchList = Object.values(batches);
+      const opChallenges = batchList.filter((b) => b.flagged).length;
+      const opResolved = batchList.filter((b) => b.resolved).length;
+
+      return {
+        ...state,
+        running: snap.running ?? false,
+        blocks: {
+          l1: snap.blocks?.l1 ?? 0,
+          "op-l2": snap.blocks?.["op-l2"] ?? snap.blocks?.opL2 ?? 0,
+          "zk-l2": snap.blocks?.["zk-l2"] ?? snap.blocks?.zkL2 ?? 0,
+        },
+        batches,
+        scoreboard: {
+          ...state.scoreboard,
+          opChallenges,
+          opResolved,
+        },
+      };
+    }
 
     case "WS_EVENT": {
       const { event } = action;

@@ -63,6 +63,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             </span>
             <button
               onClick={() => dispatch({ type: "INSPECT_BATCH", batchId: null })}
+              aria-label="Close batch inspector"
               className="text-zinc-500 hover:text-zinc-300 text-lg leading-none"
             >
               ×

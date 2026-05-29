@@ -73,6 +73,7 @@ export function ZkInspect({ data, onClose }: Props) {
           <h2 className="text-lg font-bold text-emerald-400">ZK Inspect</h2>
           <button
             onClick={onClose}
+            aria-label="Close ZK inspect"
             className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none"
           >
             ×
