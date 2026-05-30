@@ -4,63 +4,73 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { DisputeResolvedPayload, FilteredStep } from "../types";
 
-const STEP_RATE_MS = 66; // ~15 steps/sec
-const VISIBLE_STEPS = 8;
+const STEP_RATE_MS = 450;
 
-interface TapeProps {
-  steps: FilteredStep[];
-  currentIdx: number;
-  divergenceIdx: number;
-  label: string;
-  frozen: boolean;
+function stepsMatch(a: FilteredStep, b: FilteredStep): boolean {
+  if (a.op !== b.op) return false;
+  const as = a.stack4 ?? [];
+  const bs = b.stack4 ?? [];
+  if (as.length !== bs.length) return false;
+  for (let i = 0; i < as.length; i++) {
+    if (as[i] !== bs[i]) return false;
+  }
+  const sa = a.storage ?? {};
+  const sb = b.storage ?? {};
+  const keys = new Set([...Object.keys(sa), ...Object.keys(sb)]);
+  for (const k of keys) {
+    if (sa[k] !== sb[k]) return false;
+  }
+  return true;
+}
+
+function opAccent(op: string): string {
+  if (op === "SSTORE") return "border-violet-500 bg-violet-950/50";
+  if (op === "SLOAD") return "border-blue-500 bg-blue-950/40";
+  if (op.startsWith("CALL") || op === "DELEGATECALL" || op === "STATICCALL") {
+    return "border-yellow-500 bg-yellow-950/30";
+  }
+  if (op === "REVERT") return "border-orange-600 bg-orange-950/40";
+  return "border-zinc-600 bg-zinc-900/60";
+}
+
+interface CardProps {
+  step: FilteredStep;
   side: "honest" | "claimed";
+  state: "idle" | "match" | "mismatch" | "pending";
 }
 
-function opColor(op: string, side: "honest" | "claimed", atDiv: boolean): string {
-  if (atDiv) return side === "honest" ? "border-emerald-400 bg-emerald-900/40" : "border-red-400 bg-red-900/40";
-  if (op === "SSTORE") return "border-violet-500 bg-violet-900/30";
-  if (op === "SLOAD") return "border-blue-500 bg-blue-900/30";
-  if (op.startsWith("CALL") || op === "STATICCALL" || op === "DELEGATECALL")
-    return "border-yellow-500 bg-yellow-900/20";
-  return "border-zinc-700 bg-zinc-800/50";
-}
+function OpcodeCard({ step, side, state }: CardProps) {
+  const base =
+    side === "honest"
+      ? "border-emerald-700/60 text-emerald-100"
+      : "border-red-700/60 text-red-100";
 
-function Tape({ steps, currentIdx, divergenceIdx, label, frozen, side }: TapeProps) {
-  const windowStart = Math.max(0, currentIdx - 3);
-  const slice = steps.slice(windowStart, windowStart + VISIBLE_STEPS);
+  let ring = "";
+  if (state === "match") ring = "ring-2 ring-emerald-400 shadow-emerald-900/40 shadow-lg";
+  if (state === "mismatch") ring = "ring-2 ring-red-500 shadow-red-900/50 shadow-lg scale-[1.03]";
 
   return (
-    <div className="flex-1 space-y-1 min-w-0">
-      <p className={`text-xs font-semibold text-center ${side === "honest" ? "text-emerald-400" : "text-red-400"}`}>
-        {label}
+    <motion.div
+      layout
+      animate={state === "mismatch" ? { x: [0, -4, 4, -2, 0] } : { x: 0 }}
+      transition={{ duration: 0.35 }}
+      className={`flex-1 min-w-0 rounded-xl border-2 p-4 ${base} ${opAccent(step.op)} ${ring}`}
+    >
+      <p className="text-[10px] uppercase tracking-widest opacity-70 mb-1">
+        {side === "honest" ? "Honest trace" : "Sequencer claim"}
       </p>
-      <div className="flex gap-1 overflow-hidden justify-center">
-        {slice.map((step, i) => {
-          const absIdx = windowStart + i;
-          const isDiv = absIdx === divergenceIdx;
-          const isCurrent = absIdx === currentIdx;
-          return (
-            <motion.div
-              key={absIdx}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{
-                opacity: 1,
-                scale: isDiv ? 1.5 : isCurrent ? 1.1 : 1,
-              }}
-              className={`
-                flex flex-col items-center justify-center rounded border px-1 py-0.5
-                text-[9px] font-mono min-w-[36px] shrink-0
-                ${opColor(step.op, side, isDiv)}
-                ${isCurrent && !frozen ? "ring-1 ring-white/30" : ""}
-              `}
-            >
-              <span>{step.op}</span>
-              <span className="text-zinc-500 text-[8px]">#{absIdx}</span>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
+      <p className="text-xl font-mono font-bold">{step.op}</p>
+      {step.storage && Object.keys(step.storage).length > 0 && (
+        <div className="mt-2 text-[10px] font-mono space-y-0.5 opacity-90">
+          {Object.entries(step.storage).slice(0, 2).map(([slot, val]) => (
+            <div key={slot} className="truncate">
+              <span className="text-zinc-500">slot </span>
+              {slot.slice(0, 10)}… = {val.slice(0, 12)}…
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -70,19 +80,26 @@ interface Props {
 }
 
 export function OpcodeRace({ data, onClose }: Props) {
-  const { divergenceIdx, honestSteps, claimedSteps, op, slot, honestVal, claimedVal } = data;
-  const maxSteps = Math.max(honestSteps.length, claimedSteps.length);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const frozen = currentIdx >= divergenceIdx;
+  const { batchId, divergenceIdx, honestSteps, claimedSteps, op, slot, honestVal, claimedVal } =
+    data;
+  const totalSteps = Math.min(honestSteps.length, claimedSteps.length);
+  const [phase, setPhase] = useState<"battle" | "verdict">("battle");
+  const [round, setRound] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const divergencePanelRef = useRef<HTMLDivElement>(null);
+
+  const honest = honestSteps[round];
+  const claimed = claimedSteps[round];
+  const matched = honest && claimed ? stepsMatch(honest, claimed) : false;
+  const isDivergenceRound = round === divergenceIdx;
 
   useEffect(() => {
-    setCurrentIdx(0);
+    setPhase("battle");
+    setRound(0);
     timerRef.current = setInterval(() => {
-      setCurrentIdx((prev) => {
+      setRound((prev) => {
         if (prev >= divergenceIdx) {
           if (timerRef.current) clearInterval(timerRef.current);
+          setPhase("verdict");
           return prev;
         }
         return prev + 1;
@@ -91,107 +108,155 @@ export function OpcodeRace({ data, onClose }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [divergenceIdx]);
+  }, [divergenceIdx, batchId]);
 
-  // Auto-scroll the divergence callout into view when the tape freezes.
-  useEffect(() => {
-    if (frozen && divergencePanelRef.current) {
-      setTimeout(() => {
-        divergencePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 150);
+  function replay() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setPhase("battle");
+    setRound(0);
+    timerRef.current = setInterval(() => {
+      setRound((prev) => {
+        if (prev >= divergenceIdx) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setPhase("verdict");
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, STEP_RATE_MS);
+  }
+
+  const cardState = (side: "honest" | "claimed"): CardProps["state"] => {
+    if (phase === "battle" && round < divergenceIdx) return "match";
+    if (phase === "battle" && round === divergenceIdx && isDivergenceRound) {
+      return matched ? "match" : "mismatch";
     }
-  }, [frozen]);
+    if (phase === "verdict" && isDivergenceRound) return matched ? "match" : "mismatch";
+    return "idle";
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
     >
       <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.9 }}
-        className="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-2xl p-6 space-y-5 shadow-2xl"
+        initial={{ scale: 0.92, y: 12 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 12 }}
+        className="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-3xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-zinc-100">OpcodeRace</h2>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-zinc-100">Opcode War — Batch #{batchId}</h2>
+            <p className="text-xs text-zinc-500 mt-1">
+              Bisection narrowed the dispute to one instruction. Each round compares the honest
+              replay against what the sequencer executed.
+            </p>
+          </div>
           <button
             onClick={onClose}
-            aria-label="Close opcode race"
-            className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none"
+            aria-label="Close opcode war"
+            className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none shrink-0"
           >
             ×
           </button>
         </div>
 
-        <div className="relative flex gap-4 items-start">
-          <Tape
-            steps={honestSteps}
-            currentIdx={currentIdx}
-            divergenceIdx={divergenceIdx}
-            label="Honest"
-            frozen={frozen}
-            side="honest"
-          />
-
-          {/* Divider appears at divergence */}
-          <AnimatePresence>
-            {frozen && (
-              <motion.div
-                initial={{ scaleY: 0, opacity: 0 }}
-                animate={{ scaleY: 1, opacity: 1 }}
-                className="w-px bg-red-500 self-stretch"
-              />
-            )}
-          </AnimatePresence>
-
-          <Tape
-            steps={claimedSteps}
-            currentIdx={currentIdx}
-            divergenceIdx={divergenceIdx}
-            label="Claimed (lying)"
-            frozen={frozen}
-            side="claimed"
-          />
+        {/* Matched history */}
+        <div className="flex flex-wrap gap-1 min-h-[28px]">
+          {Array.from({ length: Math.min(round, divergenceIdx) }, (_, i) => (
+            <span
+              key={i}
+              className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400"
+            >
+              #{i} {honestSteps[i]?.op} ✓
+            </span>
+          ))}
         </div>
 
+        {/* Current duel */}
+        {honest && claimed ? (
+          <div className="flex items-stretch gap-3">
+            <OpcodeCard step={honest} side="honest" state={cardState("honest")} />
+            <div className="flex flex-col items-center justify-center px-1 shrink-0">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-600">vs</span>
+              {phase === "battle" && round < divergenceIdx && (
+                <span className="text-xs text-emerald-400 font-semibold mt-1">match</span>
+              )}
+              {(phase === "verdict" || (phase === "battle" && round === divergenceIdx)) &&
+                !matched && (
+                  <span className="text-xs text-red-400 font-bold mt-1">clash</span>
+                )}
+            </div>
+            <OpcodeCard step={claimed} side="claimed" state={cardState("claimed")} />
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500 text-center py-8">
+            No opcode steps available for this batch.
+          </p>
+        )}
+
         <div className="text-center text-xs text-zinc-500 font-mono">
-          step {currentIdx} / {maxSteps - 1}
-          {frozen && (
-            <span className="ml-2 text-red-400 font-semibold">
-              ← DIVERGED AT #{divergenceIdx}
+          {phase === "battle" ? (
+            <>
+              round {round + 1} of {Math.max(divergenceIdx + 1, 1)}
+              {round < divergenceIdx && (
+                <span className="ml-2 text-emerald-500">— traces agree</span>
+              )}
+            </>
+          ) : (
+            <span className="text-red-400 font-semibold">
+              diverged at step #{divergenceIdx} · {totalSteps} engine ops compared
             </span>
           )}
         </div>
 
         <AnimatePresence>
-          {frozen && (
+          {phase === "verdict" && (
             <motion.div
-              ref={divergencePanelRef}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-red-700 bg-red-950/40 p-4 space-y-2"
+              className="rounded-xl border border-red-700 bg-red-950/30 p-4 space-y-3"
             >
-              <p className="text-xs text-red-400 font-bold uppercase tracking-wide">
-                Divergence — op: {op}
+              <p className="text-sm font-semibold text-red-300">
+                Fraud proof wins — invalid state transition at{" "}
+                <span className="font-mono">{op}</span>
               </p>
-              {slot && (
-                <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-                  <span className="text-zinc-500">Slot</span>
-                  <span className="col-span-2 text-zinc-300 break-all">{slot}</span>
-                  <span className="text-emerald-400">Honest</span>
-                  <span className="col-span-2 text-emerald-300 break-all">{honestVal}</span>
-                  <span className="text-red-400">Claimed</span>
-                  <span className="col-span-2 text-red-300 break-all">{claimedVal}</span>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                The sequencer&apos;s batch claimed a post-state root that required this execution
+                path. Honest replay through the verified engine disagrees here, so the L1 dispute
+                game resolves against the sequencer and the batch is rejected.
+              </p>
+              {(slot || honestVal || claimedVal) && (
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs font-mono border-t border-red-900/50 pt-3">
+                  {slot && (
+                    <>
+                      <span className="text-zinc-500">Storage slot</span>
+                      <span className="text-zinc-300 break-all">{slot}</span>
+                    </>
+                  )}
+                  {honestVal && (
+                    <>
+                      <span className="text-emerald-400">Honest value</span>
+                      <span className="text-emerald-300 break-all">{honestVal}</span>
+                    </>
+                  )}
+                  {claimedVal && (
+                    <>
+                      <span className="text-red-400">Claimed value</span>
+                      <span className="text-red-300 break-all">{claimedVal}</span>
+                    </>
+                  )}
                 </div>
               )}
               <button
-                onClick={() => setCurrentIdx(0)}
-                className="text-xs text-zinc-500 hover:text-zinc-300 underline"
+                onClick={replay}
+                className="text-xs text-zinc-400 hover:text-zinc-200 underline"
               >
-                Replay
+                Replay battle
               </button>
             </motion.div>
           )}

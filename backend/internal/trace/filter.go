@@ -22,8 +22,26 @@ type FilteredStep struct {
 
 // Filter reduces a raw struct-log sequence to only the salient ops.
 func Filter(logs []StructLog) []FilteredStep {
+	return filterSalient(logs, false)
+}
+
+// FilterEngine keeps salient ops inside the swap engine (after the router DELEGATECALL).
+// Router-level reads/calls differ between honest replay and the mined tx; skipping them
+// aligns tapes so fraud shows up at the SSTORE (or similar) inside the engine.
+func FilterEngine(logs []StructLog) []FilteredStep {
+	return filterSalient(logs, true)
+}
+
+func filterSalient(logs []StructLog, engineOnly bool) []FilteredStep {
 	out := make([]FilteredStep, 0, len(logs)/10)
+	inEngine := !engineOnly
 	for _, l := range logs {
+		if engineOnly && !inEngine {
+			if l.Op == "DELEGATECALL" {
+				inEngine = true
+			}
+			continue
+		}
 		if !salientOps[l.Op] {
 			continue
 		}
@@ -32,7 +50,6 @@ func Filter(logs []StructLog) []FilteredStep {
 			PC:      l.PC,
 			Storage: l.Storage,
 		}
-		// top 4 stack items
 		if n := len(l.Stack); n > 0 {
 			start := n - 4
 			if start < 0 {

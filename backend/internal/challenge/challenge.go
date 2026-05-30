@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const challengePortalABIStr = `[
@@ -249,9 +250,19 @@ func (c *Challenger) traceDiff(ctx context.Context, batch *store.BatchInfo) (*tr
 	}
 	blockTag := fmt.Sprintf("0x%x", receipt.BlockNumber.Uint64()-1)
 
+	chainID, err := c.l2Client.EC.ChainID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("chain id: %w", err)
+	}
+	from, err := types.Sender(types.LatestSignerForChainID(chainID), lyingTx)
+	if err != nil {
+		return nil, fmt.Errorf("tx sender: %w", err)
+	}
+
 	honestResult, err := trace.HonestReplay(
 		ctx,
 		c.l2Client.EC,
+		from,
 		common.HexToAddress(c.l2Addrs.SwapRouter),
 		common.HexToAddress(c.l2Addrs.HonestSwapEngine),
 		lyingTx.Data(),

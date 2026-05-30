@@ -9,6 +9,29 @@ func makeLog(op string, stack []string, storage map[string]string) StructLog {
 	return StructLog{Op: op, Stack: stack, Storage: storage}
 }
 
+func withEngineEntry(logs []StructLog) []StructLog {
+	out := make([]StructLog, 0, len(logs)+1)
+	out = append(out, makeLog("DELEGATECALL", nil, nil))
+	out = append(out, logs...)
+	return out
+}
+
+func TestFilterEngine_skipsRouterPreamble(t *testing.T) {
+	logs := []StructLog{
+		makeLog("SLOAD", []string{"router"}, nil),
+		makeLog("DELEGATECALL", []string{"engine"}, nil),
+		makeLog("SLOAD", []string{"engine-slot"}, nil),
+		makeLog("SSTORE", nil, map[string]string{"slot": "1"}),
+	}
+	filtered := FilterEngine(logs)
+	if len(filtered) != 2 {
+		t.Fatalf("expected 2 engine steps, got %d (%v)", len(filtered), filtered)
+	}
+	if filtered[0].Op != "SLOAD" || filtered[1].Op != "SSTORE" {
+		t.Errorf("unexpected engine ops: %v", filtered)
+	}
+}
+
 func TestFilter_keepsOnlySalientOps(t *testing.T) {
 	logs := []StructLog{
 		makeLog("PUSH1", nil, nil),
@@ -56,11 +79,11 @@ func TestFilter_shortStack(t *testing.T) {
 }
 
 func TestDiff_identicalTraces(t *testing.T) {
-	logs := []StructLog{
+	logs := withEngineEntry([]StructLog{
 		makeLog("SLOAD", nil, map[string]string{"slot": "1"}),
 		makeLog("SSTORE", nil, map[string]string{"slot": "2"}),
 		makeLog("RETURN", nil, nil),
-	}
+	})
 	result := Diff(logs, logs)
 	if result != nil {
 		t.Errorf("expected nil divergence for identical traces, got %+v", result)
@@ -68,16 +91,16 @@ func TestDiff_identicalTraces(t *testing.T) {
 }
 
 func TestDiff_opDivergence(t *testing.T) {
-	honest := []StructLog{
+	honest := withEngineEntry([]StructLog{
 		makeLog("SLOAD", nil, nil),
 		makeLog("SSTORE", nil, map[string]string{"s": "100"}),
 		makeLog("RETURN", nil, nil),
-	}
-	lying := []StructLog{
+	})
+	lying := withEngineEntry([]StructLog{
 		makeLog("SLOAD", nil, nil),
-		makeLog("SSTORE", nil, map[string]string{"s": "200"}), // different storage value
+		makeLog("SSTORE", nil, map[string]string{"s": "200"}),
 		makeLog("RETURN", nil, nil),
-	}
+	})
 	result := Diff(honest, lying)
 	if result == nil {
 		t.Fatal("expected divergence, got nil")
@@ -97,12 +120,12 @@ func TestDiff_opDivergence(t *testing.T) {
 }
 
 func TestDiff_stackDivergence(t *testing.T) {
-	honest := []StructLog{
+	honest := withEngineEntry([]StructLog{
 		makeLog("SLOAD", []string{"0x1", "0x2", "0x3", "0xA"}, nil),
-	}
-	lying := []StructLog{
-		makeLog("SLOAD", []string{"0x1", "0x2", "0x3", "0xB"}, nil), // top differs
-	}
+	})
+	lying := withEngineEntry([]StructLog{
+		makeLog("SLOAD", []string{"0x1", "0x2", "0x3", "0xB"}, nil),
+	})
 	result := Diff(honest, lying)
 	if result == nil {
 		t.Fatal("expected stack divergence, got nil")
@@ -113,14 +136,14 @@ func TestDiff_stackDivergence(t *testing.T) {
 }
 
 func TestDiff_honestAndClaimedTapesAttached(t *testing.T) {
-	honest := []StructLog{
+	honest := withEngineEntry([]StructLog{
 		makeLog("SSTORE", nil, map[string]string{"k": "1"}),
 		makeLog("RETURN", nil, nil),
-	}
-	lying := []StructLog{
+	})
+	lying := withEngineEntry([]StructLog{
 		makeLog("SSTORE", nil, map[string]string{"k": "9"}),
 		makeLog("RETURN", nil, nil),
-	}
+	})
 	result := Diff(honest, lying)
 	if result == nil {
 		t.Fatal("expected divergence")

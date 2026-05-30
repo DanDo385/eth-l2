@@ -24,8 +24,8 @@ type DivergenceResult struct {
 // Diff walks two filtered trace tapes in lockstep and returns the first divergence.
 // Returns nil when no divergence is found (traces are identical up to the shorter one).
 func Diff(honestLogs, claimedLogs []StructLog) *DivergenceResult {
-	hs := Filter(honestLogs)
-	cs := Filter(claimedLogs)
+	hs := FilterEngine(honestLogs)
+	cs := FilterEngine(claimedLogs)
 
 	limit := min(len(hs), len(cs))
 	for i := range limit {

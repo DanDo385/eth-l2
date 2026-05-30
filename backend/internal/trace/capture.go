@@ -56,6 +56,7 @@ func Transaction(ctx context.Context, ec *ethclient.Client, txHash common.Hash) 
 func HonestReplay(
 	ctx context.Context,
 	ec *ethclient.Client,
+	from common.Address,
 	routerAddr common.Address,
 	honestEngineAddr common.Address,
 	calldata []byte,
@@ -66,6 +67,7 @@ func HonestReplay(
 	}
 
 	call := map[string]string{
+		"from": from.Hex(),
 		"to":   routerAddr.Hex(),
 		"data": hexutil.Encode(calldata),
 		"gas":  "0x200000",

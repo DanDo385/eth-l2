@@ -3,7 +3,7 @@
 export interface FilteredStep {
   op: string;
   stack4: string[];
-  storage: Record<string, string>;
+  storage?: Record<string, string> | null;
   pc: number;
 }
 
