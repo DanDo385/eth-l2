@@ -6,7 +6,7 @@ import { apiPost } from "../lib/ws";
 import { parseUrlHash, writeUrlSeed } from "../lib/url";
 
 export function ControlPanel() {
-  const { state } = useAppStore();
+  const { state, dispatch, refreshState } = useAppStore();
   const [seed, setSeed] = useState(42);
   const [speed, setSpeed] = useState(3);
   const [busy, setBusy] = useState(false);
@@ -21,6 +21,16 @@ export function ControlPanel() {
     setBusy(true);
     try {
       await apiPost(path, body);
+      await refreshState();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Request failed";
+      dispatch({
+        type: "WS_EVENT",
+        event: {
+          type: "error_occurred",
+          payload: { chain: "api", message },
+        },
+      });
     } finally {
       setBusy(false);
     }
@@ -35,7 +45,8 @@ export function ControlPanel() {
     await call("/api/reseed", { seed });
   }
 
-  const running = state.running;
+  const active = state.running;
+  const paused = state.paused;
   const connected = state.connected;
 
   return (
@@ -78,7 +89,7 @@ export function ControlPanel() {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {!running ? (
+        {!active ? (
           <button
             onClick={handleStart}
             disabled={busy || !connected}
@@ -90,14 +101,14 @@ export function ControlPanel() {
           <>
             <button
               onClick={() => call("/api/pause")}
-              disabled={busy}
+              disabled={busy || paused}
               className="btn-zinc"
             >
               Pause
             </button>
             <button
               onClick={() => call("/api/resume")}
-              disabled={busy}
+              disabled={busy || !paused}
               className="btn-zinc"
             >
               Resume

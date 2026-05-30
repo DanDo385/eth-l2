@@ -38,13 +38,25 @@ interface Props {
 }
 
 export function BlockInspector({ onShowOpcodeRace }: Props) {
-  const { state, dispatch } = useAppStore();
+  const { state, dispatch, refreshState } = useAppStore();
   const batchId = state.inspectedBatch;
   const batch = batchId !== null ? state.batches[batchId] : null;
 
   async function handleChallenge() {
     if (!batch) return;
-    await apiPost("/api/challenge", { batchId: batch.batchId });
+    try {
+      await apiPost("/api/challenge", { batchId: batch.batchId });
+      await refreshState();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Challenge failed";
+      dispatch({
+        type: "WS_EVENT",
+        event: {
+          type: "error_occurred",
+          payload: { chain: "api", message },
+        },
+      });
+    }
   }
 
   return (

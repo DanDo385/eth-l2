@@ -66,7 +66,9 @@ function Inner() {
           <span aria-live="polite">
             {state.connected
             ? state.running
-              ? "running"
+              ? state.paused
+                ? "paused"
+                : "running"
               : "idle"
             : "disconnected"}
           </span>

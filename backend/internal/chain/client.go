@@ -11,6 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// DefaultGasLimit is used for all local Anvil transactions (swap bots, sequencers, etc.).
+const DefaultGasLimit = 16_000_000
+
 // anvilKeys are the default Anvil private keys (mnemonic: test test … junk).
 var anvilKeys = []string{
 	"ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", // [0] deployer
@@ -62,6 +65,7 @@ func NewClient(ctx context.Context, cfg ChainConfig) (*Client, error) {
 			ec.Close()
 			return nil, err
 		}
+		auth.GasLimit = DefaultGasLimit
 		c.auths = append(c.auths, auth)
 	}
 	return c, nil

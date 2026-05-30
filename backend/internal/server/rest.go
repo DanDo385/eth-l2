@@ -128,7 +128,7 @@ func handleState(sess *engine.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := sess.Store()
 		if st == nil {
-			writeJSON(w, map[string]any{"running": false, "batches": []any{}, "blocks": map[string]int{}})
+			writeJSON(w, map[string]any{"running": false, "paused": false, "batches": []any{}, "blocks": map[string]int{}})
 			return
 		}
 		writeJSON(w, st.Snapshot())

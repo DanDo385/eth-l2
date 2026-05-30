@@ -29,7 +29,7 @@ type TraceResult struct {
 	StructLogs  []StructLog `json:"structLogs"`
 }
 
-var tracerConfig = map[string]bool{
+var tracerConfig = map[string]interface{}{
 	"disableMemory":  true,
 	"disableStack":   false,
 	"disableStorage": false,
@@ -82,8 +82,16 @@ func HonestReplay(
 		},
 	}
 
+	traceCfg := map[string]interface{}{
+		"disableMemory":  true,
+		"disableStack":   false,
+		"disableStorage": false,
+		// Anvil 1.5.x rejects a 4th RPC param; embed overrides in the trace config.
+		"stateOverrides": stateOverride,
+	}
+
 	var raw json.RawMessage
-	err := ec.Client().CallContext(ctx, &raw, "debug_traceCall", call, blockTag, tracerConfig, stateOverride)
+	err := ec.Client().CallContext(ctx, &raw, "debug_traceCall", call, blockTag, traceCfg)
 	if err != nil {
 		return nil, fmt.Errorf("debug_traceCall (honest replay): %w", err)
 	}

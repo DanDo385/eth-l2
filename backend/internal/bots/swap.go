@@ -2,6 +2,7 @@ package bots
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -30,7 +31,12 @@ const swapRouterABI = `[
   {"type":"function","name":"seed","inputs":[
     {"name":"trader","type":"address"},
     {"name":"amountA","type":"uint256"}
-  ],"outputs":[],"stateMutability":"nonpayable"}
+  ],"outputs":[  ],"stateMutability":"nonpayable"},
+  {"type":"function","name":"nonces","inputs":[
+    {"name":"trader","type":"address"}
+  ],"outputs":[
+    {"name":"","type":"uint256"}
+  ],"stateMutability":"view"}
 ]`
 
 // SwapBot submits one swap per L2 block, cycling traders deterministically.
@@ -81,9 +87,12 @@ func (b *SwapBot) Seed(ctx context.Context) error {
 }
 
 // OnBlock is called for every new L2 block; submits one swap.
-func (b *SwapBot) OnBlock(ctx context.Context, _ uint64) error {
+func (b *SwapBot) OnBlock(ctx context.Context, blockNum uint64) error {
 	traderIdx := b.prng.Intn(TraderCount)
 	trader := chain.AnvilAddress(traderIdx + 3)
+	if err := b.syncNonce(ctx, trader); err != nil {
+		return err
+	}
 	swapNonce := b.swapNonces[trader]
 
 	amountIn := big.NewInt(int64(b.prng.Intn(20) + 1)) // 1–20 units
@@ -91,9 +100,23 @@ func (b *SwapBot) OnBlock(ctx context.Context, _ uint64) error {
 	opts := copyOpts(b.client.Trader(traderIdx))
 	_, err := b.contract.Transact(opts, "swap", trader, amountIn, swapNonce)
 	if err != nil {
+		_ = b.syncNonce(ctx, trader)
 		return err
 	}
 	b.swapNonces[trader] = new(big.Int).Add(swapNonce, big.NewInt(1))
+	return nil
+}
+
+func (b *SwapBot) syncNonce(ctx context.Context, trader common.Address) error {
+	var out []interface{}
+	if err := b.contract.Call(&bind.CallOpts{Context: ctx}, &out, "nonces", trader); err != nil {
+		return err
+	}
+	nonce, ok := out[0].(*big.Int)
+	if !ok {
+		return fmt.Errorf("unexpected nonces return type %T", out[0])
+	}
+	b.swapNonces[trader] = nonce
 	return nil
 }
 

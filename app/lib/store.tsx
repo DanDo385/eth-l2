@@ -14,12 +14,24 @@ import type { ApiStateSnapshot, AppAction, AppState } from "../types";
 interface StoreContext {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
+  refreshState: () => Promise<void>;
 }
 
 const Ctx = createContext<StoreContext | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  async function refreshState() {
+    try {
+      const res = await apiGet("/api/state");
+      if (!res.ok) return;
+      const snapshot = (await res.json()) as ApiStateSnapshot;
+      dispatch({ type: "HYDRATE_STATE", snapshot });
+    } catch {
+      // Ignore refresh errors; websocket events still drive live state.
+    }
+  }
 
   useEffect(() => {
     const cleanup = openWs(
@@ -50,7 +62,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     };
   }, [state.connected]);
 
-  return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ state, dispatch, refreshState }}>{children}</Ctx.Provider>
+  );
 }
 
 export function useAppStore(): StoreContext {

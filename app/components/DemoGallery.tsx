@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { apiPost } from "../lib/ws";
+import { useAppStore } from "../lib/store";
 import { writeUrlSeed } from "../lib/url";
 
 const DEMOS = [
@@ -36,10 +37,24 @@ const DEMOS = [
 ];
 
 export function DemoGallery() {
+  const { dispatch, refreshState } = useAppStore();
+
   async function launch(seed: number) {
     writeUrlSeed(seed);
-    await apiPost("/api/stop");
-    await apiPost("/api/start", { seed, speed: 4 });
+    try {
+      await apiPost("/api/stop");
+      await apiPost("/api/start", { seed, speed: 4 });
+      await refreshState();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Demo launch failed";
+      dispatch({
+        type: "WS_EVENT",
+        event: {
+          type: "error_occurred",
+          payload: { chain: "api", message },
+        },
+      });
+    }
   }
 
   return (

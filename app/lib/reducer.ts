@@ -12,6 +12,7 @@ const MAX_BLOCK_LOG = 60;
 export const initialState: AppState = {
   connected: false,
   running: false,
+  paused: false,
   blocks: { l1: 0, "op-l2": 0, "zk-l2": 0 },
   blockLog: [],
   batches: {},
@@ -28,7 +29,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, connected: true };
 
     case "WS_DISCONNECTED":
-      return { ...state, connected: false, running: false };
+      return { ...state, connected: false, running: false, paused: false };
 
     case "HYDRATE_STATE": {
       const snap = action.snapshot as ApiStateSnapshot;
@@ -42,6 +43,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         running: snap.running ?? false,
+        paused: snap.paused ?? false,
         blocks: {
           l1: snap.blocks?.l1 ?? 0,
           "op-l2": snap.blocks?.["op-l2"] ?? snap.blocks?.opL2 ?? 0,
@@ -150,7 +152,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }
 
         case "session_state_changed":
-          return { ...state, running: event.payload.running };
+          return {
+            ...state,
+            running: event.payload.running,
+            paused: event.payload.paused ?? false,
+          };
 
         case "error_occurred":
           return { ...state, lastError: event.payload as ErrorPayload };

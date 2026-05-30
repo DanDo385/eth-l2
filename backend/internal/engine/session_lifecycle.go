@@ -65,10 +65,11 @@ func (s *Session) Start(ctx context.Context, seedVal uint64, speed int) error {
 		return err
 	}
 
-	tickCtx, cancel := context.WithCancel(ctx)
+	// Session lifetime must not be tied to the HTTP request that triggered Start.
+	tickCtx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
 	s.st = stateRunning
-	s.publishSessionState(true)
+	s.publishSessionState(true, false)
 	go s.tickLoop(tickCtx)
 	go s.challenger.AutoChallenge(tickCtx)
 	return nil
@@ -114,22 +115,28 @@ func (s *Session) initComponents(ctx context.Context) error {
 func (s *Session) Pause() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.st != stateRunning {
+	if s.st == stateIdle {
 		return fmt.Errorf("session not running")
 	}
+	if s.st == statePaused {
+		return nil
+	}
 	s.st = statePaused
-	s.publishSessionState(false)
+	s.publishSessionState(true, true)
 	return nil
 }
 
 func (s *Session) Resume() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.st != statePaused {
-		return fmt.Errorf("session not paused")
+	if s.st == stateIdle {
+		return fmt.Errorf("session not running")
+	}
+	if s.st == stateRunning {
+		return nil
 	}
 	s.st = stateRunning
-	s.publishSessionState(true)
+	s.publishSessionState(true, false)
 	return nil
 }
 
@@ -142,7 +149,7 @@ func (s *Session) Stop() {
 		cancel()
 	}
 	s.mu.Lock()
-	s.publishSessionState(false)
+	s.publishSessionState(false, false)
 	s.teardown()
 	s.st = stateIdle
 	s.mu.Unlock()
@@ -183,11 +190,14 @@ func (s *Session) teardown() {
 }
 
 // publishSessionState keeps store snapshots and websocket clients in sync with lifecycle state.
-func (s *Session) publishSessionState(running bool) {
+func (s *Session) publishSessionState(active, paused bool) {
 	if s.batchStore != nil {
-		s.batchStore.SetRunning(running)
+		s.batchStore.SetSessionState(active, paused)
 	}
 	if s.bus != nil {
-		s.bus.Publish(events.New(events.SessionChanged, events.SessionChangedPayload{Running: running}))
+		s.bus.Publish(events.New(events.SessionChanged, events.SessionChangedPayload{
+			Running: active,
+			Paused:  paused,
+		}))
 	}
 }

@@ -11,6 +11,13 @@ dev:
 	  pnpm dev --port 3001 & \
 	  wait
 
+# Stop stale dev servers on the default frontend/backend ports (macOS-safe).
+stop:
+	@for p in 3001 8080 8545 9545 10545; do \
+	  pid=$$(lsof -nP -tiTCP:$$p -sTCP:LISTEN 2>/dev/null); \
+	  if [ -n "$$pid" ]; then echo "Stopping port $$p (pid $$pid)"; kill $$pid; fi; \
+	done
+
 # Frontend only (useful when the backend is already running).
 frontend:
 	pnpm dev --port 3001
@@ -53,4 +60,4 @@ install:
 clean:
 	rm -rf out/ forge-out/ .next/ public/screenshots/
 
-.PHONY: dev frontend backend build test test-contracts test-go test-e2e install clean
+.PHONY: dev stop frontend backend build test test-contracts test-go test-e2e install clean

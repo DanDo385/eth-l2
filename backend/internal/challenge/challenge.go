@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/dando385/eth-l2/backend/internal/chain"
 	"github.com/dando385/eth-l2/backend/internal/events"
@@ -57,6 +58,8 @@ type Challenger struct {
 
 	portal      *bind.BoundContract
 	disputeGame *bind.BoundContract
+
+	inFlight sync.Map // batchID -> struct{}
 }
 
 func New(
@@ -115,9 +118,23 @@ func (c *Challenger) AutoChallenge(ctx context.Context) {
 
 // Challenge runs the full bisection + resolve dispute flow for one batch.
 func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
+	if _, loaded := c.inFlight.LoadOrStore(batchID, struct{}{}); loaded {
+		return fmt.Errorf("batch %d challenge already in progress", batchID)
+	}
+	defer c.inFlight.Delete(batchID)
+
 	batch := c.st.GetBatch(batchID)
 	if batch == nil {
 		return fmt.Errorf("batch %d not found in store", batchID)
+	}
+	if batch.Challenged {
+		return fmt.Errorf("batch %d already challenged", batchID)
+	}
+	if batch.Resolved {
+		return fmt.Errorf("batch %d already resolved", batchID)
+	}
+	if len(batch.TxHashes) == 0 {
+		return fmt.Errorf("batch %d has no tx hashes", batchID)
 	}
 
 	// 1. Initiate challenge on the portal.
@@ -135,7 +152,13 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	}
 	c.st.SetChallenged(batchID)
 
-	// 2. Bisection — alternate sequencer / challenger for maxDepth rounds.
+	// 2. Compute the on-chain divergence commitment from actual traces.
+	div, err := c.traceDiff(ctx, batch)
+	if err != nil {
+		return fmt.Errorf("trace diff: %w", err)
+	}
+
+	// 3. Bisection — alternate sequencer / challenger for maxDepth rounds.
 	// Sequencer goes first (isSequencerTurn=true after initiate), then challenger, alternating.
 	maxDepth := computeMaxDepth(batch.TxCount)
 	for depth := 0; depth < maxDepth; depth++ {
@@ -157,12 +180,6 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 		if _, err := bind.WaitMined(ctx, c.l1Client.EC, tx); err != nil {
 			return fmt.Errorf("wait bisect %d: %w", depth, err)
 		}
-	}
-
-	// 3. Compute the on-chain divergence commitment from actual traces.
-	div, err := c.traceDiff(ctx, batch)
-	if err != nil {
-		return fmt.Errorf("trace diff: %w", err)
 	}
 
 	// 4. Resolve the dispute with the divergence point.

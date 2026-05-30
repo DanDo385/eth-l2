@@ -6,12 +6,33 @@ const API_BASE =
 export const WS_URL = API_BASE.replace(/^http/, "ws") + "/stream";
 export const REST_BASE = API_BASE;
 
-export function apiPost(path: string, body?: unknown) {
-  return fetch(`${REST_BASE}${path}`, {
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export async function apiPost(path: string, body?: unknown) {
+  const res = await fetch(`${REST_BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const data = (await res.json()) as { error?: string };
+      if (data.error) message = data.error;
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiError(message, res.status);
+  }
+  return res;
 }
 
 export function apiGet(path: string) {

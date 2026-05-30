@@ -84,7 +84,7 @@ export type WsEvent =
   | { type: "batch_flagged"; payload: BatchFlaggedPayload }
   | { type: "dispute_resolved"; payload: DisputeResolvedPayload }
   | { type: "zk_inspect_ready"; payload: ZkInspectPayload }
-  | { type: "session_state_changed"; payload: { running: boolean } }
+  | { type: "session_state_changed"; payload: { running: boolean; paused: boolean } }
   | { type: "error_occurred"; payload: ErrorPayload };
 
 // ── App state ────────────────────────────────────────────────────────────────
@@ -99,6 +99,7 @@ export interface BlockNums {
 export interface AppState {
   connected: boolean;
   running: boolean;
+  paused: boolean;
   blocks: BlockNums;
   blockLog: { chain: string; blockNum: number }[];
   batches: Record<number, BatchInfo>;
@@ -115,6 +116,7 @@ export interface AppState {
 
 export interface ApiStateSnapshot {
   running: boolean;
+  paused?: boolean;
   blocks: {
     l1?: number;
     opL2?: number;

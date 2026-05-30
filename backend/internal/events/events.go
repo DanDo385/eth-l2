@@ -61,7 +61,8 @@ type ZkInspectReadyPayload struct {
 }
 
 type SessionChangedPayload struct {
-	Running bool `json:"running"`
+	Running bool `json:"running"` // session active (started, not stopped)
+	Paused  bool `json:"paused"`  // tick loop paused while active
 }
 
 type ErrorPayload struct {

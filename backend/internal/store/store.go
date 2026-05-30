@@ -46,6 +46,7 @@ type Store struct {
 	batches map[uint64]*BatchInfo
 	blocks  BlockNums
 	running bool
+	paused  bool
 }
 
 func New() *Store {
@@ -53,8 +54,17 @@ func New() *Store {
 }
 
 func (s *Store) SetRunning(v bool) {
+	s.SetSessionState(v, false)
+}
+
+func (s *Store) SetSessionState(active, paused bool) {
 	s.mu.Lock()
-	s.running = v
+	s.running = active
+	if active {
+		s.paused = paused
+	} else {
+		s.paused = false
+	}
 	s.mu.Unlock()
 }
 
@@ -114,6 +124,7 @@ func (s *Store) Snapshot() StateSnapshot {
 	defer s.mu.RUnlock()
 	snap := StateSnapshot{
 		Running: s.running,
+		Paused:  s.paused,
 		Blocks:  s.blocks,
 		Batches: make([]*BatchInfo, 0, len(s.batches)),
 	}
@@ -125,7 +136,8 @@ func (s *Store) Snapshot() StateSnapshot {
 
 // StateSnapshot is what GET /api/state returns.
 type StateSnapshot struct {
-	Running bool        `json:"running"`
-	Blocks  BlockNums   `json:"blocks"`
+	Running bool         `json:"running"`
+	Paused  bool         `json:"paused"`
+	Blocks  BlockNums    `json:"blocks"`
 	Batches []*BatchInfo `json:"batches"`
 }

@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -122,7 +123,8 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 
 	case "zk-l2":
 		if err := s.zkSwapBot.OnBlock(ctx, blockNum); err != nil {
-			s.publishError("zk-l2", fmt.Sprintf("zkSwapBot block %d: %v", blockNum, err))
+			// ZK lane is a contrast demo; log locally without hijacking the OP error banner.
+			log.Printf("zk-l2 swap block %d: %v", blockNum, err)
 		}
 		s.zkSeq.OnBlock(ctx, blockNum)
 	}

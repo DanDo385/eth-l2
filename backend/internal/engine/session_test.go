@@ -65,21 +65,21 @@ func TestSessionPauseResume_stateTransitions(t *testing.T) {
 	}
 }
 
-// TestSessionPause_whenAlreadyPaused returns an error (not running).
+// TestSessionPause_whenAlreadyPaused is idempotent.
 func TestSessionPause_whenAlreadyPaused(t *testing.T) {
 	sess := NewSession("/repo")
 	sess.st = statePaused
-	if err := sess.Pause(); err == nil {
-		t.Error("double-Pause should return an error")
+	if err := sess.Pause(); err != nil {
+		t.Errorf("double-Pause should succeed idempotently: %v", err)
 	}
 }
 
-// TestSessionResume_whenAlreadyRunning returns an error (not paused).
+// TestSessionResume_whenAlreadyRunning is idempotent.
 func TestSessionResume_whenAlreadyRunning(t *testing.T) {
 	sess := NewSession("/repo")
 	sess.st = stateRunning
-	if err := sess.Resume(); err == nil {
-		t.Error("Resume on running session should return an error")
+	if err := sess.Resume(); err != nil {
+		t.Errorf("Resume on running session should succeed idempotently: %v", err)
 	}
 }
 
@@ -139,9 +139,12 @@ func TestPublishSessionState_syncsStoreAndBus(t *testing.T) {
 	ch, unsub := sess.bus.Subscribe(1)
 	defer unsub()
 
-	sess.publishSessionState(true)
+	sess.publishSessionState(true, false)
 	if !sess.batchStore.Snapshot().Running {
-		t.Fatal("expected store snapshot running=true after publishSessionState(true)")
+		t.Fatal("expected store snapshot running=true after publishSessionState(true, false)")
+	}
+	if sess.batchStore.Snapshot().Paused {
+		t.Fatal("expected store snapshot paused=false after publishSessionState(true, false)")
 	}
 
 	ev := <-ch
@@ -154,5 +157,8 @@ func TestPublishSessionState_syncsStoreAndBus(t *testing.T) {
 	}
 	if !payload.Running {
 		t.Fatal("expected websocket payload running=true")
+	}
+	if payload.Paused {
+		t.Fatal("expected websocket payload paused=false")
 	}
 }

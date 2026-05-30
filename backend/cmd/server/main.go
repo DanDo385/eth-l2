@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dando385/eth-l2/backend/internal/engine"
+	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/server"
 )
 
@@ -22,15 +23,31 @@ func main() {
 	hub := server.NewHub()
 
 	// Fan events from the active session bus to all WebSocket clients.
-	// Re-subscribed whenever the session starts/stops via the Bus() accessor.
 	go func() {
+		var runCancel context.CancelFunc
+		var activeBus *events.Bus
 		for {
 			bus := sess.Bus()
 			if bus == nil {
+				if runCancel != nil {
+					runCancel()
+					runCancel = nil
+					activeBus = nil
+				}
 				time.Sleep(50 * time.Millisecond)
 				continue
 			}
-			hub.Run(context.Background(), bus)
+			if bus == activeBus {
+				time.Sleep(50 * time.Millisecond)
+				continue
+			}
+			if runCancel != nil {
+				runCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			runCancel = cancel
+			activeBus = bus
+			go hub.Run(ctx, bus)
 		}
 	}()
 
