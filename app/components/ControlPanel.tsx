@@ -50,8 +50,10 @@ export function ControlPanel() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs text-zinc-500 uppercase tracking-wide">Seed</label>
+        <label htmlFor="seed-input" className="text-xs text-zinc-500 uppercase tracking-wide">Seed</label>
         <input
+          id="seed-input"
+          name="seed"
           type="number"
           value={seed}
           onChange={(e) => setSeed(Number(e.target.value))}
@@ -60,10 +62,12 @@ export function ControlPanel() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs text-zinc-500 uppercase tracking-wide">
+        <label htmlFor="speed-input" className="text-xs text-zinc-500 uppercase tracking-wide">
           Speed: {speed}×
         </label>
         <input
+          id="speed-input"
+          name="speed"
           type="range"
           min={1}
           max={10}

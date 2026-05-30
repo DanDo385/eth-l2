@@ -44,6 +44,11 @@ func handleStart(sess *engine.Session) http.HandlerFunc {
 			body.Speed = 1
 		}
 		if err := sess.Start(r.Context(), body.Seed, body.Speed); err != nil {
+			// Idempotent UX: frontends may retry start while session is already active.
+			if strings.Contains(err.Error(), "already active") {
+				writeJSON(w, map[string]string{"status": "running"})
+				return
+			}
 			httpError(w, err.Error(), http.StatusConflict)
 			return
 		}

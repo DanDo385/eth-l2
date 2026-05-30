@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { AppStoreProvider, useAppStore } from "./lib/store";
@@ -18,16 +18,19 @@ import { DemoGallery } from "./components/DemoGallery";
 
 function Inner() {
   const { state, dispatch } = useAppStore();
+  const autostartAttempted = useRef(false);
 
   // Auto-start from URL hash on first connect
   useEffect(() => {
     if (!state.connected) return;
+    if (autostartAttempted.current) return;
     const p = parseUrlHash();
-    if (p.autostart) {
+    if (p.autostart && !state.running) {
+      autostartAttempted.current = true;
       apiPost("/api/start", { seed: p.seed, speed: p.speed });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.connected]);
+  }, [state.connected, state.running]);
 
   // Auto-dismiss backend errors after 6 s
   useEffect(() => {
