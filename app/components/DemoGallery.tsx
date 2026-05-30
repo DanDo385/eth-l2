@@ -67,19 +67,19 @@ export function DemoGallery() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => launch(demo.seed)}
-            className={`text-left p-3 rounded-lg border bg-zinc-950 transition-colors ${demo.color}`}
+            className={`text-left p-3 rounded-lg border bg-zinc-950 transition-colors min-w-0 ${demo.color}`}
           >
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-start gap-2 mb-1 min-w-0">
               <span
-                className={`text-xs px-1.5 py-0.5 rounded font-mono ${demo.badge}`}
+                className={`shrink-0 text-xs px-1.5 py-0.5 rounded font-mono ${demo.badge}`}
               >
                 #{demo.seed}
               </span>
-              <span className="text-xs font-semibold text-zinc-200">
+              <span className="text-xs font-semibold text-zinc-200 leading-snug">
                 {demo.title}
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500 leading-snug">{demo.caption}</p>
+            <p className="text-[10px] text-zinc-500 leading-snug break-words">{demo.caption}</p>
           </motion.button>
         ))}
       </div>

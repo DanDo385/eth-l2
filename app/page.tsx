@@ -75,9 +75,9 @@ function Inner() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[220px_1fr_240px] gap-4 p-4 min-h-[calc(100vh-49px)]">
+      <div className="grid grid-cols-1 xl:grid-cols-[330px_1fr_240px] gap-4 p-4 min-h-[calc(100vh-49px)]">
         {/* Left sidebar */}
-        <aside className="flex flex-col gap-4 overflow-y-auto">
+        <aside className="flex flex-col gap-4 overflow-y-auto min-w-0 xl:min-w-[330px]">
           <ControlPanel />
           <DemoGallery />
           <AccountSidebar />
