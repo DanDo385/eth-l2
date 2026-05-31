@@ -5,6 +5,7 @@ import {
   useContext,
   useReducer,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import { appReducer, initialState } from "./reducer";
@@ -22,7 +23,7 @@ const Ctx = createContext<StoreContext | null>(null);
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  async function refreshState() {
+  const refreshState = useCallback(async () => {
     try {
       const res = await apiGet("/api/state");
       if (!res.ok) return;
@@ -31,7 +32,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore refresh errors; websocket events still drive live state.
     }
-  }
+  }, []);
 
   useEffect(() => {
     const cleanup = openWs(
@@ -61,6 +62,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [state.connected]);
+
+  useEffect(() => {
+    if (!state.running) return;
+    void refreshState();
+  }, [state.running, refreshState]);
 
   return (
     <Ctx.Provider value={{ state, dispatch, refreshState }}>{children}</Ctx.Provider>

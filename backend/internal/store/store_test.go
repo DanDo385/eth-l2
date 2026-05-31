@@ -90,6 +90,9 @@ func TestSetResolved(t *testing.T) {
 	if !b.Resolved {
 		t.Error("expected Resolved=true")
 	}
+	if !b.Challenged {
+		t.Error("expected Challenged=true after SetResolved")
+	}
 	if b.Divergence == nil {
 		t.Fatal("expected Divergence to be set")
 	}

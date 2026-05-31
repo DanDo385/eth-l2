@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../lib/store";
 import { apiPost } from "../lib/ws";
@@ -49,6 +50,19 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
   const batch = batchId !== null ? state.batches[batchId] : null;
   const status = batch ? batchStatus(batch) : null;
 
+  useEffect(() => {
+    if (batchId === null) return;
+    void refreshState();
+  }, [batchId, refreshState]);
+
+  useEffect(() => {
+    if (batchId === null || !batch || batch.resolved || !batch.flagged) return;
+    const timer = setInterval(() => {
+      void refreshState();
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [batchId, batch?.flagged, batch?.challenged, batch?.resolved, refreshState]);
+
   async function handleChallenge() {
     if (!batch) return;
     try {
@@ -70,7 +84,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
     <AnimatePresence>
       {batch && status && (
         <motion.div
-          key="inspector"
+          key={batch.batchId}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}

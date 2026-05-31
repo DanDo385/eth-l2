@@ -96,6 +96,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
         case "batch_posted": {
           const p = event.payload as BatchPostedPayload;
+          const existing = state.batches[p.batchId];
           const info: BatchInfo = {
             batchId: p.batchId,
             engineType: p.engineType,
@@ -103,9 +104,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             l2StartBlock: p.l2StartBlock,
             l2EndBlock: p.l2EndBlock,
             txCount: p.txCount,
-            flagged: false,
-            challenged: false,
-            resolved: false,
+            flagged: existing?.flagged ?? false,
+            challenged: existing?.challenged ?? false,
+            resolved: existing?.resolved ?? false,
+            postedRoot: existing?.postedRoot,
+            expectedRoot: existing?.expectedRoot,
+            flagReason: existing?.flagReason,
+            divergence: existing?.divergence,
           };
           return {
             ...state,
@@ -116,30 +121,66 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         case "batch_flagged": {
           const p = event.payload;
           const existing = state.batches[p.batchId];
-          if (!existing) return state;
+          const base: BatchInfo = existing ?? {
+            batchId: p.batchId,
+            engineType: "obvious",
+            postStateRoot: p.postedRoot,
+            l2StartBlock: p.l2EndBlock,
+            l2EndBlock: p.l2EndBlock,
+            txCount: 0,
+            flagged: false,
+            challenged: false,
+            resolved: false,
+          };
+          const wasFlagged = base.flagged;
           return {
             ...state,
             batches: {
               ...state.batches,
               [p.batchId]: {
-                ...existing,
+                ...base,
                 flagged: true,
                 postedRoot: p.postedRoot,
                 expectedRoot: p.expectedRoot,
                 flagReason: p.reason,
               },
             },
-            inspectedBatch: state.inspectedBatch,
             scoreboard: normalizeScoreboard(state.scoreboard, {
-              opChallenges: safeNum(state.scoreboard.opChallenges) + 1,
+              opChallenges: wasFlagged
+                ? state.scoreboard.opChallenges
+                : safeNum(state.scoreboard.opChallenges) + 1,
             }),
+          };
+        }
+
+        case "batch_challenged": {
+          const p = event.payload;
+          const existing = state.batches[p.batchId];
+          if (!existing) return state;
+          if (existing.challenged) return state;
+          return {
+            ...state,
+            batches: {
+              ...state.batches,
+              [p.batchId]: { ...existing, challenged: true, flagged: true },
+            },
           };
         }
 
         case "dispute_resolved": {
           const p = event.payload;
           const existing = state.batches[p.batchId];
-          if (!existing) return state;
+          const base: BatchInfo = existing ?? {
+            batchId: p.batchId,
+            engineType: "obvious",
+            postStateRoot: "",
+            l2StartBlock: 0,
+            l2EndBlock: 0,
+            txCount: 0,
+            flagged: true,
+            challenged: false,
+            resolved: false,
+          };
           const divInfo = {
             divergenceIdx: p.divergenceIdx,
             op: p.op,
@@ -149,19 +190,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             honestSteps: p.honestSteps,
             claimedSteps: p.claimedSteps,
           };
+          const wasResolved = base.resolved;
           return {
             ...state,
             batches: {
               ...state.batches,
               [p.batchId]: {
-                ...existing,
+                ...base,
+                flagged: true,
                 challenged: true,
                 resolved: true,
                 divergence: divInfo,
               },
             },
             scoreboard: normalizeScoreboard(state.scoreboard, {
-              opResolved: safeNum(state.scoreboard.opResolved) + 1,
+              opResolved: wasResolved
+                ? state.scoreboard.opResolved
+                : safeNum(state.scoreboard.opResolved) + 1,
             }),
           };
         }
@@ -182,6 +227,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }
 
         case "session_state_changed":
+          if (!event.payload.running) {
+            return {
+              ...state,
+              running: false,
+              paused: false,
+              batches: {},
+              inspectedBatch: null,
+              opcodeRaceData: null,
+              zkRollups: {},
+            };
+          }
           return {
             ...state,
             running: event.payload.running,
@@ -196,8 +252,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
-    case "INSPECT_BATCH":
-      return { ...state, inspectedBatch: action.batchId };
+    case "INSPECT_BATCH": {
+      const switching =
+        action.batchId !== null && action.batchId !== state.inspectedBatch;
+      return {
+        ...state,
+        inspectedBatch: action.batchId,
+        ...(switching ? { opcodeRaceData: null, zkInspectData: null } : {}),
+      };
+    }
 
     case "SHOW_OPCODE_RACE": {
       const batch = state.batches[action.batchId];

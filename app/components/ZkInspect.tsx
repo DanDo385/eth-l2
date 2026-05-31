@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ZkInspectPayload } from "../types";
 import { safeNum } from "../lib/numbers";
-
-const STAGES = [
-  { key: "commit", label: "Commit trace", durationMs: 600 },
-  { key: "witness", label: "Witness generation", durationMs: 1000 },
-  { key: "prove", label: "Proving", durationMs: 2000 },
-  { key: "verify", label: "Verify on-chain", durationMs: 500 },
-];
+import {
+  OP_VS_ZK_ROWS,
+  ZK_TOUR_STEPS,
+  zkOneLiner,
+  zkVerdictLabel,
+} from "../data/zkEducation";
 
 interface Props {
   data: ZkInspectPayload;
@@ -18,174 +17,182 @@ interface Props {
 }
 
 export function ZkInspect({ data, onClose }: Props) {
-  const [stageIdx, setStageIdx] = useState(-1);
-  const [constraintCount, setConstraintCount] = useState(0);
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const [step, setStep] = useState(0);
+  const lastStep = ZK_TOUR_STEPS.length - 1;
+  const current = ZK_TOUR_STEPS[step];
+  const accepted = data.accepted;
 
   useEffect(() => {
-    let elapsed = 0;
-    let stageStart = 0;
-    let animStart = Date.now();
-
-    const advance = (idx: number) => {
-      if (idx >= STAGES.length) return;
-      setStageIdx(idx);
-      stageStart = Date.now();
-
-      if (STAGES[idx].key === "prove") {
-        // grow constraint counter during prove stage
-        const target = safeNum(data.constraints);
-        const dur = STAGES[idx].durationMs;
-        const t0 = Date.now();
-        const tick = setInterval(() => {
-          const progress = Math.min(1, (Date.now() - t0) / dur);
-          setConstraintCount(Math.floor(progress * target));
-          setElapsedMs(Date.now() - animStart);
-          if (progress >= 1) clearInterval(tick);
-        }, 50);
-      }
-
-      setTimeout(() => {
-        elapsed += STAGES[idx].durationMs;
-        advance(idx + 1);
-      }, STAGES[idx].durationMs);
-    };
-
-    const kickoff = setTimeout(() => advance(0), 300);
-    return () => clearTimeout(kickoff);
-  }, [data.constraints]);
-
-  const done = stageIdx >= STAGES.length;
+    setStep(0);
+  }, [data.batchId]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
     >
       <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.9 }}
-        className="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl"
+        initial={{ scale: 0.92, y: 12 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 12 }}
+        className="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-emerald-400">ZK Inspect</h2>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-emerald-400">ZK concept tour</h2>
+            <p className="text-xs text-zinc-500 mt-1 font-mono">
+              Batch #{safeNum(data.batchId)} · block {safeNum(data.l2EndBlock)} ·{" "}
+              <span className={accepted ? "text-emerald-400" : "text-red-400"}>
+                {zkVerdictLabel(accepted)}
+              </span>
+            </p>
+          </div>
           <button
             onClick={onClose}
-            aria-label="Close ZK inspect"
-            className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none"
+            aria-label="Close ZK tour"
+            className="text-zinc-500 hover:text-zinc-300 text-2xl leading-none shrink-0"
           >
             ×
           </button>
         </div>
 
-        <div className="text-xs text-zinc-500 font-mono">
-          Batch #{safeNum(data.batchId)} · block {safeNum(data.l2EndBlock)}
-        </div>
+        <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-emerald-800 pl-3">
+          Three ideas that separate ZK rollups from optimistic ones. Click through at your
+          pace — same rhythm as the opcode proof walkthrough.
+        </p>
 
-        <div className="space-y-2">
-          {STAGES.map((stage, i) => {
-            const isActive = i === stageIdx;
-            const isDone = i < stageIdx || stageIdx >= STAGES.length;
-            return (
-              <motion.div
-                key={stage.key}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 border transition-colors ${
-                  isDone
-                    ? "border-emerald-700 bg-emerald-900/20"
-                    : isActive
-                      ? "border-emerald-500 bg-emerald-900/30"
-                      : "border-zinc-800 bg-zinc-900"
-                }`}
-              >
-                <span className="text-base">
-                  {isDone ? "✓" : isActive ? "⏳" : "○"}
-                </span>
-                <span
-                  className={`text-sm flex-1 ${
-                    isDone
-                      ? "text-emerald-400"
-                      : isActive
-                        ? "text-zinc-100"
-                        : "text-zinc-600"
-                  }`}
-                >
-                  {stage.label}
-                </span>
-                {isActive && stage.key === "prove" && (
-                  <span className="text-xs font-mono text-violet-400">
-                    {constraintCount.toLocaleString()} constraints
-                  </span>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <AnimatePresence>
-          {stageIdx >= STAGES.length - 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`rounded-xl border p-4 space-y-3 text-xs ${
-                data.accepted
-                  ? "border-emerald-700 bg-emerald-950/40"
-                  : "border-red-700 bg-red-950/40"
+        {/* Step pills */}
+        <div className="flex flex-wrap gap-1.5">
+          {ZK_TOUR_STEPS.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setStep(i)}
+              className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
+                i === step
+                  ? "border-emerald-400 bg-emerald-950/50 text-emerald-200"
+                  : i < step
+                    ? "border-emerald-900 text-emerald-500"
+                    : "border-zinc-700 text-zinc-500"
               }`}
             >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              {s.beat} {s.title}
+            </button>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current.id}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4 space-y-3"
+          >
+            <p className="text-xs font-semibold text-emerald-300">{current.beat}</p>
+            <p className="text-sm font-medium text-zinc-100">{current.concept}</p>
+            <p className="text-xs text-zinc-400 leading-relaxed border-t border-emerald-900/40 pt-3">
+              {current.detail(data)}
+            </p>
+
+            {current.id === "prove" && (
+              <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+                <div className="rounded-lg bg-black/30 border border-violet-900/50 p-2">
                   <p className="text-zinc-500">Constraints</p>
-                  <p
-                    className={`font-mono text-base ${
-                      data.accepted ? "text-emerald-300" : "text-red-300"
-                    }`}
-                  >
+                  <p className="font-mono text-violet-300 text-base">
                     {safeNum(data.constraints).toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-zinc-500">Prove time</p>
-                  <p
-                    className={`font-mono text-base ${
-                      data.accepted ? "text-emerald-300" : "text-red-300"
-                    }`}
-                  >
+                <div className="rounded-lg bg-black/30 border border-violet-900/50 p-2">
+                  <p className="text-zinc-500">Prove time (sim)</p>
+                  <p className="font-mono text-violet-300 text-base">
                     {safeNum(data.proveMs)} ms
                   </p>
                 </div>
-                <div>
-                  <p className="text-zinc-500">Verify gas</p>
-                  <p
-                    className={`font-mono text-base ${
-                      data.accepted ? "text-emerald-300" : "text-red-300"
-                    }`}
-                  >
-                    {safeNum(data.verifyGas).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-zinc-500">Status</p>
-                  <p
-                    className={`font-semibold ${
-                      data.accepted ? "text-emerald-400" : "text-red-400"
-                    }`}
-                  >
-                    {data.accepted ? "Verified ✓" : "Rejected ✗"}
-                  </p>
-                </div>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-zinc-800/80 pt-3">
-                {data.reason ??
-                  (data.accepted
-                    ? "Proof verified on L1 — batch finalized immediately."
-                    : "Invalid proof — this batch was rejected and never finalized.")}
-              </p>
-            </motion.div>
-          )}
+            )}
+
+            {current.id === "verify" && (
+              <div
+                className={`rounded-lg border p-3 text-xs ${
+                  accepted
+                    ? "border-emerald-700 bg-emerald-950/40"
+                    : "border-red-700 bg-red-950/40"
+                }`}
+              >
+                <p
+                  className={`font-semibold ${accepted ? "text-emerald-300" : "text-red-300"}`}
+                >
+                  {zkOneLiner(data)}
+                </p>
+                <p className="text-zinc-400 mt-2 leading-relaxed">
+                  {data.reason ??
+                    (accepted
+                      ? "L1 finalized this batch immediately — no challenge window."
+                      : "L1 rejected the proof — this state never became canonical.")}
+                </p>
+                <p className="text-zinc-500 mt-2 font-mono">
+                  Verify gas: {safeNum(data.verifyGas).toLocaleString()}
+                </p>
+              </div>
+            )}
+          </motion.div>
         </AnimatePresence>
+
+        {step === lastStep && (
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 p-3 space-y-2">
+            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">
+              Why this lane feels different from OP
+            </p>
+            <div className="space-y-1.5 text-[11px]">
+              {OP_VS_ZK_ROWS.map((row) => (
+                <div key={row.topic} className="grid grid-cols-[5rem_1fr] gap-2">
+                  <span className="text-zinc-500">{row.topic}</span>
+                  <span className="text-zinc-400">
+                    <span className="text-blue-400/90">OP:</span> {row.optimistic}
+                    <br />
+                    <span className="text-emerald-400/90">ZK:</span> {row.zk}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <span className="text-xs text-zinc-500 font-mono">
+            Step {step + 1} of {ZK_TOUR_STEPS.length}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={step === 0}
+              className="px-3 py-1.5 text-xs rounded border border-zinc-700 text-zinc-300 disabled:opacity-40"
+            >
+              ← Prev
+            </button>
+            {step < lastStep ? (
+              <button
+                type="button"
+                onClick={() => setStep((s) => s + 1)}
+                className="px-3 py-1.5 text-xs rounded border border-emerald-800 text-emerald-300"
+              >
+                Next →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 text-xs rounded border border-emerald-700 bg-emerald-950/40 text-emerald-200"
+              >
+                Done
+              </button>
+            )}
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );

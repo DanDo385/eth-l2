@@ -129,6 +129,8 @@ func (s *Store) SetChallenged(id uint64) {
 func (s *Store) SetResolved(id uint64, div *DivInfo) {
 	s.mu.Lock()
 	if b := s.batches[id]; b != nil {
+		b.Flagged = true
+		b.Challenged = true
 		b.Resolved = true
 		b.Divergence = div
 	}

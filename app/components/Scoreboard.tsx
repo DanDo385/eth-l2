@@ -3,6 +3,7 @@
 import { useAppStore } from "../lib/store";
 import { safeNum } from "../lib/numbers";
 import type { AppState } from "../types";
+import { ZkContrastStrip } from "./ZkContrastStrip";
 
 function scoreNums(sb: AppState["scoreboard"]) {
   return {
@@ -95,6 +96,8 @@ export function Scoreboard() {
           <span className="font-mono text-emerald-400">{detectionRate}%</span>
         </div>
       </div>
+
+      <ZkContrastStrip />
     </div>
   );
 }

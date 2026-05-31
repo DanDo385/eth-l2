@@ -33,14 +33,14 @@ export function OpBatchGroup({ batch, blockNums, dimmed, selected, onClick }: Pr
     <motion.button
       type="button"
       initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: dimmed ? 0.25 : 1, y: 0 }}
+      animate={{ opacity: dimmed ? 0.45 : 1, y: 0 }}
       onClick={onClick}
       title={status.explanation}
       className={`
         relative text-left rounded-lg border-2 p-2 min-w-[11rem] max-w-[14rem] shrink-0
         transition-all ${status.border} ${status.bg}
-        ${selected ? "ring-2 ring-zinc-300 ring-offset-2 ring-offset-zinc-950" : ""}
-        ${dimmed ? "pointer-events-none" : "cursor-pointer hover:brightness-110"}
+        cursor-pointer hover:brightness-110
+        ${selected ? "ring-2 ring-zinc-300 ring-offset-2 ring-offset-zinc-950 opacity-100" : ""}
       `}
     >
       <div className="flex items-center justify-between gap-1 mb-1">

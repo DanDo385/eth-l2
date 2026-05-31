@@ -57,6 +57,10 @@ export interface BatchFlaggedPayload {
   reason: string;
 }
 
+export interface BatchChallengedPayload {
+  batchId: number;
+}
+
 export interface DisputeResolvedPayload {
   batchId: number;
   divergenceIdx: number;
@@ -87,6 +91,7 @@ export type WsEvent =
   | { type: "block_mined"; payload: BlockMinedPayload }
   | { type: "batch_posted"; payload: BatchPostedPayload }
   | { type: "batch_flagged"; payload: BatchFlaggedPayload }
+  | { type: "batch_challenged"; payload: BatchChallengedPayload }
   | { type: "dispute_resolved"; payload: DisputeResolvedPayload }
   | { type: "zk_inspect_ready"; payload: ZkInspectPayload }
   | { type: "session_state_changed"; payload: { running: boolean; paused: boolean } }

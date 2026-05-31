@@ -151,6 +151,9 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 		return fmt.Errorf("wait challengeBatch: %w", err)
 	}
 	c.st.SetChallenged(batchID)
+	c.bus.Publish(events.New(events.BatchChallenged, events.BatchChallengedPayload{
+		BatchID: batchID,
+	}))
 
 	// 2. Compute the on-chain divergence commitment from actual traces.
 	div, err := c.traceDiff(ctx, batch)

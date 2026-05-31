@@ -91,7 +91,10 @@ export function ResearchPanel() {
       {zkProofs.length > 0 && (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">
-            ZK — validity proofs
+            ZK — 3-step concept tour
+          </p>
+          <p className="text-[10px] text-zinc-600 leading-snug">
+            Claim → prove off-chain → verify on L1. Each batch is a live example.
           </p>
           <ul className="space-y-1.5">
             {zkProofs.slice(0, 8).map((z) => {
@@ -124,7 +127,7 @@ export function ResearchPanel() {
                     onClick={() => openZkProof(z.batchId)}
                     className="shrink-0 text-[10px] px-2 py-1 rounded border border-emerald-800 text-emerald-300 hover:bg-emerald-950/40"
                   >
-                    ZK inspect
+                    Concept tour
                   </button>
                 </li>
               );

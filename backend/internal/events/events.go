@@ -11,6 +11,7 @@ const (
 	BlockMined      Type = "block_mined"
 	BatchPosted     Type = "batch_posted"
 	BatchFlagged    Type = "batch_flagged"
+	BatchChallenged Type = "batch_challenged"
 	DisputeResolved Type = "dispute_resolved"
 	ZkInspectReady  Type = "zk_inspect_ready"
 	SessionChanged  Type = "session_state_changed"
@@ -50,6 +51,10 @@ type BatchFlaggedPayload struct {
 	ExpectedRoot string `json:"expectedRoot"`
 	L2EndBlock   uint64 `json:"l2EndBlock"`
 	Reason       string `json:"reason"`
+}
+
+type BatchChallengedPayload struct {
+	BatchID uint64 `json:"batchId"`
 }
 
 type ZkInspectReadyPayload struct {

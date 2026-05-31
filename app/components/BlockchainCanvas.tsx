@@ -85,17 +85,23 @@ function StandardLane({ chain, latestBlock, batches, onBatchClick, inspectedBatc
       <div className="flex flex-wrap gap-1">
         {blocks.map((n) => {
           const batch = chain === "op-l2" ? findBatchForBlock(n, batches) : undefined;
-          const dimmed =
-            chain === "op-l2" &&
-            inspectedBatch !== null &&
-            !(batch && batch.batchId === inspectedBatch);
           return (
             <BlockBox
               key={n}
               blockNum={n}
               batch={batch}
-              dimmed={dimmed}
-              onClick={batch && !dimmed ? () => onBatchClick(batch.batchId) : undefined}
+              dimmed={
+                chain === "op-l2" &&
+                inspectedBatch !== null &&
+                batch !== undefined &&
+                batch.batchId !== inspectedBatch
+              }
+              selected={
+                chain === "op-l2" &&
+                batch !== undefined &&
+                batch.batchId === inspectedBatch
+              }
+              onClick={batch ? () => onBatchClick(batch.batchId) : undefined}
             />
           );
         })}
@@ -123,14 +129,15 @@ function OpLane({ latestBlock, batches, onBatchClick, inspectedBatch }: Omit<Lan
           if (seg.kind === "pending") {
             return <OpPendingBlock key={`p-${seg.blockNum}`} blockNum={seg.blockNum} />;
           }
-          const dimmed = inspectedBatch !== null && seg.batch.batchId !== inspectedBatch;
+          const selected = inspectedBatch === seg.batch.batchId;
+          const dimmed = inspectedBatch !== null && !selected;
           return (
             <OpBatchGroup
               key={`b-${seg.batch.batchId}`}
               batch={seg.batch}
               blockNums={seg.blocks}
               dimmed={dimmed}
-              selected={inspectedBatch === seg.batch.batchId}
+              selected={selected}
               onClick={() => onBatchClick(seg.batch.batchId)}
             />
           );
@@ -179,6 +186,12 @@ export function BlockchainCanvas({ onBatchClick }: Props) {
         onBatchClick={onBatchClick}
         inspectedBatch={state.inspectedBatch}
       />
+
+      <p className="text-[10px] text-zinc-600 leading-relaxed border-l-2 border-emerald-900 pl-2">
+        ZK lane: same swap traffic, different trust model — every batch needs a validity proof.
+        Use the scoreboard&apos;s <span className="text-emerald-500">ZK in three beats</span> strip
+        or Proof lab to walk the concept tour.
+      </p>
     </div>
   );
 }
