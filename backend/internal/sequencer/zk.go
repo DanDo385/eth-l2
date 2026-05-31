@@ -137,7 +137,17 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 
 	// Find a proof the VerifierMock accepts: keccak256(proof||headerHash)[0] < 0x80
 	headerHash := hashBatchHeader(header)
-	proof := s.findAcceptingProof(headerHash)
+	var proof []byte
+	var simulateInvalid bool
+	// ~25% of batches demo a rejected proof (contrast with OP's challenge window).
+	derived := s.prng.KeccakDerive(fmt.Sprintf("zk-valid:%d", batchID))
+	choice := binary.BigEndian.Uint64(derived[:8]) % 4
+	if choice == 0 {
+		proof = s.findRejectingProof(headerHash)
+		simulateInvalid = true
+	} else {
+		proof = s.findAcceptingProof(headerHash)
+	}
 
 	opts := copyOpts(s.l1Client.Sequencer())
 	tx, err := s.zkRollup.Transact(opts, "submitBatch", header, proof)
@@ -166,6 +176,7 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 		ProveMs:     proveMs,
 		VerifyGas:   verifyGas,
 		Accepted:    accepted,
+		Reason:      zkRejectReason(simulateInvalid, accepted),
 	}))
 
 	s.nextBatchID++
@@ -190,6 +201,29 @@ func hashBatchHeader(h BatchHeader) [32]byte {
 	var out [32]byte
 	copy(out[:], crypto.Keccak256(buf))
 	return out
+}
+
+// findRejectingProof searches for a 40-byte proof the VerifierMock rejects.
+func (s *ZKSequencer) findRejectingProof(headerHash [32]byte) []byte {
+	base := s.prng.KeccakDerive(fmt.Sprintf("zk-bad-proof:%d", s.nextBatchID))
+	for nonce := uint64(0); ; nonce++ {
+		proof := make([]byte, 40)
+		copy(proof[:32], base[:])
+		binary.BigEndian.PutUint64(proof[32:], nonce)
+		if crypto.Keccak256(proof, headerHash[:])[0] >= 0x80 {
+			return proof
+		}
+	}
+}
+
+func zkRejectReason(simulatedInvalid, accepted bool) string {
+	if accepted {
+		return "Proof verified on L1 — batch finalized immediately with no challenge window."
+	}
+	if simulatedInvalid {
+		return "Invalid proof — L1 verifier rejected this batch. Fraudulent state never entered the chain."
+	}
+	return "Proof verification failed on L1."
 }
 
 // findAcceptingProof searches for a 40-byte proof the VerifierMock accepts.

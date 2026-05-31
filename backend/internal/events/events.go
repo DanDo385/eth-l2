@@ -49,6 +49,7 @@ type BatchFlaggedPayload struct {
 	PostedRoot   string `json:"postedRoot"`
 	ExpectedRoot string `json:"expectedRoot"`
 	L2EndBlock   uint64 `json:"l2EndBlock"`
+	Reason       string `json:"reason"`
 }
 
 type ZkInspectReadyPayload struct {
@@ -58,6 +59,7 @@ type ZkInspectReadyPayload struct {
 	ProveMs     int64  `json:"proveMs"`
 	VerifyGas   uint64 `json:"verifyGas"`
 	Accepted    bool   `json:"accepted"`
+	Reason      string `json:"reason,omitempty"`
 }
 
 type SessionChangedPayload struct {
