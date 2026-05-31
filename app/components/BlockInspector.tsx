@@ -3,6 +3,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../lib/store";
 import { apiPost } from "../lib/ws";
+import {
+  batchStatus,
+  batchWindowNote,
+  engineExplanation,
+} from "../data/batchEducation";
+import { PORTAL_BOND_ETH } from "../data/protocol";
 
 function hex(s: string) {
   return s.length > 18 ? s.slice(0, 10) + "…" + s.slice(-6) : s;
@@ -41,6 +47,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
   const { state, dispatch, refreshState } = useAppStore();
   const batchId = state.inspectedBatch;
   const batch = batchId !== null ? state.batches[batchId] : null;
+  const status = batch ? batchStatus(batch) : null;
 
   async function handleChallenge() {
     if (!batch) return;
@@ -61,7 +68,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
 
   return (
     <AnimatePresence>
-      {batch && (
+      {batch && status && (
         <motion.div
           key="inspector"
           initial={{ opacity: 0, x: 20 }}
@@ -82,12 +89,26 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             </button>
           </div>
 
+          <div
+            className={`rounded-lg border p-2.5 space-y-1 ${status.border} ${status.bg}`}
+          >
+            <p className="text-xs font-semibold text-zinc-200">{status.label}</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">{status.explanation}</p>
+          </div>
+
+          <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-zinc-700 pl-2">
+            {batchWindowNote(batch)}
+          </p>
+
           <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span className="text-zinc-500">Engine</span>
               {engineBadge(batch.engineType)}
             </div>
-            <div className="flex justify-between">
+            <p className="text-[10px] text-zinc-600 leading-snug">
+              {engineExplanation(batch.engineType)}
+            </p>
+            <div className="flex justify-between pt-1">
               <span className="text-zinc-500">Blocks</span>
               <span className="font-mono text-zinc-300">
                 {batch.l2StartBlock} → {batch.l2EndBlock}
@@ -105,23 +126,26 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap text-xs">
-            {batch.flagged && !batch.challenged && (
-              <span className="px-2 py-1 rounded bg-yellow-900/40 text-yellow-400 border border-yellow-700">
-                ⚠ Flagged
-              </span>
-            )}
-            {batch.challenged && !batch.resolved && (
-              <span className="px-2 py-1 rounded bg-orange-900/40 text-orange-400 border border-orange-700">
-                ⚡ Challenged
-              </span>
-            )}
-            {batch.resolved && (
-              <span className="px-2 py-1 rounded bg-red-900/40 text-red-400 border border-red-700">
-                ✗ Resolved invalid
-              </span>
-            )}
-          </div>
+          {batch.flagged && batch.postedRoot && batch.expectedRoot && (
+            <div className="border-t border-zinc-800 pt-3 space-y-2 text-xs">
+              <p className="text-zinc-500 uppercase tracking-wide">Root mismatch</p>
+              <div>
+                <span className="text-red-400">Sequencer posted</span>
+                <p className="font-mono text-zinc-400 break-all text-[10px]">
+                  {hex(batch.postedRoot)}
+                </p>
+              </div>
+              <div>
+                <span className="text-emerald-400">Honest replay</span>
+                <p className="font-mono text-zinc-400 break-all text-[10px]">
+                  {hex(batch.expectedRoot)}
+                </p>
+              </div>
+              <p className="text-[10px] text-zinc-600">
+                Challengers post a {PORTAL_BOND_ETH} ETH bond to force bisection on L1.
+              </p>
+            </div>
+          )}
 
           {batch.divergence && (
             <div className="border-t border-zinc-800 pt-3 space-y-1 text-xs">
@@ -147,22 +171,29 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2 pt-1 flex-col">
             {batch.flagged && !batch.challenged && (
-              <button
-                onClick={handleChallenge}
-                className="flex-1 btn-red text-xs"
-              >
-                Challenge
+              <button onClick={handleChallenge} className="w-full btn-red text-xs">
+                Challenge on L1 ({PORTAL_BOND_ETH} ETH bond)
               </button>
             )}
             {batch.resolved && batch.divergence && (
               <button
                 onClick={() => onShowOpcodeRace(batch.batchId)}
-                className="flex-1 btn-green text-xs"
+                className="w-full btn-green text-xs"
               >
-                OpcodeRace ↗
+                Walk opcode proof step-by-step ↗
               </button>
+            )}
+            {batch.resolved && batch.divergence && (
+              <p className="text-[10px] text-zinc-600 text-center">
+                Also listed in Proof lab below when you want to revisit.
+              </p>
+            )}
+            {batch.flagged && !batch.resolved && (
+              <p className="text-[10px] text-zinc-600 text-center">
+                Auto-challenge may already be running — wait for bisection to finish.
+              </p>
             )}
           </div>
         </motion.div>
