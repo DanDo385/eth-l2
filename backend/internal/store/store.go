@@ -17,6 +17,9 @@ type BatchInfo struct {
 	L2EndBlock    uint64        `json:"l2EndBlock"`
 	TxCount       int           `json:"txCount"`
 	Flagged       bool          `json:"flagged"`
+	PostedRoot    string        `json:"postedRoot,omitempty"`
+	ExpectedRoot  string        `json:"expectedRoot,omitempty"`
+	FlagReason    string        `json:"flagReason,omitempty"`
 	Challenged    bool          `json:"challenged"`
 	Resolved      bool          `json:"resolved"`
 	Divergence    *DivInfo      `json:"divergence,omitempty"`
@@ -94,9 +97,23 @@ func (s *Store) GetBatch(id uint64) *BatchInfo {
 }
 
 func (s *Store) FlagBatch(id uint64) {
+	s.FlagBatchWithRoots(id, "", "", "")
+}
+
+// FlagBatchWithRoots marks a batch suspicious and records the root mismatch for the UI.
+func (s *Store) FlagBatchWithRoots(id uint64, postedRoot, expectedRoot, reason string) {
 	s.mu.Lock()
 	if b := s.batches[id]; b != nil {
 		b.Flagged = true
+		if postedRoot != "" {
+			b.PostedRoot = postedRoot
+		}
+		if expectedRoot != "" {
+			b.ExpectedRoot = expectedRoot
+		}
+		if reason != "" {
+			b.FlagReason = reason
+		}
 	}
 	s.mu.Unlock()
 }

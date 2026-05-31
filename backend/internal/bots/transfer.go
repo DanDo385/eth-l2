@@ -23,17 +23,12 @@ func NewTransferBot(client *chain.Client, prng *seed.PRNG) *TransferBot {
 
 // OnBlock is called for every new L1 block.
 func (b *TransferBot) OnBlock(ctx context.Context, _ uint64) error {
-	count := 2 + b.prng.Intn(3) // 2–4 transfers
+	// Only shuffle ETH from the deployer so we never drain sequencer/challenger/trader gas.
+	count := 2 + b.prng.Intn(2) // 2–3 decorative transfers
 	for i := 0; i < count; i++ {
-		fromIdx := b.prng.Intn(5)
-		toIdx := b.prng.Intn(4) // pick from 0-3, shift if same as from
-		if toIdx >= fromIdx {
-			toIdx++
-		}
-		// 0.001–0.005 ETH (1e15–5e15 wei)
+		toIdx := 1 + b.prng.Intn(4) // accounts 1–4
 		amount := new(big.Int).SetUint64(1e15 + b.prng.Uint64()%(4*1e15))
-		// non-fatal: low balance or nonce race; just skip
-		_ = b.sendETH(ctx, fromIdx, chain.AnvilAddress(toIdx), amount)
+		_ = b.sendETH(ctx, 0, chain.AnvilAddress(toIdx), amount)
 	}
 	return nil
 }

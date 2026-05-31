@@ -8,10 +8,10 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/dando385/eth-l2/backend/internal/bots"
 	"github.com/dando385/eth-l2/backend/internal/chain"
 	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/sequencer"
+	"github.com/dando385/eth-l2/backend/internal/store"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -97,6 +97,7 @@ type HonestWatcher struct {
 	l2Client   *chain.Client
 	routerAddr common.Address
 	bus        *events.Bus
+	st         *store.Store
 
 	sim              *honestSim
 	swapABI          abi.ABI
@@ -109,6 +110,7 @@ func NewHonestWatcher(
 	_ *chain.Addresses,
 	l2Addrs *chain.Addresses,
 	bus *events.Bus,
+	st *store.Store,
 ) *HonestWatcher {
 	traders := []common.Address{
 		chain.AnvilAddress(3),
@@ -119,7 +121,8 @@ func NewHonestWatcher(
 		l2Client:         l2Client,
 		routerAddr:       common.HexToAddress(l2Addrs.SwapRouter),
 		bus:              bus,
-		sim:              newHonestSim(traders, bots.InitialBalance),
+		st:               st,
+		sim:              newHonestSim(traders, chain.TraderSeedBalance),
 		swapABI:          parsed,
 		simRootByL2Block: make(map[uint64][32]byte),
 	}
@@ -156,11 +159,21 @@ func (w *HonestWatcher) CheckBatch(batch *sequencer.BatchResult) {
 	if expectedRoot == batch.PostStateRoot {
 		return // honest
 	}
+	posted := fmt.Sprintf("0x%x", batch.PostStateRoot)
+	expected := fmt.Sprintf("0x%x", expectedRoot)
+	reason := fmt.Sprintf(
+		"Honest replay of %d swaps across blocks %d–%d produced a different state root than the sequencer posted on L1.",
+		batch.TxCount, batch.L2StartBlock, batch.L2EndBlock,
+	)
+	if w.st != nil {
+		w.st.FlagBatchWithRoots(batch.BatchID, posted, expected, reason)
+	}
 	w.bus.Publish(events.New(events.BatchFlagged, events.BatchFlaggedPayload{
 		BatchID:      batch.BatchID,
-		PostedRoot:   fmt.Sprintf("0x%x", batch.PostStateRoot),
-		ExpectedRoot: fmt.Sprintf("0x%x", expectedRoot),
+		PostedRoot:   posted,
+		ExpectedRoot: expected,
 		L2EndBlock:   batch.L2EndBlock,
+		Reason:       reason,
 	}))
 }
 

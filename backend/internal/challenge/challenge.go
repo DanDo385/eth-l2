@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
 	"strings"
 	"sync"
 
@@ -139,8 +138,8 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	}
 
 	// 1. Initiate challenge on the portal.
-	opts := copyOpts(c.l1Client.Challenger())
-	opts.Value = big.NewInt(1e17) // 0.1 ETH challenger bond
+	opts := chain.WithGas(copyOpts(c.l1Client.Challenger()), chain.GasLimitL1Portal)
+	opts.Value = chain.BondAmount()
 	tx, err := c.portal.Transact(opts, "challengeBatch", batchID)
 	if err != nil {
 		return fmt.Errorf("challengeBatch: %w", err)
@@ -171,7 +170,7 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 			signer = c.l1Client.Sequencer()
 		}
 
-		tx, err = c.disputeGame.Transact(copyOpts(signer), "bisect", batchID, claimedHash, pos)
+		tx, err = c.disputeGame.Transact(chain.WithGas(copyOpts(signer), chain.GasLimitL1Portal), "bisect", batchID, claimedHash, pos)
 		if err != nil {
 			return fmt.Errorf("bisect depth %d: %w", depth, err)
 		}
@@ -184,7 +183,7 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	}
 
 	// 4. Resolve the dispute with the divergence point.
-	opts = copyOpts(c.l1Client.Challenger())
+	opts = chain.WithGas(copyOpts(c.l1Client.Challenger()), chain.GasLimitL1Portal)
 	tx, err = c.disputeGame.Transact(opts, "resolve", batchID, false, div.Point)
 	if err != nil {
 		return fmt.Errorf("resolve: %w", err)

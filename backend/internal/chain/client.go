@@ -7,12 +7,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// DefaultGasLimit is used for all local Anvil transactions (swap bots, sequencers, etc.).
-const DefaultGasLimit = 16_000_000
+// Deprecated: use GasLimitDefault / GasLimitSwap from params.go.
+const DefaultGasLimit = GasLimitDefault
 
 // anvilKeys are the default Anvil private keys (mnemonic: test test … junk).
 var anvilKeys = []string{
@@ -65,7 +66,7 @@ func NewClient(ctx context.Context, cfg ChainConfig) (*Client, error) {
 			ec.Close()
 			return nil, err
 		}
-		auth.GasLimit = DefaultGasLimit
+		auth.GasLimit = GasLimitDefault
 		c.auths = append(c.auths, auth)
 	}
 	return c, nil
@@ -93,3 +94,25 @@ func (c *Client) Mine(ctx context.Context, n int) error {
 }
 
 func (c *Client) Close() { c.EC.Close() }
+
+// EnsureDemoBalances tops up native ETH for all demo accounts via anvil_setBalance.
+// Long runs consume gas and portal bonds; this keeps protocol actors solvent.
+func (c *Client) EnsureDemoBalances(ctx context.Context) error {
+	bal := DemoNativeBalance()
+	hexBal := hexutil.EncodeBig(bal)
+	for i := 0; i < demoAccountCount; i++ {
+		addr := AnvilAddress(i)
+		var ok bool
+		if err := c.EC.Client().CallContext(ctx, &ok, "anvil_setBalance", addr, hexBal); err != nil {
+			return fmt.Errorf("anvil_setBalance %s: %w", c.Config.Name, err)
+		}
+	}
+	return nil
+}
+
+// WithGas returns a copy of auth with an operation-specific gas limit.
+func WithGas(auth *bind.TransactOpts, limit uint64) *bind.TransactOpts {
+	c := *auth
+	c.GasLimit = limit
+	return &c
+}

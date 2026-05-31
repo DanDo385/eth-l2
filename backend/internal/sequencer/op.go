@@ -178,8 +178,8 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 		Timestamp:     uint64(time.Now().Unix()),
 	}
 
-	opts := copyOpts(s.l1Client.Sequencer())
-	opts.Value = big.NewInt(1e17) // 0.1 ETH bond
+	opts := chain.WithGas(copyOpts(s.l1Client.Sequencer()), chain.GasLimitL1Portal)
+	opts.Value = chain.BondAmount()
 	if _, err := s.portal.Transact(opts, "postBatch", header, rawData); err != nil {
 		return nil, fmt.Errorf("postBatch: %w", err)
 	}
@@ -232,7 +232,7 @@ func (s *OPSequencer) chooseEngine(batchID uint64) (common.Address, string) {
 }
 
 func (s *OPSequencer) setImpl(ctx context.Context, impl common.Address) error {
-	opts := copyOpts(s.l2Client.Sequencer())
+	opts := chain.WithGas(copyOpts(s.l2Client.Sequencer()), chain.GasLimitSwap)
 	_, err := s.router.Transact(opts, "setImplementation", impl)
 	return err
 }

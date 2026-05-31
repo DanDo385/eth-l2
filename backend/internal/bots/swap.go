@@ -16,9 +16,6 @@ import (
 // TraderCount is the number of trader accounts the swap bot cycles through.
 const TraderCount = 2
 
-// InitialBalance is the balanceA seeded to each trader at session start.
-const InitialBalance = 10_000
-
 const swapRouterABI = `[
   {"type":"function","name":"swap","inputs":[
     {"name":"trader","type":"address"},
@@ -31,8 +28,13 @@ const swapRouterABI = `[
   {"type":"function","name":"seed","inputs":[
     {"name":"trader","type":"address"},
     {"name":"amountA","type":"uint256"}
-  ],"outputs":[  ],"stateMutability":"nonpayable"},
+  ],"outputs":[],"stateMutability":"nonpayable"},
   {"type":"function","name":"nonces","inputs":[
+    {"name":"trader","type":"address"}
+  ],"outputs":[
+    {"name":"","type":"uint256"}
+  ],"stateMutability":"view"},
+  {"type":"function","name":"balanceA","inputs":[
     {"name":"trader","type":"address"}
   ],"outputs":[
     {"name":"","type":"uint256"}
@@ -45,7 +47,6 @@ type SwapBot struct {
 	contract   *bind.BoundContract
 	routerAddr common.Address
 	prng       *seed.PRNG
-	// swapNonces tracks the contract-level nonce per trader (distinct from Ethereum nonces).
 	swapNonces map[common.Address]*big.Int
 	seeded     bool
 }
@@ -74,11 +75,10 @@ func (b *SwapBot) Seed(ctx context.Context) error {
 	if b.seeded {
 		return nil
 	}
-	opts := copyOpts(b.client.Deployer())
+	opts := chain.WithGas(b.client.Deployer(), chain.GasLimitSeed)
 	for i := 0; i < TraderCount; i++ {
 		addr := chain.AnvilAddress(i + 3)
-		_, err := b.contract.Transact(opts, "seed", addr, big.NewInt(InitialBalance))
-		if err != nil {
+		if _, err := b.contract.Transact(opts, "seed", addr, big.NewInt(chain.TraderSeedBalance)); err != nil {
 			return err
 		}
 	}
@@ -86,25 +86,62 @@ func (b *SwapBot) Seed(ctx context.Context) error {
 	return nil
 }
 
-// OnBlock is called for every new L2 block; submits one swap.
-func (b *SwapBot) OnBlock(ctx context.Context, blockNum uint64) error {
+// OnBlock is called for every new L2 block; submits one swap when funded.
+func (b *SwapBot) OnBlock(ctx context.Context, _ uint64) error {
 	traderIdx := b.prng.Intn(TraderCount)
 	trader := chain.AnvilAddress(traderIdx + 3)
 	if err := b.syncNonce(ctx, trader); err != nil {
 		return err
 	}
-	swapNonce := b.swapNonces[trader]
 
-	amountIn := big.NewInt(int64(b.prng.Intn(20) + 1)) // 1–20 units
-
-	opts := copyOpts(b.client.Trader(traderIdx))
-	_, err := b.contract.Transact(opts, "swap", trader, amountIn, swapNonce)
+	amountIn := big.NewInt(int64(b.prng.Intn(20) + 1))
+	skip, err := b.ensureBalanceA(ctx, trader, amountIn)
 	if err != nil {
-		_ = b.syncNonce(ctx, trader)
 		return err
 	}
-	b.swapNonces[trader] = new(big.Int).Add(swapNonce, big.NewInt(1))
+	if skip {
+		return nil
+	}
+
+	opts := chain.WithGas(b.client.Trader(traderIdx), chain.GasLimitSwap)
+	_, err = b.contract.Transact(opts, "swap", trader, amountIn, b.swapNonces[trader])
+	if err != nil {
+		if RecoverableTxErr(err) {
+			_ = b.syncNonce(ctx, trader)
+			return nil
+		}
+		return err
+	}
+	b.swapNonces[trader] = new(big.Int).Add(b.swapNonces[trader], big.NewInt(1))
 	return nil
+}
+
+func (b *SwapBot) ensureBalanceA(ctx context.Context, trader common.Address, amountIn *big.Int) (skip bool, err error) {
+	bal, err := b.readBalanceA(ctx, trader)
+	if err != nil {
+		return false, err
+	}
+	if bal.Cmp(amountIn) >= 0 {
+		return false, nil
+	}
+	if bal.Cmp(big.NewInt(chain.TraderTopUpThreshold)) < 0 {
+		opts := chain.WithGas(b.client.Deployer(), chain.GasLimitSeed)
+		_, err = b.contract.Transact(opts, "seed", trader, big.NewInt(chain.TraderSeedBalance))
+		return false, err
+	}
+	return true, nil
+}
+
+func (b *SwapBot) readBalanceA(ctx context.Context, trader common.Address) (*big.Int, error) {
+	var out []interface{}
+	if err := b.contract.Call(&bind.CallOpts{Context: ctx}, &out, "balanceA", trader); err != nil {
+		return nil, err
+	}
+	bal, ok := out[0].(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("unexpected balanceA type %T", out[0])
+	}
+	return bal, nil
 }
 
 func (b *SwapBot) syncNonce(ctx context.Context, trader common.Address) error {
@@ -120,8 +157,14 @@ func (b *SwapBot) syncNonce(ctx context.Context, trader common.Address) error {
 	return nil
 }
 
-// copyOpts returns a shallow copy so we can set Value without mutating the shared auth.
-func copyOpts(auth *bind.TransactOpts) *bind.TransactOpts {
-	c := *auth
-	return &c
+// RecoverableTxErr is true for transient local-demo failures (low balance, nonce drift, revert).
+func RecoverableTxErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "insufficient funds") ||
+		strings.Contains(msg, "insufficient a") ||
+		strings.Contains(msg, "invalid nonce") ||
+		strings.Contains(msg, "execution reverted")
 }

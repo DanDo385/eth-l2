@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/dando385/eth-l2/backend/internal/bots"
 	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/store"
 	"github.com/dando385/eth-l2/backend/internal/watcher"
@@ -82,12 +83,12 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 	switch chainName {
 	case "l1":
 		if err := s.transferBot.OnBlock(ctx, blockNum); err != nil {
-			s.publishError("l1", fmt.Sprintf("transferBot block %d: %v", blockNum, err))
+			s.reportBotError("l1", "transferBot", blockNum, err)
 		}
 
 	case "op-l2":
 		if err := s.opSwapBot.OnBlock(ctx, blockNum); err != nil {
-			s.publishError("op-l2", fmt.Sprintf("opSwapBot block %d: %v", blockNum, err))
+			s.reportBotError("op-l2", "opSwapBot", blockNum, err)
 		}
 
 		blk, err := s.clients["op-l2"].EC.BlockByNumber(ctx, big.NewInt(int64(blockNum)))
@@ -100,13 +101,13 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 				txData = append(txData, watcher.TxData{To: to, Data: data})
 			}
 			if err := s.opWatcher.OnL2Block(ctx, blockNum, &blockData{txData}); err != nil {
-				s.publishError("op-l2", fmt.Sprintf("opWatcher block %d: %v", blockNum, err))
+				s.reportBotError("op-l2", "opWatcher", blockNum, err)
 			}
 		}
 
 		result, err := s.opSeq.OnBlock(ctx, blockNum)
 		if err != nil {
-			s.publishError("op-l2", fmt.Sprintf("opSeq block %d: %v", blockNum, err))
+			s.reportBotError("op-l2", "opSeq", blockNum, err)
 		}
 		if result != nil {
 			s.batchStore.AddBatch(&store.BatchInfo{
@@ -128,6 +129,15 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 		}
 		s.zkSeq.OnBlock(ctx, blockNum)
 	}
+}
+
+func (s *Session) reportBotError(chainName, component string, blockNum uint64, err error) {
+	msg := fmt.Sprintf("%s block %d: %v", component, blockNum, err)
+	if bots.RecoverableTxErr(err) {
+		log.Printf("[%s] %s", chainName, msg)
+		return
+	}
+	s.publishError(chainName, msg)
 }
 
 func (s *Session) publishError(chain, msg string) {

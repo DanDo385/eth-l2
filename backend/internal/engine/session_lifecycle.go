@@ -41,6 +41,10 @@ func (s *Session) Start(ctx context.Context, seedVal uint64, speed int) error {
 			s.teardown()
 			return err
 		}
+		if err := c.EnsureDemoBalances(ctx); err != nil {
+			s.teardown()
+			return fmt.Errorf("fund %s accounts: %w", cfg.Name, err)
+		}
 		s.clients[cfg.Name] = c
 	}
 
@@ -104,9 +108,8 @@ func (s *Session) initComponents(ctx context.Context) error {
 
 	s.opSeq = sequencer.NewOPSequencer(l1c, opL2c, s.l1Addrs, opAddrs, s.prng.Fork("op-seq"), s.bus, batchEvery)
 	s.zkSeq = sequencer.NewZKSequencer(l1c, zkL2c, s.l1Addrs, zkAddrs, s.prng.Fork("zk-seq"), s.bus, batchEvery)
-	s.opWatcher = watcher.NewHonestWatcher(l1c, opL2c, s.l1Addrs, opAddrs, s.bus)
-
 	s.batchStore = store.New()
+	s.opWatcher = watcher.NewHonestWatcher(l1c, opL2c, s.l1Addrs, opAddrs, s.bus, s.batchStore)
 	s.challenger = challenge.New(l1c, opL2c, s.l1Addrs, opAddrs, s.batchStore, s.bus)
 
 	return nil
