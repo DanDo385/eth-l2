@@ -66,15 +66,18 @@ export function ControlPanel() {
           id="seed-input"
           name="seed"
           type="number"
-          value={seed}
-          onChange={(e) => setSeed(Number(e.target.value))}
+          value={Number.isFinite(seed) ? seed : 42}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setSeed(Number.isFinite(v) ? v : 42);
+          }}
           className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500"
         />
       </div>
 
       <div className="space-y-2">
         <label htmlFor="speed-input" className="text-xs text-zinc-500 uppercase tracking-wide">
-          Speed: {speed}×
+          Speed: {Number.isFinite(speed) ? speed : 3}×
         </label>
         <input
           id="speed-input"
@@ -82,8 +85,11 @@ export function ControlPanel() {
           type="range"
           min={1}
           max={10}
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
+          value={Number.isFinite(speed) ? speed : 3}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setSpeed(Number.isFinite(v) ? v : 3);
+          }}
           className="w-full accent-emerald-400"
         />
       </div>

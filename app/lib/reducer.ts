@@ -6,8 +6,22 @@ import type {
   BatchPostedPayload,
   ErrorPayload,
 } from "../types";
+import { safeNum } from "./numbers";
 
 const MAX_BLOCK_LOG = 60;
+
+function normalizeScoreboard(
+  sb: AppState["scoreboard"],
+  patch: Partial<AppState["scoreboard"]> = {},
+): AppState["scoreboard"] {
+  return {
+    opChallenges: safeNum(patch.opChallenges ?? sb.opChallenges),
+    opResolved: safeNum(patch.opResolved ?? sb.opResolved),
+    zkBatches: safeNum(patch.zkBatches ?? sb.zkBatches),
+    zkAccepted: safeNum(patch.zkAccepted ?? sb.zkAccepted),
+    zkRejected: safeNum(patch.zkRejected ?? sb.zkRejected),
+  };
+}
 
 export const initialState: AppState = {
   connected: false,
@@ -19,8 +33,11 @@ export const initialState: AppState = {
   inspectedBatch: null,
   opcodeRaceData: null,
   zkInspectData: null,
+  zkRollups: {},
+  exploredOpProofs: {},
+  exploredZkProofs: {},
   lastError: null,
-  scoreboard: { opChallenges: 0, opResolved: 0, zkBatches: 0 },
+  scoreboard: { opChallenges: 0, opResolved: 0, zkBatches: 0, zkAccepted: 0, zkRejected: 0 },
 };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -45,16 +62,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         running: snap.running ?? false,
         paused: snap.paused ?? false,
         blocks: {
-          l1: snap.blocks?.l1 ?? 0,
-          "op-l2": snap.blocks?.["op-l2"] ?? snap.blocks?.opL2 ?? 0,
-          "zk-l2": snap.blocks?.["zk-l2"] ?? snap.blocks?.zkL2 ?? 0,
+          l1: safeNum(snap.blocks?.l1),
+          "op-l2": safeNum(
+            snap.blocks?.["op-l2"] ?? snap.blocks?.opL2,
+          ),
+          "zk-l2": safeNum(
+            snap.blocks?.["zk-l2"] ?? snap.blocks?.zkL2,
+          ),
         },
         batches,
-        scoreboard: {
-          ...state.scoreboard,
+        scoreboard: normalizeScoreboard(state.scoreboard, {
           opChallenges,
           opResolved,
-        },
+        }),
       };
     }
 
@@ -66,7 +86,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           const { chain, blockNum } = event.payload;
           return {
             ...state,
-            blocks: { ...state.blocks, [chain]: blockNum },
+            blocks: { ...state.blocks, [chain]: safeNum(blockNum) },
             blockLog: [
               ...state.blockLog.slice(-(MAX_BLOCK_LOG - 1)),
               { chain, blockNum },
@@ -94,19 +114,25 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }
 
         case "batch_flagged": {
-          const { batchId } = event.payload;
-          const existing = state.batches[batchId];
+          const p = event.payload;
+          const existing = state.batches[p.batchId];
           if (!existing) return state;
           return {
             ...state,
             batches: {
               ...state.batches,
-              [batchId]: { ...existing, flagged: true },
+              [p.batchId]: {
+                ...existing,
+                flagged: true,
+                postedRoot: p.postedRoot,
+                expectedRoot: p.expectedRoot,
+                flagReason: p.reason,
+              },
             },
-            scoreboard: {
-              ...state.scoreboard,
-              opChallenges: state.scoreboard.opChallenges + 1,
-            },
+            inspectedBatch: state.inspectedBatch,
+            scoreboard: normalizeScoreboard(state.scoreboard, {
+              opChallenges: safeNum(state.scoreboard.opChallenges) + 1,
+            }),
           };
         }
 
@@ -134,20 +160,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 divergence: divInfo,
               },
             },
-            scoreboard: {
-              ...state.scoreboard,
-              opResolved: state.scoreboard.opResolved + 1,
-            },
+            scoreboard: normalizeScoreboard(state.scoreboard, {
+              opResolved: safeNum(state.scoreboard.opResolved) + 1,
+            }),
           };
         }
 
         case "zk_inspect_ready": {
+          const p = event.payload;
           return {
             ...state,
-            scoreboard: {
-              ...state.scoreboard,
-              zkBatches: state.scoreboard.zkBatches + 1,
-            },
+            zkRollups: { ...state.zkRollups, [p.batchId]: p },
+            scoreboard: normalizeScoreboard(state.scoreboard, {
+              zkBatches: safeNum(state.scoreboard.zkBatches) + 1,
+              zkAccepted:
+                safeNum(state.scoreboard.zkAccepted) + (p.accepted ? 1 : 0),
+              zkRejected:
+                safeNum(state.scoreboard.zkRejected) + (p.accepted ? 0 : 1),
+            }),
           };
         }
 
@@ -184,17 +214,37 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           honestSteps: batch.divergence.honestSteps,
           claimedSteps: batch.divergence.claimedSteps,
         },
+        zkInspectData: null,
       };
     }
 
     case "CLOSE_OPCODE_RACE":
       return { ...state, opcodeRaceData: null };
 
-    case "SHOW_ZK_INSPECT":
-      return { ...state, zkInspectData: action.payload };
+    case "SHOW_ZK_INSPECT": {
+      const data = state.zkRollups[action.batchId];
+      if (!data) return state;
+      return {
+        ...state,
+        zkInspectData: data,
+        opcodeRaceData: null,
+      };
+    }
 
     case "CLOSE_ZK_INSPECT":
       return { ...state, zkInspectData: null };
+
+    case "MARK_EXPLORED":
+      if (action.lane === "op") {
+        return {
+          ...state,
+          exploredOpProofs: { ...state.exploredOpProofs, [action.batchId]: true },
+        };
+      }
+      return {
+        ...state,
+        exploredZkProofs: { ...state.exploredZkProofs, [action.batchId]: true },
+      };
 
     case "DISMISS_ERROR":
       return { ...state, lastError: null };

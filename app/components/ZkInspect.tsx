@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ZkInspectPayload } from "../types";
+import { safeNum } from "../lib/numbers";
 
 const STAGES = [
   { key: "commit", label: "Commit trace", durationMs: 600 },
@@ -33,7 +34,7 @@ export function ZkInspect({ data, onClose }: Props) {
 
       if (STAGES[idx].key === "prove") {
         // grow constraint counter during prove stage
-        const target = data.constraints;
+        const target = safeNum(data.constraints);
         const dur = STAGES[idx].durationMs;
         const t0 = Date.now();
         const tick = setInterval(() => {
@@ -81,7 +82,7 @@ export function ZkInspect({ data, onClose }: Props) {
         </div>
 
         <div className="text-xs text-zinc-500 font-mono">
-          Batch #{data.batchId} · block {data.l2EndBlock}
+          Batch #{safeNum(data.batchId)} · block {safeNum(data.l2EndBlock)}
         </div>
 
         <div className="space-y-2">
@@ -128,32 +129,60 @@ export function ZkInspect({ data, onClose }: Props) {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-emerald-700 bg-emerald-950/40 p-4 grid grid-cols-2 gap-3 text-xs"
+              className={`rounded-xl border p-4 space-y-3 text-xs ${
+                data.accepted
+                  ? "border-emerald-700 bg-emerald-950/40"
+                  : "border-red-700 bg-red-950/40"
+              }`}
             >
-              <div>
-                <p className="text-zinc-500">Constraints</p>
-                <p className="text-emerald-300 font-mono text-base">
-                  {data.constraints.toLocaleString()}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-zinc-500">Constraints</p>
+                  <p
+                    className={`font-mono text-base ${
+                      data.accepted ? "text-emerald-300" : "text-red-300"
+                    }`}
+                  >
+                    {safeNum(data.constraints).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-zinc-500">Prove time</p>
+                  <p
+                    className={`font-mono text-base ${
+                      data.accepted ? "text-emerald-300" : "text-red-300"
+                    }`}
+                  >
+                    {safeNum(data.proveMs)} ms
+                  </p>
+                </div>
+                <div>
+                  <p className="text-zinc-500">Verify gas</p>
+                  <p
+                    className={`font-mono text-base ${
+                      data.accepted ? "text-emerald-300" : "text-red-300"
+                    }`}
+                  >
+                    {safeNum(data.verifyGas).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-zinc-500">Status</p>
+                  <p
+                    className={`font-semibold ${
+                      data.accepted ? "text-emerald-400" : "text-red-400"
+                    }`}
+                  >
+                    {data.accepted ? "Verified ✓" : "Rejected ✗"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-zinc-500">Prove time</p>
-                <p className="text-emerald-300 font-mono text-base">
-                  {data.proveMs} ms
-                </p>
-              </div>
-              <div>
-                <p className="text-zinc-500">Verify gas</p>
-                <p className="text-emerald-300 font-mono text-base">
-                  {data.verifyGas.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <p className="text-zinc-500">Status</p>
-                <p className={`font-semibold ${data.accepted ? "text-emerald-400" : "text-red-400"}`}>
-                  {data.accepted ? "Valid ✓" : "Invalid ✗"}
-                </p>
-              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed border-t border-zinc-800/80 pt-3">
+                {data.reason ??
+                  (data.accepted
+                    ? "Proof verified on L1 — batch finalized immediately."
+                    : "Invalid proof — this batch was rejected and never finalized.")}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -15,6 +15,7 @@ import { OpcodeRace } from "./components/OpcodeRace";
 import { ZkInspect } from "./components/ZkInspect";
 import { Scoreboard } from "./components/Scoreboard";
 import { DemoGallery } from "./components/DemoGallery";
+import { ResearchPanel } from "./components/ResearchPanel";
 
 function Inner() {
   const { state, dispatch } = useAppStore();
@@ -45,6 +46,7 @@ function Inner() {
 
   function handleOpcodeRace(batchId: number) {
     dispatch({ type: "SHOW_OPCODE_RACE", batchId });
+    dispatch({ type: "MARK_EXPLORED", lane: "op", batchId });
   }
 
   return (
@@ -92,6 +94,7 @@ function Inner() {
         {/* Right panel */}
         <aside className="flex flex-col gap-4 overflow-y-auto">
           <BlockInspector onShowOpcodeRace={handleOpcodeRace} />
+          <ResearchPanel />
         </aside>
       </div>
 
@@ -118,18 +121,18 @@ function Inner() {
         )}
       </AnimatePresence>
 
-      {/* Overlays */}
-      <AnimatePresence>
+      {/* Overlays — user opens from Proof lab or batch inspector; never auto-popup */}
+      <AnimatePresence mode="wait">
         {state.opcodeRaceData && (
           <OpcodeRace
-            key="opcode-race"
+            key={`opcode-${state.opcodeRaceData.batchId}`}
             data={state.opcodeRaceData}
             onClose={() => dispatch({ type: "CLOSE_OPCODE_RACE" })}
           />
         )}
-        {state.zkInspectData && (
+        {!state.opcodeRaceData && state.zkInspectData && (
           <ZkInspect
-            key="zk-inspect"
+            key={`zk-${state.zkInspectData.batchId}`}
             data={state.zkInspectData}
             onClose={() => dispatch({ type: "CLOSE_ZK_INSPECT" })}
           />

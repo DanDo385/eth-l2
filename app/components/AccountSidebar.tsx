@@ -1,15 +1,8 @@
 "use client";
 
 import { useAppStore } from "../lib/store";
-
-// Anvil default account addresses (from test mnemonic)
-const ACCOUNTS = [
-  { role: "Deployer", addr: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" },
-  { role: "Sequencer", addr: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" },
-  { role: "Challenger", addr: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" },
-  { role: "Trader 0", addr: "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
-  { role: "Trader 1", addr: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" },
-];
+import { DEMO_ACCOUNTS } from "../data/accounts";
+import { safeNum } from "../lib/numbers";
 
 function short(addr: string) {
   return addr.slice(0, 6) + "…" + addr.slice(-4);
@@ -25,7 +18,7 @@ export function AccountSidebar() {
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
       <p className="text-xs text-zinc-500 uppercase tracking-wide">Accounts</p>
       <ul className="space-y-2">
-        {ACCOUNTS.map(({ role, addr }) => (
+        {DEMO_ACCOUNTS.map(({ role, addr }) => (
           <li key={addr} className="flex flex-col">
             <span className="text-xs text-zinc-400">{role}</span>
             <span className="text-xs font-mono text-zinc-300">{short(addr)}</span>
@@ -51,7 +44,7 @@ export function AccountSidebar() {
           {Object.entries(state.blocks).map(([chain, num]) => (
             <div key={chain} className="flex justify-between">
               <span className="text-zinc-500">{chain}</span>
-              <span className="text-zinc-300">{num}</span>
+              <span className="text-zinc-300">{safeNum(num)}</span>
             </div>
           ))}
         </div>

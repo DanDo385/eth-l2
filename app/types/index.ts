@@ -25,6 +25,9 @@ export interface BatchInfo {
   l2EndBlock: number;
   txCount: number;
   flagged: boolean;
+  postedRoot?: string;
+  expectedRoot?: string;
+  flagReason?: string;
   challenged: boolean;
   resolved: boolean;
   divergence?: DivInfo;
@@ -51,6 +54,7 @@ export interface BatchFlaggedPayload {
   postedRoot: string;
   expectedRoot: string;
   l2EndBlock: number;
+  reason: string;
 }
 
 export interface DisputeResolvedPayload {
@@ -71,6 +75,7 @@ export interface ZkInspectPayload {
   proveMs: number;
   verifyGas: number;
   accepted: boolean;
+  reason?: string;
 }
 
 export interface ErrorPayload {
@@ -106,11 +111,17 @@ export interface AppState {
   inspectedBatch: number | null;
   opcodeRaceData: DisputeResolvedPayload | null;
   zkInspectData: ZkInspectPayload | null;
+  /** ZK batch outcomes keyed by batchId — populated from WS, never auto-opens modals. */
+  zkRollups: Record<number, ZkInspectPayload>;
+  exploredOpProofs: Record<number, true>;
+  exploredZkProofs: Record<number, true>;
   lastError: ErrorPayload | null;
   scoreboard: {
     opChallenges: number;
     opResolved: number;
     zkBatches: number;
+    zkAccepted: number;
+    zkRejected: number;
   };
 }
 
@@ -135,6 +146,7 @@ export type AppAction =
   | { type: "INSPECT_BATCH"; batchId: number | null }
   | { type: "SHOW_OPCODE_RACE"; batchId: number }
   | { type: "CLOSE_OPCODE_RACE" }
-  | { type: "SHOW_ZK_INSPECT"; payload: ZkInspectPayload }
+  | { type: "SHOW_ZK_INSPECT"; batchId: number }
   | { type: "CLOSE_ZK_INSPECT" }
+  | { type: "MARK_EXPLORED"; lane: "op" | "zk"; batchId: number }
   | { type: "DISMISS_ERROR" };

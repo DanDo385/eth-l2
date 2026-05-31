@@ -17,9 +17,12 @@ export function parseUrlHash(): UrlParams {
   const hash = window.location.hash.replace(/^#/, "");
   const params = new URLSearchParams(hash);
 
+  const seedRaw = parseInt(params.get("seed") ?? "", 10);
+  const speedRaw = parseInt(params.get("speed") ?? "", 10);
+
   return {
-    seed: parseInt(params.get("seed") ?? "") || defaults.seed,
-    speed: parseInt(params.get("speed") ?? "") || defaults.speed,
+    seed: Number.isFinite(seedRaw) ? seedRaw : defaults.seed,
+    speed: Number.isFinite(speedRaw) ? speedRaw : defaults.speed,
     autostart: params.get("autostart") === "1",
     hideControls: params.get("hideControls") === "1",
   };
