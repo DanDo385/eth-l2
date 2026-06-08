@@ -41,8 +41,9 @@ The technical hook is: "trust turns back into verification at the opcode/state t
 3. Open the app in a clean browser window.
 4. Keep DeepWeeds Demo Director visible for the opening.
 5. Click Simulate Trade once or twice.
-6. Scroll to L2 Optimistic and Fraud Proof War.
-7. End on the mismatched SSTORE card and the resolved invalid state.
+6. Show the wETH price path section so viewers understand that trades move market state before the fraud proof.
+7. Scroll to L2 Optimistic and Fraud Proof War.
+8. End on the mismatched SSTORE card and the resolved invalid state.
 
 The frontend has deterministic fallback data in app/data/demoData.ts, so the demo remains recordable even if generated artifacts are missing or stale.
 

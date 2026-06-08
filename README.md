@@ -7,7 +7,7 @@ A local lab for **L2 rollup mechanics**: Optimistic (OP) and ZK-style pipelines 
 - Loom guide: [`DEMO_GUIDE.md`](./DEMO_GUIDE.md)
 - Portfolio tag: `deep-weeds`
 - Recommended video length: 150-180 seconds
-- Best GIF loop: trade → bad batch → bisection → opcode mismatch → resolved invalid
+- Best GIF loop: trade → wETH price path → bad batch → bisection → opcode mismatch → resolved invalid
 - Thumbnail hook: `CATCH THE LYING SEQUENCER`
 
 

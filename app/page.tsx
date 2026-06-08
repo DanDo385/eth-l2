@@ -7,6 +7,7 @@ import { L1Mainnet } from "./components/L1Mainnet";
 import { L2Optimistic } from "./components/L2Optimistic";
 import { L2ZK } from "./components/L2ZK";
 import { TransactionFlow } from "./components/TransactionFlow";
+import { WethPriceChart } from "./components/WethPriceChart";
 import { BatchCompaction } from "./components/BatchCompaction";
 import { ChallengeFlow } from "./components/ChallengeFlow";
 import { FraudProofWar } from "./components/FraudProofWar";
@@ -14,6 +15,13 @@ import { DeepWeedsDemoDirector } from "./components/DeepWeedsDemoDirector";
 import type { Report, OpBatch, OpDispute } from "./types";
 
 const TRADERS = ["0x3C44...93BC", "0x90F7...b906", "0x15d3...6A65", "0x9965...04dc", "0x14dC...5FEe"];
+const DEMO_TRADE_SEQUENCE = [
+  { amountIn: "16 L3", amountOut: "1,552 L3" },
+  { amountIn: "29 L3", amountOut: "2,871 L3" },
+  { amountIn: "44 L3", amountOut: "4,268 L3" },
+  { amountIn: "11 L3", amountOut: "1,074 L3" },
+  { amountIn: "37 L3", amountOut: "3,649 L3" },
+];
 
 export default function Home() {
   const [report, setReport] = useState<Report | null>(null);
@@ -25,11 +33,12 @@ export default function Home() {
   const simulateTrade = useCallback(() => {
     setSimulating(true);
     const id = trades.length;
+    const demoTrade = DEMO_TRADE_SEQUENCE[id % DEMO_TRADE_SEQUENCE.length];
     const newTrade = {
       id,
       trader: TRADERS[id % TRADERS.length],
-      amountIn: `${Math.floor(Math.random() * 50) + 5} L3`,
-      amountOut: `${Math.floor(Math.random() * 5000) + 500} L3`,
+      amountIn: demoTrade.amountIn,
+      amountOut: demoTrade.amountOut,
       nonce: 0,
       status: "pending" as const,
       chain: (id % 2 === 0 ? "op" : "zk") as "op" | "zk",
@@ -105,6 +114,10 @@ export default function Home() {
           </motion.button>
         </div>
         <TransactionFlow trades={trades} />
+      </div>
+
+      <div className="mb-8">
+        <WethPriceChart trades={trades} />
       </div>
 
       {/* Middle: L2 OP and L2 ZK side by side */}
