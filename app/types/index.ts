@@ -15,6 +15,9 @@ export interface DivInfo {
   claimedVal: string;
   honestSteps: FilteredStep[];
   claimedSteps: FilteredStep[];
+  /** Total EVM instructions executed before filtering to salient state-touching ops. */
+  rawHonestLen?: number;
+  rawClaimedLen?: number;
 }
 
 export interface BatchInfo {
@@ -70,6 +73,9 @@ export interface DisputeResolvedPayload {
   claimedVal: string;
   honestSteps: FilteredStep[];
   claimedSteps: FilteredStep[];
+  /** Total EVM instructions executed before filtering to salient state-touching ops. */
+  rawHonestLen?: number;
+  rawClaimedLen?: number;
 }
 
 export interface ZkInspectPayload {
@@ -116,7 +122,7 @@ export interface AppState {
   inspectedBatch: number | null;
   opcodeRaceData: DisputeResolvedPayload | null;
   zkInspectData: ZkInspectPayload | null;
-  /** ZK batch outcomes keyed by batchId — populated from WS, never auto-opens modals. */
+  /** ZK batch outcomes keyed by batchId, populated from WS, never auto-opens modals. */
   zkRollups: Record<number, ZkInspectPayload>;
   exploredOpProofs: Record<number, true>;
   exploredZkProofs: Record<number, true>;

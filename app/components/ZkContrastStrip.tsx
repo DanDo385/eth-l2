@@ -19,7 +19,7 @@ export function ZkContrastStrip() {
           ZK in three beats
         </p>
         <p className="text-[10px] text-zinc-600 mt-0.5 leading-snug">
-          Same batch window as OP, opposite trust model — validity is proved, not assumed.
+          Same batch window as OP, opposite trust model, validity is proved, not assumed.
         </p>
       </div>
 
@@ -63,12 +63,12 @@ export function ZkContrastStrip() {
           }}
           className="w-full text-[11px] py-2 rounded-lg border border-emerald-800 text-emerald-300 hover:bg-emerald-950/30"
         >
-          Walk ZK concept tour — Batch #{latest.batchId}
+          Walk ZK concept tour: Batch #{latest.batchId}
           {latest.accepted ? " (verified)" : " (rejected)"}
         </button>
       ) : (
         <p className="text-[10px] text-zinc-600 italic text-center">
-          Start the demo — a live ZK batch tour appears here.
+          Start the demo, a live ZK batch tour appears here.
         </p>
       )}
     </div>

@@ -51,17 +51,32 @@ export function ControlPanel() {
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
+      {/* Connection status */}
       <div className="flex items-center gap-2">
         <span
           className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400" : "bg-red-500"} inline-block`}
         />
         <span className="text-xs text-zinc-400 font-mono">
-          {connected ? "connected" : "disconnected"}
+          {connected
+            ? active
+              ? paused
+                ? "simulation paused"
+                : "simulation running"
+              : "connected, ready to start"
+            : "connecting to backend…"}
         </span>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="seed-input" className="text-xs text-zinc-500 uppercase tracking-wide">Seed</label>
+      {/* Seed */}
+      <div className="space-y-1.5">
+        <div className="flex items-baseline gap-2">
+          <label htmlFor="seed-input" className="text-xs text-zinc-400 font-semibold">
+            Seed
+          </label>
+          <span className="text-[10px] text-zinc-600">
+            deterministic replay, same seed = same fraud pattern
+          </span>
+        </div>
         <input
           id="seed-input"
           name="seed"
@@ -73,12 +88,21 @@ export function ControlPanel() {
           }}
           className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500"
         />
+        <p className="text-[10px] text-zinc-600 leading-relaxed">
+          The seed feeds a keccak256-chain PRNG that controls which batches are honest vs fraudulent. Try the demo cards below for pre-tuned scenarios.
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="speed-input" className="text-xs text-zinc-500 uppercase tracking-wide">
-          Speed: {Number.isFinite(speed) ? speed : 3}×
-        </label>
+      {/* Speed */}
+      <div className="space-y-1.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <label htmlFor="speed-input" className="text-xs text-zinc-400 font-semibold">
+            Speed
+          </label>
+          <span className="text-xs font-mono text-zinc-300">
+            {Number.isFinite(speed) ? speed : 3}×
+          </span>
+        </div>
         <input
           id="speed-input"
           name="speed"
@@ -92,8 +116,12 @@ export function ControlPanel() {
           }}
           className="w-full accent-emerald-400"
         />
+        <p className="text-[10px] text-zinc-600 leading-relaxed">
+          Scales Anvil block times. At 4× you see fraud resolved in ~30 s. At 1× it runs at realistic mainnet pace.
+        </p>
       </div>
 
+      {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2">
         {!active ? (
           <button
@@ -101,7 +129,7 @@ export function ControlPanel() {
             disabled={busy || !connected}
             className="col-span-2 btn-green"
           >
-            Start
+            {busy ? "Starting…" : "Start simulation"}
           </button>
         ) : (
           <>
@@ -124,7 +152,7 @@ export function ControlPanel() {
               disabled={busy}
               className="btn-zinc"
             >
-              Reseed
+              {busy ? "Reseeding…" : "Reseed"}
             </button>
             <button
               onClick={() => call("/api/stop")}
@@ -136,6 +164,12 @@ export function ControlPanel() {
           </>
         )}
       </div>
+
+      {!connected && (
+        <p className="text-[10px] text-zinc-600 leading-relaxed border-t border-zinc-800 pt-3">
+          Waiting for the Go backend. Run <span className="font-mono text-zinc-500">make dev</span> in the repo root to start both the backend and this frontend.
+        </p>
+      )}
     </div>
   );
 }

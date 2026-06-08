@@ -123,9 +123,21 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 		}
 
 	case "zk-l2":
+		// Re-fund ZK accounts every 20 blocks so long-running demos don't run dry.
+		// (EnsureDemoBalances is also called at session start, but Anvil's internal
+		// state can diverge from what was set when the chain processes many txs.)
+		if blockNum%20 == 0 {
+			if zkClient := s.clients["zk-l2"]; zkClient != nil {
+				if err := zkClient.EnsureDemoBalances(ctx); err != nil {
+					log.Printf("zk-l2 refund: %v", err)
+				}
+			}
+		}
 		if err := s.zkSwapBot.OnBlock(ctx, blockNum); err != nil {
 			// ZK lane is a contrast demo; log locally without hijacking the OP error banner.
-			log.Printf("zk-l2 swap block %d: %v", blockNum, err)
+			if !bots.RecoverableTxErr(err) {
+				log.Printf("zk-l2 swap block %d: %v", blockNum, err)
+			}
 		}
 		s.zkSeq.OnBlock(ctx, blockNum)
 	}

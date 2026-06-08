@@ -6,6 +6,7 @@ import { BlockBox } from "./BlockBox";
 import { OpBatchGroup, OpPendingBlock } from "./OpBatchGroup";
 import type { BatchInfo } from "../types";
 import { BATCH_WINDOW } from "../data/protocol";
+import { BLOCK_COLOR_LEGEND } from "../data/batchEducation";
 
 const LANE_WINDOW = 20;
 
@@ -151,16 +152,38 @@ interface Props {
   onBatchClick: (batchId: number) => void;
 }
 
+function ColorLegend() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {BLOCK_COLOR_LEGEND.map((item) => (
+        <div
+          key={item.label}
+          title={item.description}
+          className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] ${item.border} ${item.bg}`}
+        >
+          <span className="font-mono text-zinc-300">{item.short}</span>
+          <span className="text-zinc-400">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function BlockchainCanvas({ onBatchClick }: Props) {
   const { state } = useAppStore();
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-6">
-      <div>
-        <p className="text-xs text-zinc-500 uppercase tracking-wide">Chain activity</p>
-        <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
-          OP batches group {BATCH_WINDOW} L2 blocks under one posted state root. Click a batch to
-          inspect why it is honest, suspicious, or proven fraudulent — then walk the opcode proof.
+      <div className="space-y-2">
+        <div className="flex items-baseline gap-3">
+          <p className="text-xs text-zinc-500 uppercase tracking-wide">Chain activity</p>
+          <p className="text-[10px] text-zinc-600">
+            click a batch to inspect · hover a legend chip to see what each color means
+          </p>
+        </div>
+        <ColorLegend />
+        <p className="text-[11px] text-zinc-600 leading-relaxed">
+          OP batches group {BATCH_WINDOW} L2 blocks under one posted state root. A valid batch stays blue; a fraud proof turns it red.
         </p>
       </div>
 
@@ -188,7 +211,7 @@ export function BlockchainCanvas({ onBatchClick }: Props) {
       />
 
       <p className="text-[10px] text-zinc-600 leading-relaxed border-l-2 border-emerald-900 pl-2">
-        ZK lane: same swap traffic, different trust model — every batch needs a validity proof.
+        ZK lane: same swap traffic, different trust model, every batch needs a validity proof.
         Use the scoreboard&apos;s <span className="text-emerald-500">ZK in three beats</span> strip
         or Proof lab to walk the concept tour.
       </p>

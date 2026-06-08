@@ -10,6 +10,7 @@ import {
   engineExplanation,
 } from "../data/batchEducation";
 import { PORTAL_BOND_ETH } from "../data/protocol";
+import { decodeWord, opHeadline, slotMeaning } from "../data/traceNarrative";
 
 function hex(s: string) {
   return s.length > 18 ? s.slice(0, 10) + "…" + s.slice(-6) : s;
@@ -114,35 +115,49 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             {batchWindowNote(batch)}
           </p>
 
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between">
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-500">Engine</span>
               {engineBadge(batch.engineType)}
             </div>
             <p className="text-[10px] text-zinc-600 leading-snug">
               {engineExplanation(batch.engineType)}
             </p>
-            <div className="flex justify-between pt-1">
-              <span className="text-zinc-500">Blocks</span>
-              <span className="font-mono text-zinc-300">
-                {batch.l2StartBlock} → {batch.l2EndBlock}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500">Tx count</span>
-              <span className="font-mono text-zinc-300">{batch.txCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500">Post root</span>
-              <span className="font-mono text-zinc-400">
-                {hex(batch.postStateRoot)}
-              </span>
+
+            <div className="border-t border-zinc-800 pt-2 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-zinc-500" title="L2 block range covered by this batch">L2 blocks</span>
+                <span className="font-mono text-zinc-300">
+                  {batch.l2StartBlock} → {batch.l2EndBlock}
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-700 leading-snug">
+                These L2 blocks' swaps are all covered by the single state root below. If any swap was wrong, the entire batch is invalid.
+              </p>
+
+              <div className="flex justify-between pt-1">
+                <span className="text-zinc-500" title="Number of swap transactions in this batch">Swaps</span>
+                <span className="font-mono text-zinc-300">{batch.txCount}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-zinc-500" title="32-byte hash committing to all balances after this batch">State root</span>
+                <span className="font-mono text-zinc-400 text-[10px]">
+                  {hex(batch.postStateRoot)}
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-700 leading-snug">
+                The state root is a single 32-byte hash of all account balances after the batch ran. The sequencer posts this to L1, if it&apos;s wrong, a challenger can prove it on-chain.
+              </p>
             </div>
           </div>
 
           {batch.flagged && batch.postedRoot && batch.expectedRoot && (
             <div className="border-t border-zinc-800 pt-3 space-y-2 text-xs">
-              <p className="text-zinc-500 uppercase tracking-wide">Root mismatch</p>
+              <p className="text-zinc-400 font-semibold">State root mismatch detected</p>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">
+                The honest watcher replayed every swap in this batch using the verified engine and got a different answer than the sequencer posted.
+              </p>
               <div>
                 <span className="text-red-400">Sequencer posted</span>
                 <p className="font-mono text-zinc-400 break-all text-[10px]">
@@ -150,38 +165,66 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                 </p>
               </div>
               <div>
-                <span className="text-emerald-400">Honest replay</span>
+                <span className="text-emerald-400">Honest watcher computed</span>
                 <p className="font-mono text-zinc-400 break-all text-[10px]">
                   {hex(batch.expectedRoot)}
                 </p>
               </div>
-              <p className="text-[10px] text-zinc-600">
-                Challengers post a {PORTAL_BOND_ETH} ETH bond to force bisection on L1.
+              <p className="text-[10px] text-zinc-600 leading-relaxed">
+                A challenger must post a {PORTAL_BOND_ETH} ETH bond to open a dispute on L1. The bond is returned if the challenge succeeds and the sequencer loses theirs.
               </p>
             </div>
           )}
 
           {batch.divergence && (
-            <div className="border-t border-zinc-800 pt-3 space-y-1 text-xs">
-              <p className="text-zinc-500 uppercase tracking-wide">Divergence</p>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Op</span>
-                <span className="font-mono text-red-300">{batch.divergence.op}</span>
-              </div>
-              {batch.divergence.slot && (
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Slot</span>
+            <div className="border-t border-zinc-800 pt-3 space-y-1.5 text-xs">
+              <p className="text-zinc-400 font-semibold">Fraud proof committed on L1</p>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">
+                Bisection narrowed all swaps in the batch down to one instruction. That instruction&apos;s hash is now permanently recorded on L1 as proof of fraud.
+              </p>
+              {batch.divergence.rawHonestLen ? (
+                <p className="text-[10px] text-zinc-600 leading-relaxed">
+                  The transaction ran{" "}
                   <span className="font-mono text-zinc-400">
-                    {hex(batch.divergence.slot)}
-                  </span>
-                </div>
-              )}
+                    {batch.divergence.rawHonestLen.toLocaleString()}
+                  </span>{" "}
+                  EVM instructions; only{" "}
+                  <span className="font-mono text-zinc-400">
+                    {batch.divergence.honestSteps.length}
+                  </span>{" "}
+                  touch storage or make calls, and exactly one of those is wrong.
+                </p>
+              ) : null}
               <div className="flex justify-between">
-                <span className="text-zinc-500">Step</span>
+                <span className="text-zinc-500" title="EVM opcode where honest and claimed traces diverge">Opcode</span>
+                <span className="font-mono text-red-300">
+                  {batch.divergence.op} · {opHeadline(batch.divergence.op)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500" title="Which contract variable this storage slot holds">Slot holds</span>
+                <span className="font-mono text-zinc-400 text-right">
+                  {slotMeaning(batch.divergence.slot, batch.engineType).label}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500" title="Step number in the filtered opcode trace">Trace step</span>
                 <span className="font-mono text-zinc-300">
                   #{batch.divergence.divergenceIdx}
                 </span>
               </div>
+              {(batch.divergence.honestVal || batch.divergence.claimedVal) && (
+                <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 pt-1 border-t border-zinc-800/80 mt-1.5">
+                  <span className="text-emerald-400" title="Value the verified engine computed">Honest</span>
+                  <span className="font-mono text-emerald-300 text-right break-all">
+                    {decodeWord(batch.divergence.honestVal).display}
+                  </span>
+                  <span className="text-red-400" title="Value the sequencer wrote">Sequencer</span>
+                  <span className="font-mono text-red-300 text-right break-all">
+                    {decodeWord(batch.divergence.claimedVal).display}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -206,7 +249,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             )}
             {batch.flagged && !batch.resolved && (
               <p className="text-[10px] text-zinc-600 text-center">
-                Auto-challenge may already be running — wait for bisection to finish.
+                Auto-challenge may already be running, wait for bisection to finish.
               </p>
             )}
           </div>

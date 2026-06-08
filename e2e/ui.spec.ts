@@ -224,7 +224,8 @@ test.describe("Scoreboard", () => {
     // Use exact match to avoid picking up "Honest run" from DemoGallery
     await expect(page.getByText("Honest", { exact: true })).toBeVisible();
     await expect(page.getByText("Fraudulent", { exact: true })).toBeVisible();
-    await expect(page.getByText("Challenged", { exact: true })).toBeVisible();
+    await expect(page.getByText("Flagged", { exact: true })).toBeVisible();
+    await expect(page.getByText("In dispute", { exact: true })).toBeVisible();
     await expect(page.getByText("Resolved", { exact: true }).first()).toBeVisible();
   });
 

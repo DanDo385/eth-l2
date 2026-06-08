@@ -218,13 +218,15 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 }
 
 // chooseEngine picks honest/obvious/subtle deterministically from the seed.
+// Fraud rate: ~10% total (1-in-20 obvious, 1-in-20 subtle, 18-in-20 honest).
+// This reflects a realistic rollup where fraud is rare, not the norm.
 func (s *OPSequencer) chooseEngine(batchID uint64) (common.Address, string) {
 	derived := s.prng.KeccakDerive(fmt.Sprintf("engine:%d", batchID))
-	choice := binary.BigEndian.Uint64(derived[:8]) % 3
+	choice := binary.BigEndian.Uint64(derived[:8]) % 20
 	switch choice {
-	case 1:
+	case 0:
 		return common.HexToAddress(s.l2Addrs.LyingObvious), "obvious"
-	case 2:
+	case 1:
 		return common.HexToAddress(s.l2Addrs.LyingSubtle), "subtle"
 	default:
 		return common.HexToAddress(s.l2Addrs.HonestSwapEngine), "honest"

@@ -60,7 +60,7 @@ export function ZkInspect({ data, onClose }: Props) {
 
         <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-emerald-800 pl-3">
           Three ideas that separate ZK rollups from optimistic ones. Click through at your
-          pace — same rhythm as the opcode proof walkthrough.
+          pace, same rhythm as the opcode proof walkthrough.
         </p>
 
         {/* Step pills */}
@@ -97,6 +97,13 @@ export function ZkInspect({ data, onClose }: Props) {
               {current.detail(data)}
             </p>
 
+            <div className="rounded-lg bg-black/30 border border-emerald-900/40 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-emerald-500/80 mb-1">
+                From first principles
+              </p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">{current.deepDive}</p>
+            </div>
+
             {current.id === "prove" && (
               <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
                 <div className="rounded-lg bg-black/30 border border-violet-900/50 p-2">
@@ -130,8 +137,8 @@ export function ZkInspect({ data, onClose }: Props) {
                 <p className="text-zinc-400 mt-2 leading-relaxed">
                   {data.reason ??
                     (accepted
-                      ? "L1 finalized this batch immediately — no challenge window."
-                      : "L1 rejected the proof — this state never became canonical.")}
+                      ? "L1 finalized this batch immediately, no challenge window."
+                      : "L1 rejected the proof, this state never became canonical.")}
                 </p>
                 <p className="text-zinc-500 mt-2 font-mono">
                   Verify gas: {safeNum(data.verifyGas).toLocaleString()}

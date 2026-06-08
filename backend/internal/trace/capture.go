@@ -53,6 +53,10 @@ func Transaction(ctx context.Context, ec *ethclient.Client, txHash common.Hash) 
 //
 //	SwapEngineStorage: _balanceA(0) _balanceB(1) _nonces(2) _nextSwapId+_swapCount(3) _stateRoot(4) _swapHashes(5)
 //	SwapRouter:        sequencer(6)  implementation(7)
+//
+// Slot number is derived from SwapRouter's storage layout: two inherited
+// SwapEngineStorage slots (0–5) + sequencer (6) + implementation (7).
+// If SwapRouter storage order changes, this slot number must be updated to match.
 func HonestReplay(
 	ctx context.Context,
 	ec *ethclient.Client,
@@ -74,6 +78,7 @@ func HonestReplay(
 	}
 
 	// Override slot 7 of the router to point to HonestSwapEngine.
+	// Address values in state overrides must be padded to 32 bytes (left-padded with zeros).
 	implSlot := "0x0000000000000000000000000000000000000000000000000000000000000007"
 	implValue := "0x000000000000000000000000" + honestEngineAddr.Hex()[2:]
 	stateOverride := map[string]interface{}{
@@ -84,11 +89,15 @@ func HonestReplay(
 		},
 	}
 
+	// debug_traceCall takes exactly three params: (call, blockTag, options).
+	// State overrides are carried inside the options object under "stateOverrides",
+	// NOT as a separate fourth positional argument — Anvil rejects a fourth element
+	// with a serde error ("invalid length 4, expected fewer elements in array").
+	// This matches Geth's TraceCallConfig / Anvil's GethDebugTracingCallOptions.
 	traceCfg := map[string]interface{}{
 		"disableMemory":  true,
 		"disableStack":   false,
 		"disableStorage": false,
-		// Anvil 1.5.x rejects a 4th RPC param; embed overrides in the trace config.
 		"stateOverrides": stateOverride,
 	}
 

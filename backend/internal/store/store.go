@@ -34,6 +34,8 @@ type DivInfo struct {
 	ClaimedVal    string               `json:"claimedVal"`
 	HonestSteps   []trace.FilteredStep `json:"honestSteps"`
 	ClaimedSteps  []trace.FilteredStep `json:"claimedSteps"`
+	RawHonestLen  int                  `json:"rawHonestLen"`
+	RawClaimedLen int                  `json:"rawClaimedLen"`
 }
 
 // BlockNums tracks the latest seen block per chain name.

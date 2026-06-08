@@ -26,7 +26,7 @@ function statusLabel(batch?: BatchInfo): string {
 export function BlockBox({ blockNum, batch, onClick, dimmed, selected }: Props) {
   const status = batch ? batchStatus(batch) : null;
   const title = batch
-    ? `Batch #${batch.batchId} — ${status?.label}\n${status?.explanation}`
+    ? `Batch #${batch.batchId}: ${status?.label}\n${status?.explanation}`
     : `Block ${blockNum}`;
   const clickable = Boolean(onClick);
 

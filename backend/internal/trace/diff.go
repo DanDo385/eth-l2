@@ -17,6 +17,12 @@ type DivergenceResult struct {
 	ClaimedVal    string         `json:"claimedVal,omitempty"`
 	HonestSteps   []FilteredStep `json:"honestSteps"`
 	ClaimedSteps  []FilteredStep `json:"claimedSteps"`
+	// RawHonestLen / RawClaimedLen are the total EVM instruction counts before
+	// filtering down to salient (state-touching) ops. The frontend shows these so
+	// users understand that the ~25 visible steps are a filtered slice of the
+	// thousands of instructions the transaction actually executed.
+	RawHonestLen  int `json:"rawHonestLen"`
+	RawClaimedLen int `json:"rawClaimedLen"`
 	// Point is keccak256(stepIdx ‖ op ‖ slot ‖ honestVal ‖ claimedVal), committed on-chain.
 	Point [32]byte `json:"-"`
 }
@@ -40,6 +46,8 @@ func Diff(honestLogs, claimedLogs []StructLog) *DivergenceResult {
 				ClaimedVal:    cVal,
 				HonestSteps:   hs,
 				ClaimedSteps:  cs,
+				RawHonestLen:  len(honestLogs),
+				RawClaimedLen: len(claimedLogs),
 			}
 			res.Point = commitDivergence(i, h.Op, slot, hVal, cVal)
 			return res
@@ -83,17 +91,28 @@ func storageDiff(a, b map[string]string) (slot, aVal, bVal string) {
 	return "", "", ""
 }
 
-// commitDivergence computes keccak256(stepIdx ‖ op ‖ slot ‖ honestVal ‖ claimedVal).
+// commitDivergence computes keccak256 of the divergence fields using a
+// length-prefixed encoding to prevent concatenation collisions.
+//
+// Layout: stepIdx(8) | len(op)(4) | op | len(slot)(4) | slot |
+//
+//	len(honestVal)(4) | honestVal | len(claimedVal)(4) | claimedVal
+//
 // This 32-byte hash is stored in DisputeGameMock as the on-chain divergencePoint.
 func commitDivergence(stepIdx int, op, slot, honestVal, claimedVal string) [32]byte {
 	var buf []byte
+
 	var idx [8]byte
 	binary.BigEndian.PutUint64(idx[:], uint64(stepIdx))
 	buf = append(buf, idx[:]...)
-	buf = append(buf, []byte(op)...)
-	buf = append(buf, []byte(slot)...)
-	buf = append(buf, []byte(honestVal)...)
-	buf = append(buf, []byte(claimedVal)...)
+
+	for _, s := range []string{op, slot, honestVal, claimedVal} {
+		var lenBuf [4]byte
+		binary.BigEndian.PutUint32(lenBuf[:], uint32(len(s)))
+		buf = append(buf, lenBuf[:]...)
+		buf = append(buf, []byte(s)...)
+	}
+
 	var out [32]byte
 	copy(out[:], crypto.Keccak256(buf))
 	return out

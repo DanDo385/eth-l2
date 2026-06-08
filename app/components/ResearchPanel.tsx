@@ -36,7 +36,7 @@ export function ResearchPanel() {
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Proof lab</p>
         <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
           The simulation runs quietly in the background. Open a proof when you want to
-          study it — overlays never auto-popup.
+          study it, overlays never auto-popup.
         </p>
       </div>
 
@@ -50,7 +50,7 @@ export function ResearchPanel() {
       {opProofs.length > 0 && (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">
-            Optimistic — opcode fraud proofs
+            Optimistic: opcode fraud proofs
           </p>
           <ul className="space-y-1.5">
             {opProofs.slice(0, 8).map((b) => {
@@ -91,7 +91,7 @@ export function ResearchPanel() {
       {zkProofs.length > 0 && (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">
-            ZK — 3-step concept tour
+            ZK: 3-step concept tour
           </p>
           <p className="text-[10px] text-zinc-600 leading-snug">
             Claim → prove off-chain → verify on L1. Each batch is a live example.

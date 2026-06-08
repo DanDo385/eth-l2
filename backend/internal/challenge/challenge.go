@@ -46,6 +46,8 @@ type disputeResolvedPayload struct {
 	ClaimedVal    string          `json:"claimedVal"`
 	HonestSteps   json.RawMessage `json:"honestSteps"`
 	ClaimedSteps  json.RawMessage `json:"claimedSteps"`
+	RawHonestLen  int             `json:"rawHonestLen"`
+	RawClaimedLen int             `json:"rawClaimedLen"`
 }
 
 // Challenger auto-challenges flagged batches and exposes manual challenge for the REST API.
@@ -207,6 +209,8 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 		ClaimedVal:    div.ClaimedVal,
 		HonestSteps:   div.HonestSteps,
 		ClaimedSteps:  div.ClaimedSteps,
+		RawHonestLen:  div.RawHonestLen,
+		RawClaimedLen: div.RawClaimedLen,
 	}
 	c.st.SetResolved(batchID, divInfo)
 
@@ -221,6 +225,8 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 		ClaimedVal:    div.ClaimedVal,
 		HonestSteps:   honestStepsJSON,
 		ClaimedSteps:  claimedStepsJSON,
+		RawHonestLen:  div.RawHonestLen,
+		RawClaimedLen: div.RawClaimedLen,
 	}))
 
 	return nil

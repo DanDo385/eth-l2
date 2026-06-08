@@ -16,6 +16,7 @@ import { ZkInspect } from "./components/ZkInspect";
 import { Scoreboard } from "./components/Scoreboard";
 import { DemoGallery } from "./components/DemoGallery";
 import { ResearchPanel } from "./components/ResearchPanel";
+import { WelcomeBanner } from "./components/WelcomeBanner";
 
 function Inner() {
   const { state, dispatch } = useAppStore();
@@ -51,14 +52,25 @@ function Inner() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800 px-6 py-3 flex items-center gap-4">
-        <h1 className="text-lg font-bold tracking-tight">
-          Rollup Mechanics Lab
-        </h1>
-        <span className="text-xs text-zinc-600">
-          Optimistic · ZK · Fraud proofs
-        </span>
-        <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
+      <header className="border-b border-zinc-800 px-6 py-3 flex items-center gap-4 flex-wrap">
+        <div>
+          <h1 className="text-lg font-bold tracking-tight leading-tight">
+            Rollup Mechanics Lab
+          </h1>
+          <p className="text-[10px] text-zinc-600 leading-none mt-0.5">
+            Live simulation · Optimistic fraud proofs · ZK validity proofs
+          </p>
+        </div>
+        <div className="ml-auto flex items-center gap-3 text-xs text-zinc-500">
+          <span className="hidden sm:block text-[10px] text-zinc-600">
+            {state.running
+              ? state.paused
+                ? "⏸ simulation paused"
+                : "▶ simulation running"
+              : state.connected
+              ? "● ready, pick a demo or enter a seed"
+              : ""}
+          </span>
           <span
             aria-hidden="true"
             className={`w-1.5 h-1.5 rounded-full inline-block ${
@@ -87,6 +99,7 @@ function Inner() {
 
         {/* Main canvas */}
         <section className="flex flex-col gap-4 overflow-y-auto min-w-0">
+          {!state.running && <WelcomeBanner />}
           <BlockchainCanvas onBatchClick={handleBatchClick} />
           <Scoreboard />
         </section>
@@ -121,7 +134,7 @@ function Inner() {
         )}
       </AnimatePresence>
 
-      {/* Overlays — user opens from Proof lab or batch inspector; never auto-popup */}
+      {/* Overlays, user opens from Proof lab or batch inspector; never auto-popup */}
       <AnimatePresence mode="wait">
         {state.opcodeRaceData && (
           <OpcodeRace

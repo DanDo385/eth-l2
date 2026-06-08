@@ -189,6 +189,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             claimedVal: p.claimedVal,
             honestSteps: p.honestSteps,
             claimedSteps: p.claimedSteps,
+            rawHonestLen: p.rawHonestLen,
+            rawClaimedLen: p.rawClaimedLen,
           };
           const wasResolved = base.resolved;
           return {
@@ -276,6 +278,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           claimedVal: batch.divergence.claimedVal,
           honestSteps: batch.divergence.honestSteps,
           claimedSteps: batch.divergence.claimedSteps,
+          rawHonestLen: batch.divergence.rawHonestLen,
+          rawClaimedLen: batch.divergence.rawClaimedLen,
         },
         zkInspectData: null,
       };

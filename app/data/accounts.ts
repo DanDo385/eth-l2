@@ -1,5 +1,5 @@
 /**
- * Demo account roles — keep in sync with backend/internal/chain/accounts.go
+ * Demo account roles, keep in sync with backend/internal/chain/accounts.go
  * and backend/internal/chain/params.go (bond / seed balances).
  */
 export const DEMO_ACCOUNTS = [
