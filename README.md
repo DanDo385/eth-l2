@@ -9,7 +9,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 3. The **OP sequencer** (seeded PRNG controls honesty) batches txs and posts state roots to L1.
 4. The **honest watcher** detects root mismatches and fires a `BatchFlagged` event.
 5. The **auto-challenger** opens a dispute on L1, runs bisection, traces the diverging opcode, and calls `resolve()`.
-6. The **frontend** receives all events over WebSocket and renders the live blockchain canvas, scoreboard, and opcode race replay.
+6. The **frontend** receives all events over WebSocket and renders the live blockchain canvas, scoreboard, and a step-by-step fraud-proof walkthrough (intro chapter + filtered opcode trace with human-readable storage narration).
 
 ## Quick start
 
@@ -63,10 +63,11 @@ Then open [http://localhost:3001](http://localhost:3001).
   - Terminal 2: `make frontend`
   - Terminal 3: `make test-e2e`
 
-- Pick a **seed** in the control panel (or click a Demo Gallery card).
-- Press **Start** — chains are created, contracts deployed, and bots begin trading.
+- Read the **How this lab works** welcome banner (dismissible) for the five-step rollup story.
+- Pick a **seed** in the control panel (default **42**) or click a Demo Gallery card.
+- Press **Start** — chains are created, contracts deployed, and bots begin trading (default speed **3×**).
 - Watch batches appear on the canvas; flagged/challenged/resolved batches change colour.
-- Click a batch to inspect it; click **Opcode Race** to replay the fraud-proof trace.
+- Click a batch to open the **Block Inspector**; when a batch turns red, click **Walk opcode proof step-by-step** or open it from **Proof lab** below the canvas (overlays never auto-popup).
 
 ## Prerequisites
 
@@ -79,6 +80,7 @@ Then open [http://localhost:3001](http://localhost:3001).
 | Target | Description |
 |--------|-------------|
 | `make dev` | Start Go backend + Next.js frontend (recommended) |
+| `make stop` | Kill stale processes on ports 3001, 8080, and Anvil RPC ports |
 | `make backend` | Go backend only (manages anvil + chains) |
 | `make frontend` | Next.js dev server only (port 3001) |
 | `make build` | Build contracts, Go binary, and Next.js |
@@ -107,7 +109,9 @@ backend/
     seed/           Deterministic PRNG (keccak256 chain, fork-safe)
     server/         REST endpoints + WebSocket hub
 app/                Next.js 16 frontend
-  components/       BlockchainCanvas, OpcodeRace, Scoreboard, DemoGallery, …
+  components/       BlockchainCanvas, BlockInspector, OpcodeRace (fraud-proof overlay),
+                    WelcomeBanner, ResearchPanel (Proof lab), Scoreboard, DemoGallery, …
+  data/             batchEducation, traceNarrative (hex → human swap narration), protocol
   lib/              WS client, reducer, URL hash helpers
 ```
 
@@ -151,4 +155,4 @@ The backend never pushes HTML — it publishes typed events (`block_mined`, `bat
 Reproducibility is the whole point of a lab. A **keccak256-chain PRNG** means seed `42` always produces the same sequence of honest/lying sequencer decisions, bot trade amounts, and proof nonces. Fork-safe sub-streams (`prng.Fork("op-swap")`) ensure that changing the number of bots does not shift the sequencer's random draws, so each demo URL is a stable, shareable scenario.
 
 ### Playwright (E2E tests)
-The UI correctness that matters is "does the batch turn red after a fraud proof?" — something a unit test of the reducer cannot fully answer. **Playwright** drives a real Chromium browser against the live dev server, waits for WebSocket events, and asserts DOM state. The 28 E2E tests cover all four demo seeds and the full block → batch → flag → challenge → resolve lifecycle, giving confidence that visual regressions are caught before recording a Loom.
+The UI correctness that matters is "does the layout render and do controls respond?" — something a unit test of the reducer cannot fully answer. **Playwright** drives a real Chromium browser against the live dev server and asserts DOM state across the idle layout, control panel, demo gallery, canvas, and scoreboard. The 28 E2E tests (7 describe blocks) include full-page and responsive screenshots, giving confidence that visual regressions are caught before recording a Loom.

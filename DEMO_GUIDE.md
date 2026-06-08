@@ -19,7 +19,7 @@ Open [http://localhost:3001](http://localhost:3001) in a clean browser window (n
 
 ### 0:00–0:20 — Introduce the lab
 
-Point at the header, the three-lane canvas (L1 / OP L2 / ZK L2), and the Demo Gallery.
+Point at the header, the **How this lab works** welcome banner, the three-lane canvas (L1 / OP L2 / ZK L2), and the Demo Gallery.
 
 > "This is a rollup mechanics lab. Three local blockchains, real Solidity contracts, bots trading, and a Go backend that automatically challenges fraudulent batches."
 
@@ -39,15 +39,15 @@ When a batch turns yellow/orange (flagged → challenged), click it to open the 
 
 Show the EngineType badge and the challenge button in the inspector.
 
-### 1:15–1:50 — Opcode Race replay
+### 1:15–1:50 — Fraud proof walkthrough
 
-Once a batch turns red (resolved), click the **Opcode Race** button.
+Once a batch turns red (resolved), click **Walk opcode proof step-by-step** in the Block Inspector, or open the same proof from **Proof lab** below the canvas.
 
-Watch both tapes (Honest / Claimed) scroll step by step through the EVM trace, then hard-stop at the diverging instruction.
+The overlay opens with an intro chapter (what the swap engine did, how many EVM steps were filtered), then lets you step through honest vs claimed storage writes with human-readable narration.
 
 > "Bisection narrows a 100+ step trace to a single disagreement. Here: one SSTORE writes the wrong output amount. That's where trust turns back into verification."
 
-Point at the red divider, the op/slot/value callout, and the Replay button.
+Point at the red divider, the slot/value callout, and the step timeline.
 
 ### 1:50–2:20 — Scoreboard and ZK comparison
 
@@ -74,8 +74,8 @@ Mention the ZK lane: no fraud window, proof verified on every batch.
 
 - Use seed **17** for the fastest fraud catch (diverges early in the bisection).
 - Use seed **42** for a subtler story (fee rounding is harder to spot visually).
-- Speed slider at **4×** gives fast-enough block cadence without filling the canvas instantly.
-- The **Replay** button in OpcodeRace resets the tape animation — useful for a clean second take.
+- Speed slider at **3×** (default) gives fast-enough block cadence without filling the canvas instantly; bump to **4×** for quicker runs.
+- Proof overlays never auto-popup — open them from Block Inspector or **Proof lab** when you want a clean take.
 
 ## One-liner
 
