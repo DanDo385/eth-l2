@@ -9,3 +9,6 @@ out/
 .DS_Store
 test-results/
 tsconfig.tsbuildinfo
+
+# Foundry broadcast — ephemeral deploy logs from `forge script` / local Anvil runs
+broadcast/
