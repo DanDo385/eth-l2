@@ -55,8 +55,10 @@ Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.s
 
 ```bash
 make install   # Foundry + pnpm + Playwright chromium
-make dev       # backend + frontend on :3001
+make dev       # stops stale ports, then backend + frontend on :3001
 ```
+
+If `make dev` fails with **address already in use**, run `make stop` and retry.
 
 Open [http://localhost:3001](http://localhost:3001).
 
