@@ -78,8 +78,8 @@ export function AccountSidebar() {
           {state.eventLog.length === 0 ? (
             <p className="text-[10px] text-zinc-600">No events yet.</p>
           ) : (
-            state.eventLog.slice(-30).reverse().map((entry) => (
-              <div key={entry.seq} className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
+            state.eventLog.slice(-30).reverse().map((entry, index) => (
+              <div key={`${entry.seq}-${index}-${entry.event}`} className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
                 <div className="flex justify-between gap-2 text-[9px] font-mono">
                   <span className="text-zinc-500">#{entry.seq}</span>
                   <span className={entry.layer === "L1" ? "text-violet-400" : entry.layer === "L2" ? "text-blue-400" : "text-amber-400"}>

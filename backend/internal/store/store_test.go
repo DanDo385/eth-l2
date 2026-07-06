@@ -132,6 +132,26 @@ func TestSetResolved(t *testing.T) {
 	}
 }
 
+func TestSetBondSettlement_persistsInSnapshot(t *testing.T) {
+	s := New()
+	s.AddBatch(makeBatch(9))
+	s.SetBondSettlement(9, &BondSettlement{
+		BatchID:    9,
+		Outcome:    "challenge_failed",
+		Winner:     "sequencer",
+		PayoutWei:  "190000000000000000",
+		BurnedWei:  "10000000000000000",
+		SeqBondWei: "100000000000000000",
+	})
+	b := s.GetBatch(9)
+	if b.BondSettlement == nil {
+		t.Fatal("expected bond settlement")
+	}
+	if b.BondSettlement.Outcome != "challenge_failed" {
+		t.Fatalf("outcome = %q, want challenge_failed", b.BondSettlement.Outcome)
+	}
+}
+
 func TestSetResolved_noOp_on_missing(t *testing.T) {
 	s := New()
 	s.SetResolved(999, &DivInfo{}) // should not panic

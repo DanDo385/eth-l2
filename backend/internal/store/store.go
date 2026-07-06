@@ -22,26 +22,27 @@ type SwapSummary struct {
 
 // BatchInfo holds everything the backend knows about one posted OP batch.
 type BatchInfo struct {
-	BatchID       uint64            `json:"batchId"`
-	TxHashes      []common.Hash     `json:"-"` // used internally for trace replay
-	Swaps         []SwapSummary     `json:"swaps,omitempty"`
-	EngineType    string            `json:"engineType"`
-	PostStateRoot string            `json:"postStateRoot"`
-	L2StartBlock  uint64            `json:"l2StartBlock"`
-	L2EndBlock    uint64            `json:"l2EndBlock"`
-	TxCount       int               `json:"txCount"`
-	Flagged       bool              `json:"flagged"`
-	PostedRoot    string            `json:"postedRoot,omitempty"`
-	ExpectedRoot  string            `json:"expectedRoot,omitempty"`
-	FlagReason    string            `json:"flagReason,omitempty"`
-	Challenged    bool              `json:"challenged"`
-	Resolved      bool              `json:"resolved"`
-	Finalized     bool              `json:"finalized"`
-	SubmittedAt   int64             `json:"submittedAt"` // unix seconds, for the challenge-window countdown
-	Status        string            `json:"status,omitempty"`
-	Verification  *VerificationInfo `json:"verification,omitempty"`
-	DisputeStage  string            `json:"disputeStage,omitempty"`
-	Divergence    *DivInfo          `json:"divergence,omitempty"`
+	BatchID        uint64            `json:"batchId"`
+	TxHashes       []common.Hash     `json:"-"` // used internally for trace replay
+	Swaps          []SwapSummary     `json:"swaps,omitempty"`
+	EngineType     string            `json:"engineType"`
+	PostStateRoot  string            `json:"postStateRoot"`
+	L2StartBlock   uint64            `json:"l2StartBlock"`
+	L2EndBlock     uint64            `json:"l2EndBlock"`
+	TxCount        int               `json:"txCount"`
+	Flagged        bool              `json:"flagged"`
+	PostedRoot     string            `json:"postedRoot,omitempty"`
+	ExpectedRoot   string            `json:"expectedRoot,omitempty"`
+	FlagReason     string            `json:"flagReason,omitempty"`
+	Challenged     bool              `json:"challenged"`
+	Resolved       bool              `json:"resolved"`
+	Finalized      bool              `json:"finalized"`
+	SubmittedAt    int64             `json:"submittedAt"` // unix seconds, for the challenge-window countdown
+	Status         string            `json:"status,omitempty"`
+	Verification   *VerificationInfo `json:"verification,omitempty"`
+	DisputeStage   string            `json:"disputeStage,omitempty"`
+	BondSettlement *BondSettlement   `json:"bondSettlement,omitempty"`
+	Divergence     *DivInfo          `json:"divergence,omitempty"`
 }
 
 type VerificationInfo struct {
@@ -50,6 +51,16 @@ type VerificationInfo struct {
 	PostedRoot   string `json:"postedRoot,omitempty"`
 	ExpectedRoot string `json:"expectedRoot,omitempty"`
 	Reason       string `json:"reason"`
+}
+
+type BondSettlement struct {
+	BatchID     uint64 `json:"batchId"`
+	Outcome     string `json:"outcome"`
+	Winner      string `json:"winner"`
+	SeqBondWei  string `json:"seqBondWei"`
+	ChalBondWei string `json:"chalBondWei"`
+	PayoutWei   string `json:"payoutWei"`
+	BurnedWei   string `json:"burnedWei"`
 }
 
 // DivInfo is the serialisable subset of trace.DivergenceResult for /api/batch/:id and WS events.
@@ -217,6 +228,14 @@ func (s *Store) SetFinalized(id uint64) {
 		if b.Status == "" || b.Status == "challenge_window_open" || b.Status == "verified_valid" {
 			b.Status = "finalized"
 		}
+	}
+	s.mu.Unlock()
+}
+
+func (s *Store) SetBondSettlement(id uint64, settlement *BondSettlement) {
+	s.mu.Lock()
+	if b := s.batches[id]; b != nil {
+		b.BondSettlement = settlement
 	}
 	s.mu.Unlock()
 }

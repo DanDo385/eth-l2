@@ -255,7 +255,9 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 			return fmt.Errorf("finalize honest challenge: %w", err)
 		}
 		c.st.SetFinalized(batchID)
-		c.bus.Publish(events.New(events.BondSettled, bondSettled(batchID, "challenge_failed", "sequencer")))
+		settlement := bondSettled(batchID, "challenge_failed", "sequencer")
+		c.st.SetBondSettlement(batchID, storeBondSettlement(settlement))
+		c.bus.Publish(events.New(events.BondSettled, settlement))
 		c.publishDisputeStage(batchID, "accepted", "The output root survived the invalid challenge. Withdrawals may finalize after the challenge period.")
 		return nil
 	}
@@ -316,10 +318,24 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 
 	// Broadcast the collateral waterfall: fraud proven, so the challenger takes
 	// both bonds minus the attributable-fault burn.
-	c.bus.Publish(events.New(events.BondSettled, bondSettled(batchID, "fraud", "challenger")))
+	settlement := bondSettled(batchID, "fraud", "challenger")
+	c.st.SetBondSettlement(batchID, storeBondSettlement(settlement))
+	c.bus.Publish(events.New(events.BondSettled, settlement))
 	c.publishDisputeStage(batchID, "rejected", "Fraud proven. L1 rejected the bad root, blocked withdrawals against it, and paid the challenger from escrow.")
 
 	return nil
+}
+
+func storeBondSettlement(p events.BondSettledPayload) *store.BondSettlement {
+	return &store.BondSettlement{
+		BatchID:     p.BatchID,
+		Outcome:     p.Outcome,
+		Winner:      p.Winner,
+		SeqBondWei:  p.SeqBondWei,
+		ChalBondWei: p.ChalBondWei,
+		PayoutWei:   p.PayoutWei,
+		BurnedWei:   p.BurnedWei,
+	}
 }
 
 func (c *Challenger) publishDisputeStage(batchID uint64, stage, explanation string) {
@@ -561,7 +577,9 @@ func (c *Challenger) FinalizeUnchallenged(ctx context.Context, batchID uint64) e
 		return err
 	}
 	c.st.SetFinalized(batchID)
-	c.bus.Publish(events.New(events.BondSettled, bondSettled(batchID, "unchallenged", "sequencer")))
+	settlement := bondSettled(batchID, "unchallenged", "sequencer")
+	c.st.SetBondSettlement(batchID, storeBondSettlement(settlement))
+	c.bus.Publish(events.New(events.BondSettled, settlement))
 	return nil
 }
 
