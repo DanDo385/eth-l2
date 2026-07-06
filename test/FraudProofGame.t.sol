@@ -136,6 +136,17 @@ contract FraudProofGameTest is Test {
         }
     }
 
+    // Emits reference values the Go mirror (challenge/fraudproof.go) pins against.
+    function test_log_referenceValues() public {
+        SwapStepVM.State memory s = SwapStepVM.initialState(10, 100, 10000, 30, 0);
+        emit log_named_bytes32("m0Hash", SwapStepVM.hashState(s));
+        (, bytes32[8] memory leaves) = _honestTrace(10, 0);
+        emit log_named_bytes32("honestRoot", _root(leaves));
+        emit log_named_bytes32("leaf3", leaves[3]);
+        emit log_named_uint("proof3_len", _proof(leaves, 3).length);
+        emit log_named_bytes32("proof3_0", _proof(leaves, 3)[0]);
+    }
+
     // ── full games ───────────────────────────────────────────────────────────
 
     // Sequencer posts a doubled output (obvious lie); the contract must catch it.

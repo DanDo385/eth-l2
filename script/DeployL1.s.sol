@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Script.sol";
 import {OptimisticPortalMock} from "../contracts/l1/OptimisticPortalMock.sol";
-import {DisputeGameMock} from "../contracts/l1/DisputeGameMock.sol";
+import {FraudProofGame} from "../contracts/l1/FraudProofGame.sol";
 import {ZkRollupMock} from "../contracts/l1/ZkRollupMock.sol";
 import {ZkValidityVerifier} from "../contracts/l1/ZkValidityVerifier.sol";
 
@@ -15,7 +15,7 @@ contract DeployL1 is Script {
         vm.startBroadcast(deployerKey);
 
         ZkValidityVerifier verifier = new ZkValidityVerifier();
-        DisputeGameMock disputeGame = new DisputeGameMock(address(0));
+        FraudProofGame disputeGame = new FraudProofGame(address(0));
         OptimisticPortalMock portal = new OptimisticPortalMock(sequencer, address(disputeGame));
         ZkRollupMock zkRollup = new ZkRollupMock(sequencer, address(verifier));
         disputeGame.setPortal(address(portal));

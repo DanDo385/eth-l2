@@ -8,8 +8,8 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 2. **Bots** send swap transactions to L2 swap engines.
 3. The **OP sequencer** (seeded PRNG controls honesty) batches txs and posts state roots to L1.
 4. The **honest watcher** detects root mismatches and fires a `BatchFlagged` event.
-5. The **auto-challenger** opens a dispute on L1, runs bisection, traces the diverging opcode, and calls `resolve()`.
-6. The **frontend** receives all events over WebSocket and renders the live blockchain canvas, scoreboard, and a step-by-step fraud-proof walkthrough (intro chapter + filtered opcode trace with human-readable storage narration).
+5. The **auto-challenger** opens a dispute on L1, runs **FraudProofGame** (Merkle bisection + on-chain step re-execution), and finalizes the batch with bond settlement.
+6. The **frontend** receives all events over WebSocket and renders the live blockchain canvas, scoreboard, challenge-window countdown, bond payouts, and a step-by-step fraud-proof walkthrough (intro chapter + filtered opcode trace with human-readable storage narration and source-map line citations).
 
 ## Quick start
 
@@ -66,7 +66,7 @@ Then open [http://localhost:3001](http://localhost:3001).
 - Read the **How this lab works** welcome banner (dismissible) for the five-step rollup story.
 - Pick a **seed** in the control panel (default **42**) or click a Demo Gallery card.
 - Press **Start** — chains are created, contracts deployed, and bots begin trading (default speed **3×**).
-- Watch batches appear on the canvas; flagged/challenged/resolved batches change colour.
+- Watch batches appear on the canvas; flagged/challenged/resolved batches change colour; honest batches finalize after the **120s** challenge window.
 - Click a batch to open the **Block Inspector**; when a batch turns red, click **Walk opcode proof step-by-step** or open it from **Proof lab** below the canvas (overlays never auto-popup).
 
 ## Prerequisites
@@ -94,7 +94,7 @@ Then open [http://localhost:3001](http://localhost:3001).
 ## Architecture
 
 ```
-contracts/          Solidity — OptimisticPortal, DisputeGame, SwapEngines, ZkRollup
+contracts/          Solidity — OptimisticPortal, FraudProofGame, SwapStepVM, ZkValidityVerifier, SwapEngines
 backend/
   cmd/server/       HTTP + WebSocket server entrypoint
   internal/
@@ -102,8 +102,8 @@ backend/
     bots/           Transfer bot + swap bots (seeded PRNG)
     sequencer/      OP sequencer (honest/lying), ZK sequencer
     watcher/        Honest state-root tracker (pure Go mirror of HonestSwapEngine)
-    challenge/      Auto-challenger: bisection loop + trace diff + resolve
-    trace/          debug_traceCall wrapper, Filter, Diff, commitDivergence
+    challenge/      Auto-challenger: FraudProofGame bisection + trace diff + bond settlement
+    trace/          debug_traceCall wrapper, Filter, Diff, source-map resolution
     store/          In-memory batch/block state (thread-safe)
     events/         Typed pub/sub bus
     seed/           Deterministic PRNG (keccak256 chain, fork-safe)
@@ -120,14 +120,14 @@ app/                Next.js 16 frontend
 | Seed | Behaviour |
 |------|-----------|
 | 42 | Subtle fraud — fee rounding in SSTORE |
-| 88 | Honest run — all batches resolve clean |
+| 88 | Clean run — honest batches finalize after the challenge window |
 | 17 | Obvious fraud — wrong output amount |
 | 99 | Mixed — both fraud types appear |
 
 ## Tests
 
 ```bash
-make test-contracts   # 49 Solidity tests (DisputeGame, Portal, SwapEngines, ZkRollup, TradeEngine)
+make test-contracts   # Solidity tests (FraudProofGame, Portal bonds, SwapEngines, ZkValidityVerifier)
 make test-go          # Go unit tests (seed, store, trace, watcher, engine)
 make test-e2e         # 28 Playwright tests across 7 describe blocks
 ```

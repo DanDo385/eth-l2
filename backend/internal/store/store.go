@@ -3,6 +3,7 @@ package store
 import (
 	"sync"
 
+	"github.com/dando385/eth-l2/backend/internal/sourcemap"
 	"github.com/dando385/eth-l2/backend/internal/trace"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -22,6 +23,8 @@ type BatchInfo struct {
 	FlagReason    string        `json:"flagReason,omitempty"`
 	Challenged    bool          `json:"challenged"`
 	Resolved      bool          `json:"resolved"`
+	Finalized     bool          `json:"finalized"`
+	SubmittedAt   int64         `json:"submittedAt"` // unix seconds, for the challenge-window countdown
 	Divergence    *DivInfo      `json:"divergence,omitempty"`
 }
 
@@ -36,6 +39,12 @@ type DivInfo struct {
 	ClaimedSteps  []trace.FilteredStep `json:"claimedSteps"`
 	RawHonestLen  int                  `json:"rawHonestLen"`
 	RawClaimedLen int                  `json:"rawClaimedLen"`
+	// OnchainDivergenceStep is the swap-VM step the on-chain fraud proof isolated.
+	OnchainDivergenceStep int `json:"onchainDivergenceStep"`
+	// LyingSource / HonestSource point at the exact Solidity lines (WO-4): the
+	// engine's deviating statement and the honest engine's equivalent.
+	LyingSource  *sourcemap.SourceLoc `json:"lyingSource,omitempty"`
+	HonestSource *sourcemap.SourceLoc `json:"honestSource,omitempty"`
 }
 
 // BlockNums tracks the latest seen block per chain name.
@@ -134,9 +143,34 @@ func (s *Store) SetResolved(id uint64, div *DivInfo) {
 		b.Flagged = true
 		b.Challenged = true
 		b.Resolved = true
+		b.Finalized = true
 		b.Divergence = div
 	}
 	s.mu.Unlock()
+}
+
+func (s *Store) SetFinalized(id uint64) {
+	s.mu.Lock()
+	if b := s.batches[id]; b != nil {
+		b.Finalized = true
+	}
+	s.mu.Unlock()
+}
+
+// UnfinalizedUnchallenged returns batch IDs that are honest (not flagged), not
+// challenged, not yet finalized, and older than minAgeSeconds. Used by the
+// session finalizer to return sequencer bonds after the challenge window.
+func (s *Store) UnfinalizedUnchallenged(nowUnix, minAgeSeconds int64) []uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []uint64
+	for id, b := range s.batches {
+		if !b.Finalized && !b.Challenged && !b.Flagged && b.SubmittedAt > 0 &&
+			nowUnix-b.SubmittedAt >= minAgeSeconds {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // Snapshot returns a JSON-safe copy of the full state.

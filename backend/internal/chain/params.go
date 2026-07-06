@@ -21,6 +21,10 @@ const (
 
 	// DemoAccountETH is the native ETH balance set on each demo account at session start (Anvil cheat).
 	DemoAccountETH int64 = 10_000
+
+	// ChallengeWindowSeconds mirrors OptimisticPortalMock.CHALLENGE_WINDOW. An
+	// honest unchallenged batch can be finalized (bond returned) after this.
+	ChallengeWindowSeconds int64 = 120
 )
 
 // Gas limits — must cover execution but not require 16M ETH headroom per tx.

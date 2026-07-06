@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dando385/eth-l2/backend/internal/bots"
+	"github.com/dando385/eth-l2/backend/internal/chain"
 	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/store"
 	"github.com/dando385/eth-l2/backend/internal/watcher"
@@ -85,6 +86,7 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 		if err := s.transferBot.OnBlock(ctx, blockNum); err != nil {
 			s.reportBotError("l1", "transferBot", blockNum, err)
 		}
+		s.finalizeHonestBatches(ctx)
 
 	case "op-l2":
 		if err := s.opSwapBot.OnBlock(ctx, blockNum); err != nil {
@@ -118,6 +120,7 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 				L2StartBlock:  result.L2StartBlock,
 				L2EndBlock:    result.L2EndBlock,
 				TxCount:       result.TxCount,
+				SubmittedAt:   time.Now().Unix(),
 			})
 			s.opWatcher.CheckBatch(result)
 		}
@@ -157,6 +160,21 @@ func (s *Session) publishError(chain, msg string) {
 		Chain:   chain,
 		Message: msg,
 	}))
+}
+
+// finalizeHonestBatches returns sequencer bonds for honest batches once the
+// on-chain challenge window closes (WO-6). Best-effort: reverts until L1 time
+// has advanced far enough are ignored.
+func (s *Session) finalizeHonestBatches(ctx context.Context) {
+	if s.challenger == nil || s.batchStore == nil {
+		return
+	}
+	now := time.Now().Unix()
+	for _, id := range s.batchStore.UnfinalizedUnchallenged(now, chain.ChallengeWindowSeconds) {
+		if err := s.challenger.FinalizeUnchallenged(ctx, id); err != nil {
+			log.Printf("finalize batch %d: %v", id, err)
+		}
+	}
 }
 
 // blockData adapts go-ethereum block tx data to watcher.blockReader.

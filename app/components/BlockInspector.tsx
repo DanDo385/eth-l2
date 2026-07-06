@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "../lib/store";
 import { apiPost } from "../lib/ws";
 import {
   batchStatus,
   batchWindowNote,
+  bondSettlementNote,
+  challengeWindowNote,
   engineExplanation,
 } from "../data/batchEducation";
 import { PORTAL_BOND_ETH } from "../data/protocol";
@@ -50,6 +52,13 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
   const batchId = state.inspectedBatch;
   const batch = batchId !== null ? state.batches[batchId] : null;
   const status = batch ? batchStatus(batch) : null;
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!batch || batch.finalized || batch.challenged || batch.flagged) return;
+    const timer = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(timer);
+  }, [batch]);
 
   useEffect(() => {
     if (batchId === null) return;
@@ -114,6 +123,18 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
           <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-zinc-700 pl-2">
             {batchWindowNote(batch)}
           </p>
+
+          {challengeWindowNote(batch) && (
+            <p className="text-[10px] text-blue-300/90 leading-relaxed border-l-2 border-blue-800 pl-2">
+              {challengeWindowNote(batch)}
+            </p>
+          )}
+
+          {bondSettlementNote(batch) && (
+            <p className="text-[10px] text-emerald-300/90 leading-relaxed border-l-2 border-emerald-800 pl-2">
+              {bondSettlementNote(batch)}
+            </p>
+          )}
 
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">

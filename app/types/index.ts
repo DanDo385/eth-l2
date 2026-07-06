@@ -7,6 +7,15 @@ export interface FilteredStep {
   pc: number;
 }
 
+/** A resolved Solidity source location (from the deployed-bytecode source map). */
+export interface SourceLoc {
+  file: string;
+  line: number;
+  col: number;
+  snippet: string;
+  lineText: string;
+}
+
 export interface DivInfo {
   divergenceIdx: number;
   op: string;
@@ -18,6 +27,11 @@ export interface DivInfo {
   /** Total EVM instructions executed before filtering to salient state-touching ops. */
   rawHonestLen?: number;
   rawClaimedLen?: number;
+  /** The swap-VM step the on-chain fraud proof isolated the fraud to. */
+  onchainDivergenceStep?: number;
+  /** The deviating Solidity line in the lying/buggy engine, and honest's equivalent. */
+  lyingSource?: SourceLoc;
+  honestSource?: SourceLoc;
 }
 
 export interface BatchInfo {
@@ -33,6 +47,9 @@ export interface BatchInfo {
   flagReason?: string;
   challenged: boolean;
   resolved: boolean;
+  finalized?: boolean;
+  submittedAt?: number;
+  bondSettlement?: BondSettledPayload;
   divergence?: DivInfo;
 }
 
@@ -76,6 +93,9 @@ export interface DisputeResolvedPayload {
   /** Total EVM instructions executed before filtering to salient state-touching ops. */
   rawHonestLen?: number;
   rawClaimedLen?: number;
+  onchainDivergenceStep?: number;
+  lyingSource?: SourceLoc;
+  honestSource?: SourceLoc;
 }
 
 export interface ZkInspectPayload {
@@ -91,6 +111,17 @@ export interface ZkInspectPayload {
   txCount?: number;
 }
 
+/** Collateral waterfall after a batch finalizes on L1 (WO-5). Amounts are wei strings. */
+export interface BondSettledPayload {
+  batchId: number;
+  outcome: "fraud" | "unchallenged";
+  winner: "challenger" | "sequencer";
+  seqBondWei: string;
+  chalBondWei: string;
+  payoutWei: string;
+  burnedWei: string;
+}
+
 export interface ErrorPayload {
   chain: string;
   message: string;
@@ -102,6 +133,7 @@ export type WsEvent =
   | { type: "batch_flagged"; payload: BatchFlaggedPayload }
   | { type: "batch_challenged"; payload: BatchChallengedPayload }
   | { type: "dispute_resolved"; payload: DisputeResolvedPayload }
+  | { type: "bond_settled"; payload: BondSettledPayload }
   | { type: "zk_inspect_ready"; payload: ZkInspectPayload }
   | { type: "session_state_changed"; payload: { running: boolean; paused: boolean } }
   | { type: "error_occurred"; payload: ErrorPayload };

@@ -3,6 +3,7 @@
 import { useAppStore } from "../lib/store";
 import { safeNum } from "../lib/numbers";
 import type { AppState } from "../types";
+import { CHALLENGE_WINDOW_SECONDS } from "../data/protocol";
 import { ZkContrastStrip } from "./ZkContrastStrip";
 
 function scoreNums(sb: AppState["scoreboard"]) {
@@ -64,7 +65,7 @@ export function Scoreboard() {
             </div>
           </div>
           <p className="text-[10px] text-zinc-700 leading-snug pt-1 border-t border-zinc-800">
-            The 7-day challenge window means fraudulent batches can be canonical for a while, economic bonds make this unprofitable in practice.
+            Honest batches finalize after a {CHALLENGE_WINDOW_SECONDS}s challenge window in this sim (production rollups use ~7 days). Bonds make fraud unprofitable even during the wait.
           </p>
         </div>
 

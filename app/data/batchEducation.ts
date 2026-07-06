@@ -1,5 +1,5 @@
 import type { BatchInfo } from "../types";
-import { BATCH_WINDOW } from "./protocol";
+import { BATCH_WINDOW, CHALLENGE_WINDOW_SECONDS, PORTAL_BOND_ETH, SLASH_BURN_BPS } from "./protocol";
 
 export interface BatchStatusInfo {
   label: string;
@@ -27,6 +27,34 @@ export function engineExplanation(type: BatchInfo["engineType"]): string {
   }
 }
 
+export function challengeWindowRemaining(submittedAt?: number, nowSec = Math.floor(Date.now() / 1000)): number | null {
+  if (!submittedAt) return null;
+  const left = submittedAt + CHALLENGE_WINDOW_SECONDS - nowSec;
+  return left > 0 ? left : 0;
+}
+
+export function challengeWindowNote(batch: BatchInfo): string | null {
+  if (batch.finalized || batch.challenged || batch.flagged) return null;
+  const left = challengeWindowRemaining(batch.submittedAt);
+  if (left === null) return null;
+  if (left === 0) {
+    return "Challenge window closed — an honest batch can finalize and return the sequencer bond.";
+  }
+  return `Challenge window: ${left}s remaining. Anyone can dispute before it closes; after that, an honest batch finalizes on L1.`;
+}
+
+export function bondSettlementNote(batch: BatchInfo): string | null {
+  const b = batch.bondSettlement;
+  if (!b) return null;
+  const payoutEth = (Number(b.payoutWei) / 1e18).toFixed(3);
+  const burnEth = (Number(b.burnedWei) / 1e18).toFixed(3);
+  if (b.outcome === "unchallenged") {
+    return `No challenge within ${CHALLENGE_WINDOW_SECONDS}s — sequencer recovered ${payoutEth} ETH bond.`;
+  }
+  const winner = b.winner === "challenger" ? "Challenger" : "Sequencer";
+  return `${winner} won the bond pot: ${payoutEth} ETH paid out, ${burnEth} ETH burned from the loser's stake (${SLASH_BURN_BPS / 100}% anti-griefing).`;
+}
+
 export function batchStatus(batch?: BatchInfo): BatchStatusInfo {
   if (!batch) {
     return {
@@ -43,10 +71,19 @@ export function batchStatus(batch?: BatchInfo): BatchStatusInfo {
       short: "✗",
       explanation:
         batch.divergence
-          ? `Challenge resolved on L1: honest trace and sequencer trace disagree at ${batch.divergence.op} (step #${batch.divergence.divergenceIdx}). The batch is rejected.`
-          : "This batch was challenged and rejected on L1.",
+          ? `FraudProofGame resolved on L1: traces disagreed at ${batch.divergence.op} (step #${batch.divergence.divergenceIdx}). Batch rejected; bonds settled.`
+          : "This batch was challenged and rejected on L1; bonds settled.",
       border: "border-red-500",
       bg: "bg-red-950/40",
+    };
+  }
+  if (batch.finalized && batch.engineType === "honest") {
+    return {
+      label: "Finalized",
+      short: "✓",
+      explanation: `No challenge within the ${CHALLENGE_WINDOW_SECONDS}s window. State root accepted; sequencer bond returned.`,
+      border: "border-emerald-600",
+      bg: "bg-emerald-950/30",
     };
   }
   if (batch.challenged) {
@@ -71,10 +108,14 @@ export function batchStatus(batch?: BatchInfo): BatchStatusInfo {
     };
   }
   if (batch.engineType === "honest") {
+    const left = challengeWindowRemaining(batch.submittedAt);
     return {
-      label: "Verified",
-      short: "✓",
-      explanation: "Posted state root matches honest replay, no challenge needed.",
+      label: left && left > 0 ? "Challenge window" : "Verified",
+      short: left && left > 0 ? "⏳" : "✓",
+      explanation:
+        left && left > 0
+          ? `Posted root matches honest replay. Challengers have ${left}s to dispute before the batch finalizes and the ${PORTAL_BOND_ETH} ETH bond returns.`
+          : "Posted state root matches honest replay; waiting for L1 finalization.",
       border: "border-blue-500",
       bg: "bg-blue-950/40",
     };
@@ -140,11 +181,18 @@ export const BLOCK_COLOR_LEGEND = [
     description: "A challenger posted a bond on L1. The bisection game is running to narrow down which opcode is wrong.",
   },
   {
+    label: "Finalized",
+    short: "✓",
+    border: "border-emerald-600",
+    bg: "bg-emerald-950/30",
+    description: "Challenge window closed with no dispute. Batch accepted on L1; sequencer bond returned.",
+  },
+  {
     label: "Fraud proven",
     short: "✗",
     border: "border-red-500",
     bg: "bg-red-950/40",
-    description: "The dispute game resolved against the sequencer. The exact fraudulent opcode is recorded on L1. Batch rejected.",
+    description: "The dispute game resolved against the sequencer. FraudProofGame re-executed the diverging step on L1. Batch rejected; bonds settled.",
   },
   {
     label: "Pending",
@@ -181,14 +229,14 @@ export const HOW_IT_WORKS_STEPS = [
   {
     n: "4",
     title: "Challenger bisects on L1",
-    body: "The challenger posts a bond and opens a dispute. A bisection game on L1 narrows the entire batch execution down to one disagreed-upon opcode, no need to re-run everything.",
+    body: `The challenger posts a ${PORTAL_BOND_ETH} ETH bond and opens FraudProofGame. Merkle bisection narrows both execution traces to one disagreed-upon VM step, then the contract re-executes that step on-chain.`,
     color: "text-orange-400",
     border: "border-orange-800",
   },
   {
     n: "5",
     title: "Fraud proof wins",
-    body: "The single diverging opcode (often an SSTORE with a wrong balance) is committed on-chain. The sequencer loses its bond, the batch is rejected, and the honest state is restored.",
+    body: `The diverging step is proven on L1. The sequencer loses its bond (10% burned), the challenger takes the pot, and the batch is rejected. Honest batches with no challenge finalize after ${CHALLENGE_WINDOW_SECONDS}s.`,
     color: "text-red-400",
     border: "border-red-800",
   },

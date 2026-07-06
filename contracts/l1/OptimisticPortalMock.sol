@@ -3,11 +3,15 @@ pragma solidity ^0.8.26;
 
 import {DataTypes} from "../shared/DataTypes.sol";
 import {Hashing} from "../shared/Hashing.sol";
-import {IDisputeGame} from "../shared/interfaces/IDisputeGame.sol";
 
 contract OptimisticPortalMock {
     uint256 public constant BOND_AMOUNT = 0.1 ether;
     uint64 public constant CHALLENGE_WINDOW = 120;
+    // Burn a slice of the loser's slashed bond. This makes a sequencer that
+    // self-challenges (posts fraud, then "catches" itself to reclaim its stake)
+    // strictly lose money, so it cannot launder a slashed bond back.
+    uint256 public constant SLASH_BURN_BPS = 1000; // 10%
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     address public sequencer;
     address public disputeGame;
@@ -17,10 +21,12 @@ contract OptimisticPortalMock {
         bytes32 headerHash;
         DataTypes.BatchHeader header;
         bytes32 rawDataHash;
-        uint256 bond;
+        uint256 bond; // sequencer bond
+        uint256 challengerBond;
         uint64 submittedAt;
         bool finalized;
         bool challenged;
+        address challenger;
     }
 
     mapping(uint64 => SubmittedBatch) public batches;
@@ -35,6 +41,8 @@ contract OptimisticPortalMock {
     );
     event BatchChallenged(uint64 indexed batchId, address indexed challenger);
     event BatchFinalized(uint64 indexed batchId, bool valid);
+    // Emitted whenever bonds settle: the winner receives the pot minus the burn.
+    event BondSettled(uint64 indexed batchId, address indexed winner, uint256 payout, uint256 burned);
 
     constructor(address _sequencer, address _disputeGame) {
         sequencer = _sequencer;
@@ -56,9 +64,11 @@ contract OptimisticPortalMock {
             header: header,
             rawDataHash: dataHash,
             bond: msg.value,
+            challengerBond: 0,
             submittedAt: uint64(block.timestamp),
             finalized: false,
-            challenged: false
+            challenged: false,
+            challenger: address(0)
         });
 
         emit BatchPosted(id, hHash, header.postStateRoot, header.batchDataHash, header.txCount, msg.value);
@@ -72,34 +82,40 @@ contract OptimisticPortalMock {
         require(msg.value >= BOND_AMOUNT, "challenger bond required");
 
         b.challenged = true;
-
-        // Forward sequencer bond to dispute game so it can slash
-        payable(disputeGame).transfer(b.bond);
-
-        IDisputeGame(disputeGame).initiate(
-            batchId, msg.sender, sequencer, b.header.txCount, b.headerHash, msg.value
-        );
+        b.challenger = msg.sender;
+        // Both bonds stay escrowed here. The interactive fraud proof is opened
+        // separately by the challenger via FraudProofGame.initiate; on resolution
+        // the game calls finalizeBatch, which pays the winner from the escrow.
+        b.challengerBond = msg.value;
 
         emit BatchChallenged(batchId, msg.sender);
     }
 
+    /// @param valid true if the sequencer's batch was upheld (honest). The game
+    ///        passes the on-chain verdict; the backend passes true for an
+    ///        unchallenged batch whose window has closed.
     function finalizeBatch(uint64 batchId, bool valid) external {
         SubmittedBatch storage b = batches[batchId];
         require(!b.finalized, "already finalized");
+        b.finalized = true;
 
         if (b.challenged) {
             require(msg.sender == disputeGame, "only dispute game");
+            // Winner takes the pot (both bonds) minus a burn on the loser's stake.
+            uint256 loserBond = valid ? b.challengerBond : b.bond;
+            uint256 burn = (loserBond * SLASH_BURN_BPS) / 10000;
+            uint256 payout = b.bond + b.challengerBond - burn;
+            address winner = valid ? sequencer : b.challenger;
+            payable(winner).transfer(payout);
+            if (burn > 0) {
+                payable(BURN_ADDRESS).transfer(burn);
+            }
+            emit BondSettled(batchId, winner, payout, burn);
         } else {
             require(block.timestamp >= b.submittedAt + CHALLENGE_WINDOW, "challenge window open");
-        }
-
-        b.finalized = true;
-
-        if (!valid && !b.challenged) {
-            // Edge case: should not happen in normal flow
-        } else if (valid && !b.challenged) {
-            // Return bond to sequencer
+            // Unchallenged and past the window: return the sequencer's bond.
             payable(sequencer).transfer(b.bond);
+            emit BondSettled(batchId, sequencer, b.bond, 0);
         }
 
         emit BatchFinalized(batchId, valid);

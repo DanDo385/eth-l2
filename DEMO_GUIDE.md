@@ -4,7 +4,7 @@ A guide for recording the portfolio walkthrough. Target length: 2–3 minutes.
 
 ## What to show
 
-The core story: **a lying sequencer posts a bad batch → the auto-challenger catches it → bisection narrows the trace → one SSTORE opcode exposes the fraud**.
+The core story: **a lying sequencer posts a bad batch → FraudProofGame catches it → bonds settle → honest batches finalize after the challenge window**.
 
 ## Before recording
 
@@ -43,13 +43,21 @@ Show the EngineType badge and the challenge button in the inspector.
 
 Once a batch turns red (resolved), click **Walk opcode proof step-by-step** in the Block Inspector, or open the same proof from **Proof lab** below the canvas.
 
-The overlay opens with an intro chapter (what the swap engine did, how many EVM steps were filtered), then lets you step through honest vs claimed storage writes with human-readable narration.
+The overlay opens with an intro chapter (what the swap engine did, how many EVM steps were filtered), then lets you step through honest vs claimed storage writes with human-readable narration. At the verdict, it cites the **exact Solidity line** from the deployed source map and notes the **bond payout** (challenger takes both stakes minus a 10% burn).
 
-> "Bisection narrows a 100+ step trace to a single disagreement. Here: one SSTORE writes the wrong output amount. That's where trust turns back into verification."
+> "FraudProofGame bisects Merkle-committed execution traces down to one VM step, then re-executes that step on L1. That's where trust turns back into verification."
 
-Point at the red divider, the slot/value callout, and the step timeline.
+Point at the red divider, the source-line callout, and the step timeline.
 
-### 1:50–2:20 — Scoreboard and ZK comparison
+### 1:50–2:10 — Challenge window and bonds (seed 88)
+
+Switch to **Clean run** (seed 88) or point at a blue batch still in its challenge window.
+
+> "Honest batches sit in a 120-second challenge window in this sim — production rollups use ~7 days. If nobody disputes, the sequencer gets its 0.1 ETH bond back. If fraud is proven, the challenger takes both bonds and 10% of the loser's stake is burned so griefing doesn't pay."
+
+Show the countdown in Block Inspector and the bond-settlement note when a batch finalizes.
+
+### 2:10–2:30 — Scoreboard and ZK comparison
 
 Scroll to the Scoreboard. Point at detection rate %, honest/fraudulent/challenged/resolved counts.
 
@@ -66,7 +74,7 @@ Mention the ZK lane: no fraud window, proof verified on every batch.
 | Seed | What happens |
 |------|-------------|
 | 42 | Subtle fraud: fee rounding SSTORE divergence |
-| 88 | Honest run: all batches finalize cleanly |
+| 88 | Clean run: honest batches finalize after the 120s challenge window |
 | 17 | Obvious fraud: wrong output amount, fast divergence |
 | 99 | Mixed: both fraud types appear within one run |
 
@@ -79,4 +87,4 @@ Mention the ZK lane: no fraud window, proof verified on every batch.
 
 ## One-liner
 
-> "A rollup mechanics lab that shows trades becoming batches, a lying sequencer getting caught through bisection, and the exact opcode where trust turns into verification."
+> "A rollup mechanics lab: batches, bonds, a 120s challenge window, FraudProofGame on L1, and the exact line of Solidity where the sequencer lied."

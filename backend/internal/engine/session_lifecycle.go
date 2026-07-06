@@ -112,7 +112,7 @@ func (s *Session) initComponents(ctx context.Context) error {
 	s.zkSeq = sequencer.NewZKSequencer(l1c, zkL2c, s.l1Addrs, zkAddrs, s.prng.Fork("zk-seq"), s.bus, batchEvery)
 	s.batchStore = store.New()
 	s.opWatcher = watcher.NewHonestWatcher(l1c, opL2c, s.l1Addrs, opAddrs, s.bus, s.batchStore)
-	s.challenger = challenge.New(l1c, opL2c, s.l1Addrs, opAddrs, s.batchStore, s.bus)
+	s.challenger = challenge.New(l1c, opL2c, s.l1Addrs, opAddrs, s.batchStore, s.bus, s.repoRoot)
 
 	return nil
 }

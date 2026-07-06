@@ -98,7 +98,9 @@ func storageDiff(a, b map[string]string) (slot, aVal, bVal string) {
 //
 //	len(honestVal)(4) | honestVal | len(claimedVal)(4) | claimedVal
 //
-// This 32-byte hash is stored in DisputeGameMock as the on-chain divergencePoint.
+// This 32-byte hash summarizes the EVM-trace divergence for the UI. The
+// authoritative on-chain adjudication uses the full trace commitments in
+// FraudProofGame; this value is informational.
 func commitDivergence(stepIdx int, op, slot, honestVal, claimedVal string) [32]byte {
 	var buf []byte
 

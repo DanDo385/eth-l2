@@ -3,17 +3,17 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import {OptimisticPortalMock} from "../contracts/l1/OptimisticPortalMock.sol";
-import {DisputeGameMock} from "../contracts/l1/DisputeGameMock.sol";
+import {FraudProofGame} from "../contracts/l1/FraudProofGame.sol";
 import {DataTypes} from "../contracts/shared/DataTypes.sol";
 
 contract OptimisticPortalTest is Test {
     OptimisticPortalMock portal;
-    DisputeGameMock dispute;
+    FraudProofGame dispute;
     address sequencer = makeAddr("sequencer");
     address challenger = makeAddr("challenger");
 
     function setUp() public {
-        dispute = new DisputeGameMock(address(0));
+        dispute = new FraudProofGame(address(0));
         portal = new OptimisticPortalMock(sequencer, address(dispute));
         dispute.setPortal(address(portal));
 
@@ -133,5 +133,60 @@ contract OptimisticPortalTest is Test {
 
         vm.expectRevert("only dispute game");
         portal.finalizeBatch(0, true);
+    }
+
+    // ── bond settlement (WO-5) ────────────────────────────────────────────────
+
+    // Fraud proven: the challenger recovers its bond and wins the sequencer's,
+    // minus the burn. The sequencer ends strictly down its bond.
+    function test_finalizeBatch_fraud_paysChallengerAndBurns() public {
+        vm.prank(sequencer);
+        portal.postBatch{value: 0.1 ether}(_header(0), hex"dead");
+        vm.prank(challenger);
+        portal.challengeBatch{value: 0.1 ether}(0);
+
+        uint256 chalBefore = challenger.balance;
+        uint256 seqBefore = sequencer.balance;
+        uint256 burnBefore = portal.BURN_ADDRESS().balance;
+
+        // The game (disputeGame) reports the verdict: valid=false = fraud.
+        vm.prank(address(dispute));
+        portal.finalizeBatch(0, false);
+
+        uint256 burn = (0.1 ether * portal.SLASH_BURN_BPS()) / 10000; // 0.01
+        assertEq(challenger.balance - chalBefore, 0.2 ether - burn, "challenger takes pot minus burn");
+        assertEq(sequencer.balance, seqBefore, "sequencer recovers nothing");
+        assertEq(portal.BURN_ADDRESS().balance - burnBefore, burn, "burn goes to the burn address");
+        // Value conservation: 0.2 in = payout + burn.
+        assertEq((0.2 ether - burn) + burn, 0.2 ether);
+    }
+
+    // The sequencer's net outcome for cheating is strictly negative: it posted
+    // 0.1 and gets nothing back.
+    function test_fraud_sequencerNetNegative() public {
+        uint256 seqStart = sequencer.balance;
+        vm.prank(sequencer);
+        portal.postBatch{value: 0.1 ether}(_header(0), hex"dead");
+        vm.prank(challenger);
+        portal.challengeBatch{value: 0.1 ether}(0);
+        vm.prank(address(dispute));
+        portal.finalizeBatch(0, false);
+        assertEq(seqStart - sequencer.balance, 0.1 ether, "cheating sequencer is down exactly its bond");
+    }
+
+    // Challenge fails (sequencer honest): the sequencer recovers its bond and
+    // wins the challenger's, minus the burn.
+    function test_finalizeBatch_challengeFails_paysSequencer() public {
+        vm.prank(sequencer);
+        portal.postBatch{value: 0.1 ether}(_header(0), hex"dead");
+        vm.prank(challenger);
+        portal.challengeBatch{value: 0.1 ether}(0);
+
+        uint256 seqBefore = sequencer.balance;
+        vm.prank(address(dispute));
+        portal.finalizeBatch(0, true);
+
+        uint256 burn = (0.1 ether * portal.SLASH_BURN_BPS()) / 10000;
+        assertEq(sequencer.balance - seqBefore, 0.2 ether - burn, "sequencer takes pot minus burn");
     }
 }

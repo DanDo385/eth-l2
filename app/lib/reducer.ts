@@ -4,6 +4,7 @@ import type {
   AppState,
   BatchInfo,
   BatchPostedPayload,
+  BondSettledPayload,
   ErrorPayload,
 } from "../types";
 import { safeNum } from "./numbers";
@@ -107,6 +108,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             flagged: existing?.flagged ?? false,
             challenged: existing?.challenged ?? false,
             resolved: existing?.resolved ?? false,
+            finalized: existing?.finalized,
+            submittedAt: existing?.submittedAt,
+            bondSettlement: existing?.bondSettlement,
             postedRoot: existing?.postedRoot,
             expectedRoot: existing?.expectedRoot,
             flagReason: existing?.flagReason,
@@ -191,6 +195,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             claimedSteps: p.claimedSteps,
             rawHonestLen: p.rawHonestLen,
             rawClaimedLen: p.rawClaimedLen,
+            onchainDivergenceStep: p.onchainDivergenceStep,
+            lyingSource: p.lyingSource,
+            honestSource: p.honestSource,
           };
           const wasResolved = base.resolved;
           return {
@@ -202,6 +209,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 flagged: true,
                 challenged: true,
                 resolved: true,
+                finalized: true,
                 divergence: divInfo,
               },
             },
@@ -210,6 +218,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 ? state.scoreboard.opResolved
                 : safeNum(state.scoreboard.opResolved) + 1,
             }),
+          };
+        }
+
+        case "bond_settled": {
+          const p = event.payload as BondSettledPayload;
+          const existing = state.batches[p.batchId];
+          if (!existing) return state;
+          return {
+            ...state,
+            batches: {
+              ...state.batches,
+              [p.batchId]: {
+                ...existing,
+                finalized: true,
+                bondSettlement: p,
+              },
+            },
           };
         }
 
@@ -280,6 +305,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           claimedSteps: batch.divergence.claimedSteps,
           rawHonestLen: batch.divergence.rawHonestLen,
           rawClaimedLen: batch.divergence.rawClaimedLen,
+          onchainDivergenceStep: batch.divergence.onchainDivergenceStep,
+          lyingSource: batch.divergence.lyingSource,
+          honestSource: batch.divergence.honestSource,
         },
         zkInspectData: null,
       };

@@ -13,6 +13,7 @@ const (
 	BatchFlagged    Type = "batch_flagged"
 	BatchChallenged Type = "batch_challenged"
 	DisputeResolved Type = "dispute_resolved"
+	BondSettled     Type = "bond_settled"
 	ZkInspectReady  Type = "zk_inspect_ready"
 	SessionChanged  Type = "session_state_changed"
 	ErrorOccurred   Type = "error_occurred"
@@ -70,6 +71,18 @@ type ZkInspectReadyPayload struct {
 	// three invalid modes (two lies and one honest-intent bug) identically.
 	EngineType string `json:"engineType,omitempty"`
 	TxCount    int    `json:"txCount"`
+}
+
+// BondSettledPayload describes the collateral waterfall for one batch (WO-5).
+// All amounts are wei as decimal strings.
+type BondSettledPayload struct {
+	BatchID     uint64 `json:"batchId"`
+	Outcome     string `json:"outcome"` // "fraud" | "unchallenged"
+	Winner      string `json:"winner"`  // "challenger" | "sequencer"
+	SeqBondWei  string `json:"seqBondWei"`
+	ChalBondWei string `json:"chalBondWei"`
+	PayoutWei   string `json:"payoutWei"`
+	BurnedWei   string `json:"burnedWei"`
 }
 
 type SessionChangedPayload struct {
