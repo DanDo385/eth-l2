@@ -2,13 +2,38 @@ package sequencer
 
 import (
 	"math/big"
+	"strings"
 	"testing"
 
-	"github.com/dando385/eth-l2/backend/internal/seed"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
+
+// Guards the struct<->tuple mapping the live sequencer relies on: if a field
+// name or type drifts from zkRollupABIStr, bind.Transact would fail at runtime.
+func TestZkRollupABI_packsSubmitBatchWitness(t *testing.T) {
+	parsed, err := abi.JSON(strings.NewReader(zkRollupABIStr))
+	if err != nil {
+		t.Fatalf("parse ABI: %v", err)
+	}
+	header := BatchHeader{BatchId: 0, TxCount: 1}
+	pre := []zkAccountState{{
+		Account:  zkTrader,
+		BalanceA: big.NewInt(1000),
+		BalanceB: big.NewInt(0),
+		Nonce:    big.NewInt(0),
+	}}
+	swaps := []zkSwapOp{{Trader: zkTrader, AmountIn: big.NewInt(10), Nonce: big.NewInt(0)}}
+
+	data, err := parsed.Pack("submitBatch", header, pre, swaps)
+	if err != nil {
+		t.Fatalf("pack submitBatch: %v", err)
+	}
+	if len(data) < 4 {
+		t.Fatalf("expected non-empty calldata, got %d bytes", len(data))
+	}
+}
 
 // ── hashBatchHeader ──────────────────────────────────────────────────────────
 
@@ -57,74 +82,63 @@ func TestHashBatchHeader_zeroHeaderNonZero(t *testing.T) {
 	}
 }
 
-// ── findAcceptingProof ───────────────────────────────────────────────────────
+// ── zkLedger (honest canonical mirror) ───────────────────────────────────────
 
-func newTestZKSeq() *ZKSequencer {
-	return &ZKSequencer{prng: seed.New(42)}
+var zkTrader = common.HexToAddress("0x1111111111111111111111111111111111111111")
+var zkTraderB = common.HexToAddress("0x2222222222222222222222222222222222222222")
+
+// Cross-language parity: the same one-account scenario pinned in
+// SwapEngines.t.sol and watcher/honest_test.go must produce the same root here,
+// or the ZK witness would be rejected by the Solidity verifier for honest batches.
+func TestZkLedger_root_matchesReferenceScenario(t *testing.T) {
+	l := newZkLedger([]common.Address{zkTrader}, 1000)
+	want := "ea057b0a0638c94375c460077254704b78263d17ea3eaad67a845af4953fabbf"
+	got := common.Bytes2Hex(rootBytes(l))
+	if got != want {
+		t.Errorf("ledger root mismatch:\n got  %s\n want %s", got, want)
+	}
 }
 
-func TestFindAcceptingProof_alwaysAccepted(t *testing.T) {
-	s := newTestZKSeq()
-	for batchID := uint64(0); batchID < 20; batchID++ {
-		s.nextBatchID = batchID
-		var headerHash [32]byte
-		headerHash[0] = byte(batchID)
-		proof := s.findAcceptingProof(headerHash)
-		// VerifierMock: keccak256(proof || headerHash)[0] < 0x80
-		check := crypto.Keccak256(proof, headerHash[:])
-		if check[0] >= 0x80 {
-			t.Errorf("batch %d: proof not accepted (first byte=0x%02x)", batchID, check[0])
+func rootBytes(l *zkLedger) []byte {
+	r := l.root()
+	return r[:]
+}
+
+// An honest projected root differs from every invalid mode's projected root, so
+// the on-chain verifier (which recomputes honest) rejects the invalid claims.
+func TestZkLedger_invalidModesDivergeFromHonest(t *testing.T) {
+	l := newZkLedger([]common.Address{zkTrader}, 1_000_000)
+	swaps := []decodedSwap{{trader: zkTrader, amountIn: big.NewInt(10), nonce: big.NewInt(0)}}
+	honest := l.projectedRoot(swaps, "honest")
+	for _, mode := range []string{"obvious", "subtle", "buggy"} {
+		if l.projectedRoot(swaps, mode) == honest {
+			t.Errorf("mode %q must diverge from honest", mode)
 		}
 	}
 }
 
-func TestFindAcceptingProof_proofLength(t *testing.T) {
-	s := newTestZKSeq()
-	var h [32]byte
-	proof := s.findAcceptingProof(h)
-	if len(proof) != 40 {
-		t.Errorf("expected 40-byte proof, got %d", len(proof))
-	}
-}
-
-func TestFindAcceptingProof_deterministicForSameSeed(t *testing.T) {
-	var h [32]byte
-	h[1] = 0xab
-
-	s1 := newTestZKSeq()
-	s1.nextBatchID = 3
-	p1 := s1.findAcceptingProof(h)
-
-	s2 := newTestZKSeq()
-	s2.nextBatchID = 3
-	p2 := s2.findAcceptingProof(h)
-
-	for i := range p1 {
-		if p1[i] != p2[i] {
-			t.Errorf("proof byte %d differs: 0x%02x vs 0x%02x", i, p1[i], p2[i])
+// swapOut mirrors the four engines exactly (amountIn=10 => gross 1000).
+func TestZkLedger_swapOut_perMode(t *testing.T) {
+	in := big.NewInt(10)
+	cases := map[string]int64{"honest": 997, "obvious": 1994, "subtle": 1000, "buggy": 990}
+	for mode, want := range cases {
+		if got := swapOut(in, mode).Int64(); got != want {
+			t.Errorf("swapOut(10,%q)=%d want %d", mode, got, want)
 		}
 	}
 }
 
-func TestFindAcceptingProof_differentBatchesDifferentProofs(t *testing.T) {
-	var h [32]byte
-	s := newTestZKSeq()
-
-	s.nextBatchID = 0
-	p0 := s.findAcceptingProof(h)
-
-	s.nextBatchID = 1
-	p1 := s.findAcceptingProof(h)
-
-	same := true
-	for i := range p0 {
-		if p0[i] != p1[i] {
-			same = false
-			break
-		}
+// applyBatch(honest) advances state; projectedRoot must not mutate the ledger.
+func TestZkLedger_projectedRoot_isPure(t *testing.T) {
+	l := newZkLedger([]common.Address{zkTrader, zkTraderB}, 1_000_000)
+	before := l.root()
+	_ = l.projectedRoot([]decodedSwap{{zkTrader, big.NewInt(5), big.NewInt(0)}}, "honest")
+	if l.root() != before {
+		t.Error("projectedRoot must not mutate the ledger")
 	}
-	if same {
-		t.Error("different batch IDs should (almost certainly) produce different proofs")
+	l.applyBatch([]decodedSwap{{zkTrader, big.NewInt(5), big.NewInt(0)}}, "honest")
+	if l.root() == before {
+		t.Error("applyBatch should advance the ledger root")
 	}
 }
 

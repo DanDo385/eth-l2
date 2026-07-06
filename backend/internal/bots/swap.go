@@ -48,10 +48,14 @@ type SwapBot struct {
 	routerAddr common.Address
 	prng       *seed.PRNG
 	swapNonces map[common.Address]*big.Int
+	seedAmount int64
 	seeded     bool
 }
 
-func NewSwapBot(client *chain.Client, routerAddr common.Address, prng *seed.PRNG) (*SwapBot, error) {
+// NewSwapBot builds a swap bot. seedAmount is the balanceA each trader is
+// seeded with (and topped up to). The ZK lane uses a large amount so top-ups
+// never fire; see chain.ZKTraderSeedBalance.
+func NewSwapBot(client *chain.Client, routerAddr common.Address, prng *seed.PRNG, seedAmount int64) (*SwapBot, error) {
 	parsed, err := abi.JSON(strings.NewReader(swapRouterABI))
 	if err != nil {
 		return nil, err
@@ -63,6 +67,7 @@ func NewSwapBot(client *chain.Client, routerAddr common.Address, prng *seed.PRNG
 		routerAddr: routerAddr,
 		prng:       prng,
 		swapNonces: make(map[common.Address]*big.Int),
+		seedAmount: seedAmount,
 	}
 	for i := 0; i < TraderCount; i++ {
 		b.swapNonces[chain.AnvilAddress(i+3)] = big.NewInt(0)
@@ -78,7 +83,7 @@ func (b *SwapBot) Seed(ctx context.Context) error {
 	opts := chain.WithGas(b.client.Deployer(), chain.GasLimitSeed)
 	for i := 0; i < TraderCount; i++ {
 		addr := chain.AnvilAddress(i + 3)
-		if _, err := b.contract.Transact(opts, "seed", addr, big.NewInt(chain.TraderSeedBalance)); err != nil {
+		if _, err := b.contract.Transact(opts, "seed", addr, big.NewInt(b.seedAmount)); err != nil {
 			return err
 		}
 	}
@@ -126,7 +131,7 @@ func (b *SwapBot) ensureBalanceA(ctx context.Context, trader common.Address, amo
 	}
 	if bal.Cmp(big.NewInt(chain.TraderTopUpThreshold)) < 0 {
 		opts := chain.WithGas(b.client.Deployer(), chain.GasLimitSeed)
-		_, err = b.contract.Transact(opts, "seed", trader, big.NewInt(chain.TraderSeedBalance))
+		_, err = b.contract.Transact(opts, "seed", trader, big.NewInt(b.seedAmount))
 		return false, err
 	}
 	return true, nil

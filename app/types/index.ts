@@ -86,6 +86,9 @@ export interface ZkInspectPayload {
   verifyGas: number;
   accepted: boolean;
   reason?: string;
+  /** Claim the sequencer posted: "honest" | "obvious" | "subtle" | "buggy". */
+  engineType?: "honest" | "obvious" | "subtle" | "buggy";
+  txCount?: number;
 }
 
 export interface ErrorPayload {

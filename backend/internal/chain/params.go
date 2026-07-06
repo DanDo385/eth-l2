@@ -10,6 +10,12 @@ const (
 	// TraderSeedBalance is balanceA seeded per trader (HonestSwapEngine.seed units).
 	TraderSeedBalance int64 = 10_000
 
+	// ZKTraderSeedBalance seeds ZK-lane traders richly so mid-run token top-ups
+	// never fire. The ZK sequencer's honest ledger (sequencer/ledger.go) starts
+	// each trader at this same balance, so its witness pre-state stays in step
+	// with the on-chain L2 balances without needing to observe top-up seeds.
+	ZKTraderSeedBalance int64 = 1_000_000_000_000
+
 	// TraderTopUpThreshold refills balanceA when it drops below this during a long demo run.
 	TraderTopUpThreshold int64 = 500
 

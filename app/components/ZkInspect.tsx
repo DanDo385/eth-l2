@@ -16,6 +16,13 @@ interface Props {
   onClose: () => void;
 }
 
+// Human labels for the claim the sequencer posted (fraud vs honest-intent bug).
+const CLAIM_LABEL: Record<string, string> = {
+  obvious: "obvious lie (2x output)",
+  subtle: "subtle lie (skipped fee)",
+  buggy: "honest-intent bug (truncated)",
+};
+
 export function ZkInspect({ data, onClose }: Props) {
   const [step, setStep] = useState(0);
   const lastStep = ZK_TOUR_STEPS.length - 1;
@@ -47,6 +54,11 @@ export function ZkInspect({ data, onClose }: Props) {
               <span className={accepted ? "text-emerald-400" : "text-red-400"}>
                 {zkVerdictLabel(accepted)}
               </span>
+              {data.engineType && data.engineType !== "honest" && (
+                <span className="ml-1 text-red-300">
+                  · claim: {CLAIM_LABEL[data.engineType]}
+                </span>
+              )}
             </p>
           </div>
           <button

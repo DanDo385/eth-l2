@@ -29,9 +29,9 @@ export const ZK_TOUR_STEPS: ZkTourStep[] = [
     title: "Validity proof",
     beat: "② Prove off-chain",
     concept:
-      "A prover re-runs every swap inside a circuit and produces a short proof that the new state root follows from correct execution. Real rollups use SNARKs/STARKs; here VerifierMock stands in, but the split is the same: heavy proving off L1, cheap checking on L1.",
+      "A prover re-runs every swap inside a circuit and produces a short proof that the new state root follows from correct execution. Real rollups use SNARKs/STARKs. This demo uses a labeled stand-in (ZkValidityVerifier) that re-executes the batch on L1 to check validity: same guarantee, but not succinct. The proving-time and constraint numbers below are simulated to show what a real prover would report.",
     detail: (d) =>
-      `Simulated prover checked ~${d.constraints.toLocaleString()} constraints in ~${d.proveMs} ms. That work happens off-chain; L1 never re-executes every swap.`,
+      `Simulated prover checked ~${d.constraints.toLocaleString()} constraints in ~${d.proveMs} ms. In a real ZK rollup that heavy work happens off-chain and L1 never re-executes the swaps.`,
     deepDive:
       "A “constraint” is one arithmetic rule the execution must obey, e.g. “balanceB_after = balanceB_before + amountOut” or “amountOut = gross − fee”. Every step of every swap becomes thousands of these equations. The prover finds one assignment of numbers that satisfies all of them at once and compresses that fact into a few hundred bytes. Crucially, the fee constraint is non-negotiable: the subtle lie that slips past an optimistic challenge window simply cannot produce a satisfying proof here.",
   },
@@ -40,13 +40,13 @@ export const ZK_TOUR_STEPS: ZkTourStep[] = [
     title: "On-chain verify",
     beat: "③ L1 decides",
     concept:
-      "The verifier contract checks the proof against the public input. Accept → batch finalizes immediately. Reject → bad state never enters the chain. No challenge window, no bisection game, no watchers required.",
+      "The verifier re-derives the honest post-state root from the witness and compares it to the sequencer's claim. Match → batch finalizes immediately and the canonical root advances. Mismatch → rejected at the gate, canonical root untouched. A lie and an honest-intent bug are rejected the same way. No challenge window, no bisection, no watchers required.",
     detail: (d) =>
       d.accepted
-        ? `Proof accepted in ~${d.verifyGas.toLocaleString()} gas. This batch is final, there is nothing for a challenger to dispute.`
-        : `Proof rejected in ~${d.verifyGas.toLocaleString()} gas. The batch is discarded; fraudulent state never finalized.`,
+        ? `Verified on L1 in ~${d.verifyGas.toLocaleString()} gas (real, measured). This batch is final, there is nothing for a challenger to dispute.`
+        : `Rejected on L1 in ~${d.verifyGas.toLocaleString()} gas. The canonical root did not move; the invalid state never finalized.`,
     deepDive:
-      "Verification is a fixed, tiny computation no matter how many swaps were in the batch, that asymmetry is the whole point. Proving might take seconds and millions of constraints; checking takes a few hundred thousand gas. The verifier never re-runs the swaps; it just confirms the proof is consistent with the public input. If the prover lied about a single balance, no valid proof exists, so honest math is the only way to get accepted.",
+      "In a real ZK rollup, verification is a fixed, tiny computation no matter how many swaps were in the batch, and that asymmetry (expensive to prove, cheap to verify) is the whole point. This demo's stand-in instead RE-EXECUTES the batch to check it, so its verify gas grows with the number of swaps. That is exactly what a succinct proof removes. Either way, if the sequencer's claimed root does not match honest re-execution, it cannot settle: honest math is the only way to get accepted, whether the deviation was fraud or a bug.",
   },
 ];
 

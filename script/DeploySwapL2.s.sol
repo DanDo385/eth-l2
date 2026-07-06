@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import {HonestSwapEngine} from "../contracts/l2/HonestSwapEngine.sol";
 import {LyingSwapEngineObvious} from "../contracts/l2/LyingSwapEngineObvious.sol";
 import {LyingSwapEngineSubtle} from "../contracts/l2/LyingSwapEngineSubtle.sol";
+import {BuggySwapEngine} from "../contracts/l2/BuggySwapEngine.sol";
 import {SwapRouter} from "../contracts/l2/SwapRouter.sol";
 
 contract DeploySwapL2 is Script {
@@ -17,6 +18,7 @@ contract DeploySwapL2 is Script {
         HonestSwapEngine honest = new HonestSwapEngine();
         LyingSwapEngineObvious lyingObvious = new LyingSwapEngineObvious();
         LyingSwapEngineSubtle lyingSubtle = new LyingSwapEngineSubtle();
+        BuggySwapEngine buggy = new BuggySwapEngine();
         SwapRouter router = new SwapRouter(sequencer, address(honest));
         vm.stopBroadcast();
 
@@ -24,6 +26,7 @@ contract DeploySwapL2 is Script {
         vm.serializeAddress(json, "honestSwapEngine", address(honest));
         vm.serializeAddress(json, "lyingSwapEngineObvious", address(lyingObvious));
         vm.serializeAddress(json, "lyingSwapEngineSubtle", address(lyingSubtle));
+        vm.serializeAddress(json, "buggySwapEngine", address(buggy));
         string memory output = vm.serializeAddress(json, "swapRouter", address(router));
         vm.writeJson(output, outPath);
     }

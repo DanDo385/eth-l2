@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import {OptimisticPortalMock} from "../contracts/l1/OptimisticPortalMock.sol";
 import {DisputeGameMock} from "../contracts/l1/DisputeGameMock.sol";
 import {ZkRollupMock} from "../contracts/l1/ZkRollupMock.sol";
-import {VerifierMock} from "../contracts/l1/VerifierMock.sol";
+import {ZkValidityVerifier} from "../contracts/l1/ZkValidityVerifier.sol";
 
 contract DeployL1 is Script {
     function run() external {
@@ -14,7 +14,7 @@ contract DeployL1 is Script {
 
         vm.startBroadcast(deployerKey);
 
-        VerifierMock verifier = new VerifierMock();
+        ZkValidityVerifier verifier = new ZkValidityVerifier();
         DisputeGameMock disputeGame = new DisputeGameMock(address(0));
         OptimisticPortalMock portal = new OptimisticPortalMock(sequencer, address(disputeGame));
         ZkRollupMock zkRollup = new ZkRollupMock(sequencer, address(verifier));

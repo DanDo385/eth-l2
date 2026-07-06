@@ -65,6 +65,11 @@ type ZkInspectReadyPayload struct {
 	VerifyGas   uint64 `json:"verifyGas"`
 	Accepted    bool   `json:"accepted"`
 	Reason      string `json:"reason,omitempty"`
+	// EngineType is the claim the sequencer posted for this batch:
+	// "honest" | "obvious" | "subtle" | "buggy". A validity gate rejects the
+	// three invalid modes (two lies and one honest-intent bug) identically.
+	EngineType string `json:"engineType,omitempty"`
+	TxCount    int    `json:"txCount"`
 }
 
 type SessionChangedPayload struct {

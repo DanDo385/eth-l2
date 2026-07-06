@@ -90,11 +90,13 @@ func (s *Session) initComponents(ctx context.Context) error {
 	s.transferBot = bots.NewTransferBot(l1c, s.prng.Fork("transfer"))
 
 	var err error
-	s.opSwapBot, err = bots.NewSwapBot(opL2c, common.HexToAddress(opAddrs.SwapRouter), s.prng.Fork("op-swap"))
+	s.opSwapBot, err = bots.NewSwapBot(opL2c, common.HexToAddress(opAddrs.SwapRouter), s.prng.Fork("op-swap"), chain.TraderSeedBalance)
 	if err != nil {
 		return err
 	}
-	s.zkSwapBot, err = bots.NewSwapBot(zkL2c, common.HexToAddress(zkAddrs.SwapRouter), s.prng.Fork("zk-swap"))
+	// ZK traders are seeded richly so top-ups never fire and the sequencer's
+	// honest ledger stays in step with L2 balances (see chain.ZKTraderSeedBalance).
+	s.zkSwapBot, err = bots.NewSwapBot(zkL2c, common.HexToAddress(zkAddrs.SwapRouter), s.prng.Fork("zk-swap"), chain.ZKTraderSeedBalance)
 	if err != nil {
 		return err
 	}

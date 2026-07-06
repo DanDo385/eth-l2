@@ -6,6 +6,7 @@ import {SwapRouter} from "../contracts/l2/SwapRouter.sol";
 import {HonestSwapEngine} from "../contracts/l2/HonestSwapEngine.sol";
 import {LyingSwapEngineObvious} from "../contracts/l2/LyingSwapEngineObvious.sol";
 import {LyingSwapEngineSubtle} from "../contracts/l2/LyingSwapEngineSubtle.sol";
+import {BuggySwapEngine} from "../contracts/l2/BuggySwapEngine.sol";
 import {ISwapEngine} from "../contracts/l2/ISwapEngine.sol";
 
 contract SwapEnginesTest is Test {
@@ -13,6 +14,7 @@ contract SwapEnginesTest is Test {
     HonestSwapEngine honest;
     LyingSwapEngineObvious lyingObvious;
     LyingSwapEngineSubtle lyingSubtle;
+    BuggySwapEngine buggy;
 
     address sequencer = makeAddr("sequencer");
     address trader = makeAddr("trader");
@@ -22,6 +24,7 @@ contract SwapEnginesTest is Test {
         honest = new HonestSwapEngine();
         lyingObvious = new LyingSwapEngineObvious();
         lyingSubtle = new LyingSwapEngineSubtle();
+        buggy = new BuggySwapEngine();
         router = new SwapRouter(sequencer, address(honest));
     }
 
@@ -169,6 +172,56 @@ contract SwapEnginesTest is Test {
         bytes32 lyingRoot = router2.stateRoot();
 
         assertTrue(honestRoot != lyingRoot);
+    }
+
+    // ---- buggy engine: honest intent, off-by-truncation bug ----
+
+    function test_buggy_undercreditsFromTruncation() public {
+        vm.prank(sequencer);
+        router.setImplementation(address(buggy));
+
+        ISwapEngine(address(router)).seed(trader, 1000);
+        (, uint256 amountOut) = ISwapEngine(address(router)).swap(trader, 10, 0);
+
+        // Honest returns 997; the early-division bug returns 10 * 99 = 990.
+        assertEq(amountOut, 990);
+        assertEq(router.balanceB(trader), 990);
+    }
+
+    // A bug is still an invalid state transition: its root differs from honest,
+    // exactly like a lie. This is why a validity gate rejects bugs and lies alike.
+    function test_buggy_yieldsDifferentStateRootThanHonest() public {
+        bytes32 honestRoot;
+        {
+            ISwapEngine(address(router)).seed(trader, 1000);
+            ISwapEngine(address(router)).swap(trader, 10, 0);
+            honestRoot = router.stateRoot();
+        }
+
+        SwapRouter router2 = new SwapRouter(sequencer, address(buggy));
+        ISwapEngine(address(router2)).seed(trader, 1000);
+        ISwapEngine(address(router2)).swap(trader, 10, 0);
+
+        assertTrue(honestRoot != router2.stateRoot());
+    }
+
+    function test_buggy_distinctFromLies() public {
+        // honest 997, buggy 990, subtle 1000, obvious 1994 are all distinct.
+        uint256[4] memory outs;
+        outs[0] = _oneSwapOut(address(honest));
+        outs[1] = _oneSwapOut(address(buggy));
+        outs[2] = _oneSwapOut(address(lyingSubtle));
+        outs[3] = _oneSwapOut(address(lyingObvious));
+        assertEq(outs[0], 997);
+        assertEq(outs[1], 990);
+        assertEq(outs[2], 1000);
+        assertEq(outs[3], 1994);
+    }
+
+    function _oneSwapOut(address engine) internal returns (uint256 amountOut) {
+        SwapRouter r = new SwapRouter(sequencer, engine);
+        ISwapEngine(address(r)).seed(trader, 1000);
+        (, amountOut) = ISwapEngine(address(r)).swap(trader, 10, 0);
     }
 
     // ---- engine swap ----

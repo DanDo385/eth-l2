@@ -19,6 +19,7 @@ type Addresses struct {
 	HonestSwapEngine string `json:"honestSwapEngine"`
 	LyingObvious     string `json:"lyingSwapEngineObvious"`
 	LyingSubtle      string `json:"lyingSwapEngineSubtle"`
+	BuggySwapEngine  string `json:"buggySwapEngine"`
 	SwapRouter       string `json:"swapRouter"`
 }
 
