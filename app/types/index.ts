@@ -34,6 +34,16 @@ export interface DivInfo {
   honestSource?: SourceLoc;
 }
 
+export interface SwapSummary {
+  l2Block: number;
+  txHash: string;
+  traderIndex: number;
+  amountIn: number;
+  honestOut: number;
+  claimedOut: number;
+  isDivergent: boolean;
+}
+
 export interface BatchInfo {
   batchId: number;
   engineType: "honest" | "obvious" | "subtle";
@@ -41,6 +51,7 @@ export interface BatchInfo {
   l2StartBlock: number;
   l2EndBlock: number;
   txCount: number;
+  swaps?: SwapSummary[];
   flagged: boolean;
   postedRoot?: string;
   expectedRoot?: string;
@@ -49,8 +60,43 @@ export interface BatchInfo {
   resolved: boolean;
   finalized?: boolean;
   submittedAt?: number;
+  status?: BatchStatus;
+  verification?: VerificationInfo;
+  disputeStage?: DisputeStage;
   bondSettlement?: BondSettledPayload;
   divergence?: DivInfo;
+}
+
+export type BatchStatus =
+  | "empty_warmup"
+  | "posted_to_l1"
+  | "output_proposed"
+  | "challenge_window_open"
+  | "suspicious"
+  | "verified_valid"
+  | "verified_mismatch"
+  | "challenge_available"
+  | "challenged"
+  | "dispute_open"
+  | "bisection_round"
+  | "one_step_check"
+  | "rejected"
+  | "accepted"
+  | "finalized";
+
+export type DisputeStage =
+  | "dispute_open"
+  | "bisection_round"
+  | "one_step_check"
+  | "rejected"
+  | "accepted";
+
+export interface VerificationInfo {
+  result: "verified_valid" | "verified_mismatch";
+  costWei: string;
+  postedRoot?: string;
+  expectedRoot?: string;
+  reason: string;
 }
 
 // ── Event payloads ───────────────────────────────────────────────────────────
@@ -67,6 +113,7 @@ export interface BatchPostedPayload {
   l2EndBlock: number;
   txCount: number;
   engineType: "honest" | "obvious" | "subtle";
+  swaps?: SwapSummary[];
 }
 
 export interface BatchFlaggedPayload {
@@ -79,6 +126,16 @@ export interface BatchFlaggedPayload {
 
 export interface BatchChallengedPayload {
   batchId: number;
+}
+
+export interface BatchVerifiedPayload extends VerificationInfo {
+  batchId: number;
+}
+
+export interface DisputeStagePayload {
+  batchId: number;
+  stage: DisputeStage;
+  explanation: string;
 }
 
 export interface DisputeResolvedPayload {
@@ -114,7 +171,7 @@ export interface ZkInspectPayload {
 /** Collateral waterfall after a batch finalizes on L1 (WO-5). Amounts are wei strings. */
 export interface BondSettledPayload {
   batchId: number;
-  outcome: "fraud" | "unchallenged";
+  outcome: "fraud" | "unchallenged" | "challenge_failed";
   winner: "challenger" | "sequencer";
   seqBondWei: string;
   chalBondWei: string;
@@ -131,7 +188,9 @@ export type WsEvent =
   | { type: "block_mined"; payload: BlockMinedPayload }
   | { type: "batch_posted"; payload: BatchPostedPayload }
   | { type: "batch_flagged"; payload: BatchFlaggedPayload }
+  | { type: "batch_verified"; payload: BatchVerifiedPayload }
   | { type: "batch_challenged"; payload: BatchChallengedPayload }
+  | { type: "dispute_stage"; payload: DisputeStagePayload }
   | { type: "dispute_resolved"; payload: DisputeResolvedPayload }
   | { type: "bond_settled"; payload: BondSettledPayload }
   | { type: "zk_inspect_ready"; payload: ZkInspectPayload }
@@ -153,6 +212,7 @@ export interface AppState {
   paused: boolean;
   blocks: BlockNums;
   blockLog: { chain: string; blockNum: number }[];
+  eventLog: EventLogEntry[];
   batches: Record<number, BatchInfo>;
   inspectedBatch: number | null;
   opcodeRaceData: DisputeResolvedPayload | null;
@@ -169,6 +229,15 @@ export interface AppState {
     zkAccepted: number;
     zkRejected: number;
   };
+}
+
+export interface EventLogEntry {
+  seq: number;
+  event: string;
+  layer: "L1" | "L2" | "local";
+  batchId?: number;
+  summary: string;
+  status?: string;
 }
 
 export interface ApiStateSnapshot {

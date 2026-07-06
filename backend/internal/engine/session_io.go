@@ -21,6 +21,7 @@ func (s *Session) tickLoop(ctx context.Context) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 	lastBlocks := map[string]uint64{}
+	s.advanceLastBlocks(ctx, lastBlocks)
 	wasJustPaused := false
 
 	for {
@@ -115,6 +116,7 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 			s.batchStore.AddBatch(&store.BatchInfo{
 				BatchID:       result.BatchID,
 				TxHashes:      result.TxHashes,
+				Swaps:         result.Swaps,
 				EngineType:    result.EngineType,
 				PostStateRoot: fmt.Sprintf("0x%x", result.PostStateRoot),
 				L2StartBlock:  result.L2StartBlock,

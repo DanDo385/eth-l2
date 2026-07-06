@@ -135,6 +135,23 @@ export function ResearchPanel() {
           </ul>
         </section>
       )}
+
+      <section className="border-t border-zinc-800 pt-3 space-y-2">
+        <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wide">
+          What happens when an optimistic root is challenged?
+        </p>
+        <ol className="space-y-1.5 text-[10px] text-zinc-500 leading-relaxed list-decimal list-inside">
+          <li>The challenge targets a claimed L2 output root or assertion, not usually one transaction directly.</li>
+          <li>The challenger verifies locally first by deriving the expected state from posted L1 data.</li>
+          <li>The challenger posts a bond so invalid challenges are costly.</li>
+          <li>The dispute game narrows the disagreement from a batch to a trace segment to one execution step.</li>
+          <li>Ethereum verifies the small disputed step or records the final dispute result, not the whole L2 by default.</li>
+          <li>A successful challenge rejects the bad root and prevents withdrawals that rely on it.</li>
+          <li>Legitimate transactions in available batch data are not thrown away just because the claimed root was wrong.</li>
+          <li>Honest nodes re-derive the correct chain and state from available L1 data.</li>
+          <li>Forced inclusion is separate from fraud proving. It addresses sequencer censorship, not wrong execution.</li>
+        </ol>
+      </section>
     </div>
   );
 }

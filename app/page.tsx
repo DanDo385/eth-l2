@@ -17,6 +17,7 @@ import { Scoreboard } from "./components/Scoreboard";
 import { DemoGallery } from "./components/DemoGallery";
 import { ResearchPanel } from "./components/ResearchPanel";
 import { WelcomeBanner } from "./components/WelcomeBanner";
+import { OptimisticTracker } from "./components/OptimisticTracker";
 
 function Inner() {
   const { state, dispatch } = useAppStore();
@@ -101,6 +102,10 @@ function Inner() {
         <section className="flex flex-col gap-4 overflow-y-auto min-w-0">
           {!state.running && <WelcomeBanner />}
           <BlockchainCanvas onBatchClick={handleBatchClick} />
+          <OptimisticTracker
+            onBatchClick={handleBatchClick}
+            onShowOpcodeRace={handleOpcodeRace}
+          />
           <Scoreboard />
         </section>
 

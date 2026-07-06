@@ -18,6 +18,11 @@ function hex(s: string) {
   return s.length > 18 ? s.slice(0, 10) + "…" + s.slice(-6) : s;
 }
 
+function weiToEth(wei?: string) {
+  if (!wei) return "0.00";
+  return (Number(wei) / 1e18).toFixed(2);
+}
+
 function engineBadge(type: string) {
   switch (type) {
     case "honest":
@@ -80,6 +85,23 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
       await refreshState();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Challenge failed";
+      dispatch({
+        type: "WS_EVENT",
+        event: {
+          type: "error_occurred",
+          payload: { chain: "api", message },
+        },
+      });
+    }
+  }
+
+  async function handleVerify() {
+    if (!batch) return;
+    try {
+      await apiPost("/api/verify", { batchId: batch.batchId });
+      await refreshState();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Verification failed";
       dispatch({
         type: "WS_EVENT",
         event: {
@@ -197,6 +219,23 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             </div>
           )}
 
+          {batch.verification && (
+            <div className="border-t border-zinc-800 pt-3 space-y-2 text-xs">
+              <p className="text-zinc-400 font-semibold">
+                Local verification result:{" "}
+                <span className={batch.verification.result === "verified_mismatch" ? "text-orange-300" : "text-emerald-300"}>
+                  {batch.verification.result === "verified_mismatch" ? "mismatch found" : "claim appears valid"}
+                </span>
+              </p>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">
+                User/watcher spent {weiToEth(batch.verification.costWei)} ETH-equivalent in local compute and L1 gas budget to replay the batch before risking a challenge bond.
+              </p>
+              <p className="text-[10px] text-zinc-500 leading-relaxed">
+                {batch.verification.reason}
+              </p>
+            </div>
+          )}
+
           {batch.divergence && (
             <div className="border-t border-zinc-800 pt-3 space-y-1.5 text-xs">
               <p className="text-zinc-400 font-semibold">Fraud proof committed on L1</p>
@@ -250,10 +289,39 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
           )}
 
           <div className="flex gap-2 pt-1 flex-col">
-            {batch.flagged && !batch.challenged && (
+            {batch.txCount > 0 && !batch.verification && !batch.challenged && !batch.finalized && (
+              <>
+                <button
+                  onClick={handleVerify}
+                  disabled={batch.txCount === 0}
+                  className="w-full btn-green text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Verify locally (0.02 ETH compute/gas)
+                </button>
+                <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
+                  Normal mode never auto-challenges. Verify first, then decide whether to risk the L1 challenge bond.
+                </p>
+              </>
+            )}
+            {batch.txCount === 0 && (
+              <p className="text-[10px] text-zinc-600 text-center leading-relaxed">
+                Empty batch: no transaction hashes, no fraud-proof trace, challenge disabled.
+              </p>
+            )}
+            {batch.verification?.result === "verified_mismatch" && !batch.challenged && (
               <button onClick={handleChallenge} className="w-full btn-red text-xs">
                 Challenge on L1 ({PORTAL_BOND_ETH} ETH bond)
               </button>
+            )}
+            {batch.verification?.result === "verified_valid" && !batch.challenged && (
+              <>
+                <button onClick={handleChallenge} className="w-full btn-red text-xs">
+                  Challenge anyway ({PORTAL_BOND_ETH} ETH bond at risk)
+                </button>
+                <p className="text-[10px] text-amber-400/90 text-center leading-relaxed">
+                  Verification found no mismatch. This demonstrates a failed challenge where the challenger bond is slashed.
+                </p>
+              </>
             )}
             {batch.resolved && batch.divergence && (
               <button
@@ -268,9 +336,9 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                 Also listed in Proof lab below when you want to revisit.
               </p>
             )}
-            {batch.flagged && !batch.resolved && (
+            {batch.flagged && !batch.resolved && batch.challenged && (
               <p className="text-[10px] text-zinc-600 text-center">
-                Auto-challenge may already be running, wait for bisection to finish.
+                Dispute in progress — see Optimistic Tracker for swap rollback and bond ledger.
               </p>
             )}
           </div>

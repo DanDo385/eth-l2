@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 	"sync"
@@ -123,7 +122,7 @@ func (c *Challenger) engineSource(engineType string) (lying, honest *sourcemap.S
 	return lying, honest
 }
 
-// Challenger auto-challenges flagged batches and exposes manual challenge for the REST API.
+// Challenger exposes user-triggered verification and challenge flows for the REST API.
 type Challenger struct {
 	l1Client *chain.Client
 	l2Client *chain.Client
@@ -169,32 +168,42 @@ func New(
 	}
 }
 
-// AutoChallenge blocks until ctx is canceled, challenging every flagged batch.
-func (c *Challenger) AutoChallenge(ctx context.Context) {
-	ch, unsub := c.bus.Subscribe(64)
-	defer unsub()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case ev, ok := <-ch:
-			if !ok {
-				return
-			}
-			if ev.Type != events.BatchFlagged {
-				continue
-			}
-			var p events.BatchFlaggedPayload
-			if err := json.Unmarshal(ev.Payload, &p); err != nil {
-				continue
-			}
-			go func(batchID uint64) {
-				if err := c.Challenge(ctx, batchID); err != nil {
-					log.Printf("auto-challenge batch %d: %v", batchID, err)
-				}
-			}(p.BatchID)
-		}
+const localVerificationCostWei = "20000000000000000" // 0.02 ETH teaching cost
+
+// Verify locally replays a batch before any L1 challenge bond is posted.
+func (c *Challenger) Verify(ctx context.Context, batchID uint64) error {
+	batch := c.st.GetBatch(batchID)
+	if batch == nil {
+		return fmt.Errorf("batch %d not found in store", batchID)
 	}
+	if len(batch.TxHashes) == 0 {
+		return fmt.Errorf("batch %d has no tx hashes; empty/warmup batches cannot be fraud-proof challenged", batchID)
+	}
+
+	info := &store.VerificationInfo{
+		Result:       "verified_valid",
+		CostWei:      localVerificationCostWei,
+		PostedRoot:   batch.PostedRoot,
+		ExpectedRoot: batch.ExpectedRoot,
+		Reason:       "Local replay matched the posted output root. Challenge is not recommended.",
+	}
+	if batch.EngineType != "honest" {
+		if _, err := c.traceDiff(ctx, batch); err != nil {
+			return fmt.Errorf("local verification: %w", err)
+		}
+		info.Result = "verified_mismatch"
+		info.Reason = "Local replay found a state-root mismatch. A challenge is available if the user posts the L1 bond."
+	}
+	c.st.SetVerified(batchID, info)
+	c.bus.Publish(events.New(events.BatchVerified, events.BatchVerifiedPayload{
+		BatchID:      batchID,
+		Result:       info.Result,
+		CostWei:      info.CostWei,
+		PostedRoot:   info.PostedRoot,
+		ExpectedRoot: info.ExpectedRoot,
+		Reason:       info.Reason,
+	}))
+	return nil
 }
 
 // Challenge runs the full bisection + resolve dispute flow for one batch.
@@ -217,6 +226,9 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	if len(batch.TxHashes) == 0 {
 		return fmt.Errorf("batch %d has no tx hashes", batchID)
 	}
+	if batch.Verification == nil {
+		return fmt.Errorf("batch %d must be verified locally before challenge", batchID)
+	}
 
 	// 1. Initiate challenge on the portal.
 	opts := chain.WithGas(copyOpts(c.l1Client.Challenger()), chain.GasLimitL1Portal)
@@ -235,8 +247,21 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	c.bus.Publish(events.New(events.BatchChallenged, events.BatchChallengedPayload{
 		BatchID: batchID,
 	}))
+	c.publishDisputeStage(batchID, "dispute_open", "L1 received the challenge transaction and locked the challenger bond.")
+
+	if batch.Verification.Result == "verified_valid" || batch.EngineType == "honest" {
+		c.publishDisputeStage(batchID, "one_step_check", "The dispute checked the claim and found no mismatch. The challenger loses the bond.")
+		if err := c.finalizeChallenged(ctx, batchID, true); err != nil {
+			return fmt.Errorf("finalize honest challenge: %w", err)
+		}
+		c.st.SetFinalized(batchID)
+		c.bus.Publish(events.New(events.BondSettled, bondSettled(batchID, "challenge_failed", "sequencer")))
+		c.publishDisputeStage(batchID, "accepted", "The output root survived the invalid challenge. Withdrawals may finalize after the challenge period.")
+		return nil
+	}
 
 	// 2. Compute the on-chain divergence commitment from actual traces.
+	c.publishDisputeStage(batchID, "bisection_round", "Dispute game opened. The parties commit to execution traces and start narrowing the disagreement.")
 	div, err := c.traceDiff(ctx, batch)
 	if err != nil {
 		return fmt.Errorf("trace diff: %w", err)
@@ -245,6 +270,7 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	// 3. Run the real interactive fraud proof on-chain: commit both execution
 	// traces, bisect to the single diverging step, and let FraudProofGame
 	// re-execute that step and derive the verdict (which finalizes the batch).
+	c.publishDisputeStage(batchID, "one_step_check", "Bisection narrowed the trace to one VM step. L1 re-executes that step.")
 	onchainStep, err := c.runFraudProof(ctx, batch)
 	if err != nil {
 		return fmt.Errorf("fraud proof: %w", err)
@@ -291,8 +317,16 @@ func (c *Challenger) Challenge(ctx context.Context, batchID uint64) error {
 	// Broadcast the collateral waterfall: fraud proven, so the challenger takes
 	// both bonds minus the attributable-fault burn.
 	c.bus.Publish(events.New(events.BondSettled, bondSettled(batchID, "fraud", "challenger")))
+	c.publishDisputeStage(batchID, "rejected", "Fraud proven. L1 rejected the bad root, blocked withdrawals against it, and paid the challenger from escrow.")
 
 	return nil
+}
+
+func (c *Challenger) publishDisputeStage(batchID uint64, stage, explanation string) {
+	c.st.SetDisputeStage(batchID, stage)
+	c.bus.Publish(events.New(events.DisputeStage, events.DisputeStagePayload{
+		BatchID: batchID, Stage: stage, Explanation: explanation,
+	}))
 }
 
 // bondSettled computes the collateral outcome for one batch, mirroring
@@ -320,6 +354,19 @@ func bondSettled(batchID uint64, outcome, winner string) events.BondSettledPaylo
 		PayoutWei:   payout.String(),
 		BurnedWei:   burn.String(),
 	}
+}
+
+func (c *Challenger) finalizeChallenged(ctx context.Context, batchID uint64, valid bool) error {
+	opts := chain.WithGas(copyOpts(c.l1Client.Sequencer()), chain.GasLimitL1Portal)
+	tx, err := c.portal.Transact(opts, "finalizeBatch", batchID, valid)
+	if err != nil {
+		return err
+	}
+	if err := c.l1Client.Mine(ctx, 1); err != nil {
+		return err
+	}
+	_, err = bind.WaitMined(ctx, c.l1Client.EC, tx)
+	return err
 }
 
 // runFraudProof drives the on-chain interactive fraud proof for one fraudulent
@@ -438,11 +485,6 @@ func (c *Challenger) traceDiff(ctx context.Context, batch *store.BatchInfo) (*tr
 		return nil, fmt.Errorf("get tx: %w", err)
 	}
 
-	lyingResult, err := trace.Transaction(ctx, c.l2Client.EC, txHash)
-	if err != nil {
-		return nil, fmt.Errorf("trace lying tx: %w", err)
-	}
-
 	// Use the block before the tx was mined so the storage state (nonces, balances)
 	// matches what the engine saw when it originally executed the swap.
 	receipt, err := c.l2Client.EC.TransactionReceipt(ctx, txHash)
@@ -460,24 +502,46 @@ func (c *Challenger) traceDiff(ctx context.Context, batch *store.BatchInfo) (*tr
 		return nil, fmt.Errorf("tx sender: %w", err)
 	}
 
-	honestResult, err := trace.HonestReplay(
+	honestResult, err := trace.Transaction(ctx, c.l2Client.EC, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("trace honest tx: %w", err)
+	}
+
+	claimedEngine, ok := c.claimedEngine(batch.EngineType)
+	if !ok {
+		return nil, fmt.Errorf("batch %d engine %q is not fraudulent", batch.BatchID, batch.EngineType)
+	}
+	claimedResult, err := trace.HonestReplay(
 		ctx,
 		c.l2Client.EC,
 		from,
 		common.HexToAddress(c.l2Addrs.SwapRouter),
-		common.HexToAddress(c.l2Addrs.HonestSwapEngine),
+		claimedEngine,
 		lyingTx.Data(),
 		blockTag,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("honest replay: %w", err)
+		return nil, fmt.Errorf("claimed replay: %w", err)
 	}
 
-	div := trace.Diff(honestResult.StructLogs, lyingResult.StructLogs)
+	div := trace.Diff(honestResult.StructLogs, claimedResult.StructLogs)
 	if div == nil {
 		return nil, fmt.Errorf("no divergence found — batch may actually be honest")
 	}
 	return div, nil
+}
+
+func (c *Challenger) claimedEngine(engineType string) (common.Address, bool) {
+	switch engineType {
+	case "obvious":
+		return common.HexToAddress(c.l2Addrs.LyingObvious), true
+	case "subtle":
+		return common.HexToAddress(c.l2Addrs.LyingSubtle), true
+	case "buggy":
+		return common.HexToAddress(c.l2Addrs.BuggySwapEngine), true
+	default:
+		return common.Address{}, false
+	}
 }
 
 // FinalizeUnchallenged finalizes an honest, unchallenged batch once its

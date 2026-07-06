@@ -220,6 +220,9 @@ func (w *HonestWatcher) OnL2Block(_ context.Context, blockNum uint64, block bloc
 // CheckBatch compares the sequencer's posted state root against the honest simulation.
 // Call this immediately after the sequencer posts a batch (same tick, same goroutine).
 func (w *HonestWatcher) CheckBatch(batch *sequencer.BatchResult) {
+	if batch.TxCount == 0 {
+		return
+	}
 	expectedRoot, ok := w.simRootByL2Block[batch.L2EndBlock]
 	if !ok {
 		return // haven't processed that block yet — shouldn't happen in normal flow

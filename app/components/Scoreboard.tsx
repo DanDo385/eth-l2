@@ -3,7 +3,11 @@
 import { useAppStore } from "../lib/store";
 import { safeNum } from "../lib/numbers";
 import type { AppState } from "../types";
-import { CHALLENGE_WINDOW_SECONDS } from "../data/protocol";
+import {
+  CHALLENGE_WINDOW_SECONDS,
+  OPTIMISTIC_SUSPICION_PROBABILITY,
+  ZK_SUSPICION_PROBABILITY,
+} from "../data/protocol";
 import { ZkContrastStrip } from "./ZkContrastStrip";
 
 function scoreNums(sb: AppState["scoreboard"]) {
@@ -25,6 +29,7 @@ export function Scoreboard() {
     (b) => b.engineType === "obvious" || b.engineType === "subtle",
   ).length;
   const flagged = batchList.filter((b) => b.flagged).length;
+  const verifiedMismatch = batchList.filter((b) => b.verification?.result === "verified_mismatch").length;
   const inDispute = batchList.filter((b) => b.challenged && !b.resolved).length;
   const resolved = batchList.filter((b) => b.resolved).length;
   const detectionRate =
@@ -56,7 +61,15 @@ export function Scoreboard() {
               <span className="font-mono text-red-400">{fraud}</span>
             </div>
             <div className="flex justify-between" title="Batches flagged by the honest watcher, waiting for a challenger">
-              <span className="text-zinc-500">⚡ In dispute</span>
+              <span className="text-zinc-500">Flagged suspicious</span>
+              <span className="font-mono text-yellow-400">{flagged}</span>
+            </div>
+            <div className="flex justify-between" title="Batches where user verification found a mismatch">
+              <span className="text-zinc-500">Verified mismatch</span>
+              <span className="font-mono text-orange-400">{verifiedMismatch}</span>
+            </div>
+            <div className="flex justify-between" title="Challenges currently open on L1">
+              <span className="text-zinc-500">In dispute</span>
               <span className="font-mono text-orange-400">{inDispute}</span>
             </div>
             <div className="flex justify-between" title="Disputes that finished, sequencer lost bond, batch rejected">
@@ -65,7 +78,7 @@ export function Scoreboard() {
             </div>
           </div>
           <p className="text-[10px] text-zinc-700 leading-snug pt-1 border-t border-zinc-800">
-            Honest batches finalize after a {CHALLENGE_WINDOW_SECONDS}s challenge window in this sim (production rollups use ~7 days). Bonds make fraud unprofitable even during the wait.
+            Normal OP fault rate is about 1 in {Math.round(1 / OPTIMISTIC_SUSPICION_PROBABILITY)}. Suspicious roots wait for a user to verify and challenge during the {CHALLENGE_WINDOW_SECONDS}s window.
           </p>
         </div>
 
@@ -95,7 +108,7 @@ export function Scoreboard() {
             </div>
           </div>
           <p className="text-[10px] text-zinc-700 leading-snug pt-1 border-t border-zinc-800">
-            Invalid proofs fail at L1 submission, fraudulent state never becomes canonical. No bond, no bisection, instant finality.
+            Invalid ZK claims occur about 1 in {Math.round(1 / ZK_SUSPICION_PROBABILITY)}, half the OP rate here. They fail at proof verification, not through a fraud-proof game.
           </p>
         </div>
       </div>

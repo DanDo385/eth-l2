@@ -46,7 +46,7 @@ Confirmed SSTORE divergence via `debug_traceTransaction` / `debug_traceCall`. Re
 - Tests: `SwapEngines.t.sol`, `FraudProofGame.t.sol`, `OptimisticPortal.t.sol`, `ZkRollup.t.sol`, `ZkValidityVerifier.t.sol`
 
 ### Phase 2 — Go backend ✅
-Anvil orchestration, seeded PRNG, swap/transfer bots, OP + ZK sequencers, honest watcher, trace capture/diff, auto-challenger driving `FraudProofGame`, REST + WebSocket (`bond_settled`, `batch_challenged`, …).
+Anvil orchestration, seeded PRNG, swap/transfer bots, OP + ZK sequencers, honest watcher, trace capture/diff, user-triggered verification/challenge driving `FraudProofGame`, REST + WebSocket (`batch_verified`, `dispute_stage`, `bond_settled`, `batch_challenged`, …).
 
 ### Phase 3 — Frontend ✅
 Three-lane canvas, Block Inspector, OpcodeRace fraud-proof overlay, ZkInspect, Scoreboard, Demo Gallery, Welcome Banner, Research Panel (Proof lab). Overlays never auto-popup.

@@ -62,6 +62,13 @@ test.describe("Initial layout", () => {
     await expect(accounts.getByText("Trader 0", { exact: true })).toBeVisible();
   });
 
+  test("renders Optimistic rollup lifecycle tracker (idle)", async ({ page }) => {
+    await expect(page.getByText("Optimistic rollup lifecycle", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText(/batches never disappear when they leave the canvas/i),
+    ).toBeVisible();
+  });
+
   test("renders Scoreboard with OP and ZK columns", async ({ page }) => {
     const scoreboard = page.getByText("Scoreboard", { exact: true }).locator("..");
     await expect(scoreboard.getByText("OP: Optimistic")).toBeVisible();

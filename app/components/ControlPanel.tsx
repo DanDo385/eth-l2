@@ -9,6 +9,9 @@ export function ControlPanel() {
   const { state, dispatch, refreshState } = useAppStore();
   const [seed, setSeed] = useState(42);
   const [speed, setSpeed] = useState(3);
+  const [sessionSeconds, setSessionSeconds] = useState<60 | 120>(60);
+  const [remainingSeconds, setRemainingSeconds] = useState(60);
+  const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -37,6 +40,8 @@ export function ControlPanel() {
   }
 
   async function handleStart() {
+    setRemainingSeconds(sessionSeconds);
+    setExpired(false);
     await call("/api/start", { seed, speed });
   }
 
@@ -48,6 +53,22 @@ export function ControlPanel() {
   const active = state.running;
   const paused = state.paused;
   const connected = state.connected;
+
+  useEffect(() => {
+    if (!active || paused || expired) return;
+    const timer = setInterval(() => {
+      setRemainingSeconds((left) => {
+        if (left <= 1) {
+          clearInterval(timer);
+          setExpired(true);
+          void call("/api/pause");
+          return 0;
+        }
+        return left - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [active, paused, expired]);
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
@@ -119,6 +140,36 @@ export function ControlPanel() {
         <p className="text-[10px] text-zinc-600 leading-relaxed">
           Scales Anvil block times. At 4× you see fraud resolved in ~30 s. At 1× it runs at realistic mainnet pace.
         </p>
+      </div>
+
+      <div className="space-y-2 border-t border-zinc-800 pt-3">
+        <p className="text-xs text-zinc-400 font-semibold">Session timer</p>
+        <div className="grid grid-cols-2 gap-2">
+          {[60, 120].map((seconds) => (
+            <button
+              key={seconds}
+              type="button"
+              onClick={() => {
+                setSessionSeconds(seconds as 60 | 120);
+                if (!active) setRemainingSeconds(seconds);
+              }}
+              className={sessionSeconds === seconds ? "btn-green text-xs" : "btn-zinc text-xs"}
+            >
+              {seconds}s
+            </button>
+          ))}
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2">
+          <div className="flex justify-between text-xs font-mono">
+            <span className={expired ? "text-amber-300" : "text-zinc-400"}>
+              {expired ? "session expired" : active && !paused ? "countdown" : "timer ready"}
+            </span>
+            <span className="text-zinc-100">{remainingSeconds}s</span>
+          </div>
+          <p className="text-[10px] text-zinc-600 leading-relaxed mt-1">
+            On expiry the simulation pauses and preserves blocks, batches, balances, and logs. Use Resume to continue or Stop/Reseed to reset.
+          </p>
+        </div>
       </div>
 
       {/* Action buttons */}

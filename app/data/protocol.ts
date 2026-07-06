@@ -10,6 +10,12 @@ export const CHALLENGE_WINDOW_SECONDS = 120;
 /** Loser's slashed bond burned on fraud resolution (10%). */
 export const SLASH_BURN_BPS = 1000;
 
+/** Normal-mode OP suspicious/fault rate, mirrored by backend sequencer constants. */
+export const OPTIMISTIC_SUSPICION_PROBABILITY = 1 / 30;
+
+/** Normal-mode ZK invalid-proof rate, intentionally half the OP rate. */
+export const ZK_SUSPICION_PROBABILITY = 1 / 60;
+
 // Swap economics, mirror the constants in contracts/l2/HonestSwapEngine.sol.
 // amountOut = (amountIn * RATE) * (BPS_DENOMINATOR - FEE_BPS) / BPS_DENOMINATOR
 // The "subtle lie" engine drops the fee term and credits the gross amount.

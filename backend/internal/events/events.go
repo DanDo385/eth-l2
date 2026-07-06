@@ -11,7 +11,9 @@ const (
 	BlockMined      Type = "block_mined"
 	BatchPosted     Type = "batch_posted"
 	BatchFlagged    Type = "batch_flagged"
+	BatchVerified   Type = "batch_verified"
 	BatchChallenged Type = "batch_challenged"
+	DisputeStage    Type = "dispute_stage"
 	DisputeResolved Type = "dispute_resolved"
 	BondSettled     Type = "bond_settled"
 	ZkInspectReady  Type = "zk_inspect_ready"
@@ -38,12 +40,24 @@ type BlockMinedPayload struct {
 }
 
 type BatchPostedPayload struct {
-	BatchID       uint64 `json:"batchId"`
-	PostStateRoot string `json:"postStateRoot"` // hex
-	L2StartBlock  uint64 `json:"l2StartBlock"`
-	L2EndBlock    uint64 `json:"l2EndBlock"`
-	TxCount       int    `json:"txCount"`
-	EngineType    string `json:"engineType"` // "honest" | "obvious" | "subtle"
+	BatchID       uint64        `json:"batchId"`
+	PostStateRoot string        `json:"postStateRoot"` // hex
+	L2StartBlock  uint64        `json:"l2StartBlock"`
+	L2EndBlock    uint64        `json:"l2EndBlock"`
+	TxCount       int           `json:"txCount"`
+	EngineType    string        `json:"engineType"` // "honest" | "obvious" | "subtle"
+	Swaps         []SwapSummary `json:"swaps,omitempty"`
+}
+
+// SwapSummary is one swap in a posted batch (lifecycle tracker UI).
+type SwapSummary struct {
+	L2Block     uint64 `json:"l2Block"`
+	TxHash      string `json:"txHash"`
+	TraderIndex int    `json:"traderIndex"`
+	AmountIn    uint64 `json:"amountIn"`
+	HonestOut   uint64 `json:"honestOut"`
+	ClaimedOut  uint64 `json:"claimedOut"`
+	IsDivergent bool   `json:"isDivergent"`
 }
 
 type BatchFlaggedPayload struct {
@@ -56,6 +70,21 @@ type BatchFlaggedPayload struct {
 
 type BatchChallengedPayload struct {
 	BatchID uint64 `json:"batchId"`
+}
+
+type BatchVerifiedPayload struct {
+	BatchID      uint64 `json:"batchId"`
+	Result       string `json:"result"`
+	CostWei      string `json:"costWei"`
+	PostedRoot   string `json:"postedRoot,omitempty"`
+	ExpectedRoot string `json:"expectedRoot,omitempty"`
+	Reason       string `json:"reason"`
+}
+
+type DisputeStagePayload struct {
+	BatchID     uint64 `json:"batchId"`
+	Stage       string `json:"stage"`
+	Explanation string `json:"explanation"`
 }
 
 type ZkInspectReadyPayload struct {
@@ -77,7 +106,7 @@ type ZkInspectReadyPayload struct {
 // All amounts are wei as decimal strings.
 type BondSettledPayload struct {
 	BatchID     uint64 `json:"batchId"`
-	Outcome     string `json:"outcome"` // "fraud" | "unchallenged"
+	Outcome     string `json:"outcome"` // "fraud" | "unchallenged" | "challenge_failed"
 	Winner      string `json:"winner"`  // "challenger" | "sequencer"
 	SeqBondWei  string `json:"seqBondWei"`
 	ChalBondWei string `json:"chalBondWei"`

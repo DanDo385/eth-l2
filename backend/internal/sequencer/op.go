@@ -12,6 +12,7 @@ import (
 	"github.com/dando385/eth-l2/backend/internal/chain"
 	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/seed"
+	"github.com/dando385/eth-l2/backend/internal/store"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -55,6 +56,12 @@ type BatchHeader struct {
 	Timestamp     uint64
 }
 
+// pendingSwap records one swap tx collected for the current batch window.
+type pendingSwap struct {
+	Hash  common.Hash
+	Block uint64
+}
+
 // BatchResult is returned by OnBlock when a batch was just posted.
 type BatchResult struct {
 	BatchID       uint64
@@ -64,6 +71,7 @@ type BatchResult struct {
 	TxCount       int
 	EngineType    string
 	TxHashes      []common.Hash // copy of tx hashes included in the batch
+	Swaps         []store.SwapSummary
 }
 
 // swapSelector is keccak256("swap(address,uint256,uint256)")[:4]
@@ -85,8 +93,8 @@ type OPSequencer struct {
 	nextBatchID    uint64
 	windowStart    uint64
 	prevStateRoot  [32]byte
-	pendingTxHashes []common.Hash
-	nextEngine     common.Address // engine to use for next batch (set at end of prev batch)
+	pendingSwaps   []pendingSwap
+	nextEngine     common.Address // claimed engine for next batch; actual OP L2 execution stays honest
 	nextEngineType string
 }
 
@@ -129,8 +137,9 @@ func NewOPSequencer(
 func (s *OPSequencer) OnBlock(ctx context.Context, blockNum uint64) (*BatchResult, error) {
 	if s.windowStart == 0 {
 		s.windowStart = blockNum
-		// Set the implementation for this batch window.
-		if err := s.setImpl(ctx, s.nextEngine); err != nil {
+		// Keep canonical L2 execution honest. Faults are injected into the L1
+		// output root claim, not by poisoning live L2 state.
+		if err := s.setImpl(ctx, common.HexToAddress(s.l2Addrs.HonestSwapEngine)); err != nil {
 			return nil, fmt.Errorf("setImplementation: %w", err)
 		}
 	}
@@ -142,7 +151,10 @@ func (s *OPSequencer) OnBlock(ctx context.Context, blockNum uint64) (*BatchResul
 	}
 	for _, tx := range block.Transactions() {
 		if isSwapTx(tx.To(), tx.Data(), common.HexToAddress(s.l2Addrs.SwapRouter)) {
-			s.pendingTxHashes = append(s.pendingTxHashes, tx.Hash())
+			s.pendingSwaps = append(s.pendingSwaps, pendingSwap{
+				Hash:  tx.Hash(),
+				Block: blockNum,
+			})
 		}
 	}
 
@@ -159,10 +171,19 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 	if err := s.router.Call(&bind.CallOpts{Context: ctx}, &rootOut, "stateRoot"); err != nil {
 		return nil, fmt.Errorf("read stateRoot: %w", err)
 	}
-	postStateRoot := rootOut[0].([32]byte)
+	effectiveEngineType := s.nextEngineType
+	if len(s.pendingSwaps) == 0 {
+		effectiveEngineType = "honest"
+	}
+	honestPostStateRoot := rootOut[0].([32]byte)
+	postStateRoot := claimedRoot(honestPostStateRoot, effectiveEngineType, s.nextBatchID)
 
 	// Build rawData = packed tx hashes; batchDataHash = keccak256(rawData).
-	rawData := packHashes(s.pendingTxHashes)
+	txHashes := make([]common.Hash, len(s.pendingSwaps))
+	for i, ps := range s.pendingSwaps {
+		txHashes[i] = ps.Hash
+	}
+	rawData := packHashes(txHashes)
 	var batchDataHash [32]byte
 	copy(batchDataHash[:], crypto.Keccak256(rawData))
 
@@ -174,7 +195,7 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 		BatchDataHash: batchDataHash,
 		L2StartBlock:  s.windowStart,
 		L2EndBlock:    l2EndBlock,
-		TxCount:       uint32(len(s.pendingTxHashes)),
+		TxCount:       uint32(len(s.pendingSwaps)),
 		Timestamp:     uint64(time.Now().Unix()),
 	}
 
@@ -184,31 +205,50 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 		return nil, fmt.Errorf("postBatch: %w", err)
 	}
 
+	swaps, err := buildSwapSummaries(ctx, s.l2Client, s.pendingSwaps, effectiveEngineType)
+	if err != nil {
+		return nil, fmt.Errorf("swap summaries: %w", err)
+	}
+
 	result := &BatchResult{
 		BatchID:       batchID,
 		PostStateRoot: postStateRoot,
 		L2StartBlock:  s.windowStart,
 		L2EndBlock:    l2EndBlock,
-		TxCount:       len(s.pendingTxHashes),
-		EngineType:    s.nextEngineType,
-		TxHashes:      append([]common.Hash(nil), s.pendingTxHashes...),
+		TxCount:       len(s.pendingSwaps),
+		EngineType:    effectiveEngineType,
+		TxHashes:      append([]common.Hash(nil), txHashes...),
+		Swaps:         swaps,
 	}
 
 	// Publish event so the frontend and watcher can react.
+	swapPayload := make([]events.SwapSummary, len(swaps))
+	for i, sw := range swaps {
+		swapPayload[i] = events.SwapSummary{
+			L2Block:     sw.L2Block,
+			TxHash:      sw.TxHash,
+			TraderIndex: sw.TraderIndex,
+			AmountIn:    sw.AmountIn,
+			HonestOut:   sw.HonestOut,
+			ClaimedOut:  sw.ClaimedOut,
+			IsDivergent: sw.IsDivergent,
+		}
+	}
 	s.bus.Publish(events.New(events.BatchPosted, events.BatchPostedPayload{
 		BatchID:       batchID,
 		PostStateRoot: fmt.Sprintf("0x%x", postStateRoot),
 		L2StartBlock:  s.windowStart,
 		L2EndBlock:    l2EndBlock,
-		TxCount:       len(s.pendingTxHashes),
-		EngineType:    s.nextEngineType,
+		TxCount:       len(s.pendingSwaps),
+		EngineType:    effectiveEngineType,
+		Swaps:         swapPayload,
 	}))
 
 	// Advance to next window.
 	s.nextBatchID++
-	s.prevStateRoot = postStateRoot
+	s.prevStateRoot = honestPostStateRoot
 	s.windowStart = 0
-	s.pendingTxHashes = nil
+	s.pendingSwaps = nil
 
 	// Choose and set the engine for the NEXT batch window so the implementation is
 	// already in place when the swap bot submits to the new window.
@@ -218,25 +258,38 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 }
 
 // chooseEngine picks honest/obvious/subtle deterministically from the seed.
-// Fraud rate: ~10% total (1-in-20 obvious, 1-in-20 subtle, 18-in-20 honest).
-// This reflects a realistic rollup where fraud is rare, not the norm.
+// Fault rate: approximately 1/30 total. A faulty batch then splits between the
+// obvious and subtle lying engines.
 func (s *OPSequencer) chooseEngine(batchID uint64) (common.Address, string) {
 	derived := s.prng.KeccakDerive(fmt.Sprintf("engine:%d", batchID))
-	choice := binary.BigEndian.Uint64(derived[:8]) % 20
-	switch choice {
-	case 0:
-		return common.HexToAddress(s.l2Addrs.LyingObvious), "obvious"
-	case 1:
-		return common.HexToAddress(s.l2Addrs.LyingSubtle), "subtle"
-	default:
+	if binary.BigEndian.Uint64(derived[:8])%OptimisticSuspicionDenominator != 0 {
 		return common.HexToAddress(s.l2Addrs.HonestSwapEngine), "honest"
 	}
+	if derived[8]%2 == 0 {
+		return common.HexToAddress(s.l2Addrs.LyingObvious), "obvious"
+	}
+	return common.HexToAddress(s.l2Addrs.LyingSubtle), "subtle"
 }
 
 func (s *OPSequencer) setImpl(ctx context.Context, impl common.Address) error {
 	opts := chain.WithGas(copyOpts(s.l2Client.Sequencer()), chain.GasLimitSwap)
 	_, err := s.router.Transact(opts, "setImplementation", impl)
 	return err
+}
+
+func claimedRoot(honest [32]byte, engineType string, batchID uint64) [32]byte {
+	if engineType == "honest" {
+		return honest
+	}
+	buf := make([]byte, 0, len(honest)+len(engineType)+8)
+	buf = append(buf, honest[:]...)
+	buf = append(buf, []byte(engineType)...)
+	var id [8]byte
+	binary.BigEndian.PutUint64(id[:], batchID)
+	buf = append(buf, id[:]...)
+	var out [32]byte
+	copy(out[:], crypto.Keccak256(buf))
+	return out
 }
 
 func isSwapTx(to *common.Address, data []byte, routerAddr common.Address) bool {

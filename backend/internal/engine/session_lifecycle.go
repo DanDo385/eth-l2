@@ -75,7 +75,6 @@ func (s *Session) Start(ctx context.Context, seedVal uint64, speed int) error {
 	s.st = stateRunning
 	s.publishSessionState(true, false)
 	go s.tickLoop(tickCtx)
-	go s.challenger.AutoChallenge(tickCtx)
 	return nil
 }
 

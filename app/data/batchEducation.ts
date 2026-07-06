@@ -10,6 +10,9 @@ export interface BatchStatusInfo {
 }
 
 export function batchWindowNote(batch: BatchInfo): string {
+  if (batch.txCount === 0 || batch.status === "empty_warmup") {
+    return `Warmup batch #${batch.batchId} contains no swap transaction hashes. It can be posted as an empty L1 data point, but there is no fraud-proof target to challenge.`;
+  }
   const span = batch.l2EndBlock - batch.l2StartBlock + 1;
   return `Rollups post one state root per batch, not per block. This batch covers ${span} L2 block${span === 1 ? "" : "s"} (${batch.l2StartBlock}→${batch.l2EndBlock}) with ${batch.txCount} swap${batch.txCount === 1 ? "" : "s"}. Fraud invalidates the whole batch.`;
 }
@@ -77,6 +80,26 @@ export function batchStatus(batch?: BatchInfo): BatchStatusInfo {
       bg: "bg-red-950/40",
     };
   }
+  if (batch.status === "empty_warmup" || batch.txCount === 0) {
+    return {
+      label: "Empty warmup",
+      short: "∅",
+      explanation:
+        "This batch has no transaction hashes. It is visible for continuity, but fraud-proof challenge is disabled because there is no execution trace to bisect.",
+      border: "border-zinc-700",
+      bg: "bg-zinc-900/40",
+    };
+  }
+  if (batch.status === "accepted") {
+    return {
+      label: "Challenge failed",
+      short: "✓",
+      explanation:
+        "Local or L1 verification found no mismatch. The challenge was invalid, the challenger bond was slashed, and the output root survives.",
+      border: "border-emerald-600",
+      bg: "bg-emerald-950/30",
+    };
+  }
   if (batch.finalized && batch.engineType === "honest") {
     return {
       label: "Finalized",
@@ -94,6 +117,26 @@ export function batchStatus(batch?: BatchInfo): BatchStatusInfo {
         "A challenger posted a bond on L1. Bisection is narrowing which opcode in the batch execution trace is wrong.",
       border: "border-orange-500",
       bg: "bg-orange-950/40",
+    };
+  }
+  if (batch.status === "verified_mismatch") {
+    return {
+      label: "Mismatch verified",
+      short: "!",
+      explanation:
+        "The user replayed the batch locally and confirmed the posted output root does not match honest derivation. Challenge is available.",
+      border: "border-orange-500",
+      bg: "bg-orange-950/40",
+    };
+  }
+  if (batch.status === "verified_valid") {
+    return {
+      label: "Locally verified",
+      short: "✓",
+      explanation:
+        "Local replay found no mismatch. A challenge is possible in the protocol, but economically irrational because the challenger bond is at risk.",
+      border: "border-emerald-600",
+      bg: "bg-emerald-950/30",
     };
   }
   if (batch.flagged) {

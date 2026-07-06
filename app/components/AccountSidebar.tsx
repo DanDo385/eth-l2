@@ -3,6 +3,7 @@
 import { useAppStore } from "../lib/store";
 import { DEMO_ACCOUNTS } from "../data/accounts";
 import { safeNum } from "../lib/numbers";
+import { computeBondLedger } from "../lib/opLedger";
 
 function short(addr: string) {
   return addr.slice(0, 6) + "…" + addr.slice(-4);
@@ -13,6 +14,13 @@ export function AccountSidebar() {
   const batchList = Object.values(state.batches);
   const flagged = batchList.filter((b) => b.flagged).length;
   const resolved = batchList.filter((b) => b.resolved).length;
+  const ledger = computeBondLedger(batchList);
+  const locked =
+    ledger.sequencer.posted +
+    ledger.challenger.posted -
+    ledger.sequencer.returned -
+    ledger.challenger.returned -
+    ledger.challenger.won;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
@@ -39,6 +47,20 @@ export function AccountSidebar() {
       </div>
 
       <div className="border-t border-zinc-800 pt-3 space-y-1">
+        <p className="text-xs text-zinc-500 uppercase tracking-wide">Economics</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <span className="text-zinc-400">Escrow locked</span>
+          <span className="text-zinc-100 font-mono">{Math.max(locked, 0).toFixed(2)} ETH</span>
+          <span className="text-zinc-400">Proposer posted</span>
+          <span className="text-zinc-100 font-mono">{ledger.sequencer.posted.toFixed(2)} ETH</span>
+          <span className="text-red-400">Proposer slashed</span>
+          <span className="text-red-300 font-mono">{ledger.sequencer.slashed.toFixed(2)} ETH</span>
+          <span className="text-emerald-400">Challenger rewards</span>
+          <span className="text-emerald-300 font-mono">{ledger.challenger.won.toFixed(2)} ETH</span>
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800 pt-3 space-y-1">
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Latest blocks</p>
         <div className="space-y-1 text-xs font-mono">
           {Object.entries(state.blocks).map(([chain, num]) => (
@@ -47,6 +69,27 @@ export function AccountSidebar() {
               <span className="text-zinc-300">{safeNum(num)}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800 pt-3 space-y-2">
+        <p className="text-xs text-zinc-500 uppercase tracking-wide">Event log</p>
+        <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+          {state.eventLog.length === 0 ? (
+            <p className="text-[10px] text-zinc-600">No events yet.</p>
+          ) : (
+            state.eventLog.slice(-30).reverse().map((entry) => (
+              <div key={entry.seq} className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
+                <div className="flex justify-between gap-2 text-[9px] font-mono">
+                  <span className="text-zinc-500">#{entry.seq}</span>
+                  <span className={entry.layer === "L1" ? "text-violet-400" : entry.layer === "L2" ? "text-blue-400" : "text-amber-400"}>
+                    {entry.layer}
+                  </span>
+                </div>
+                <p className="text-[10px] text-zinc-300 leading-snug">{entry.summary}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

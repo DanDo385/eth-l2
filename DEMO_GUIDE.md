@@ -23,7 +23,7 @@ Open [http://localhost:3001](http://localhost:3001) — clean window, dark mode.
 
 Header, **How this lab works** banner, three-lane canvas (L1 / OP L2 / ZK L2), Demo Gallery.
 
-> "Rollup mechanics lab — three Anvil chains, real Solidity, Go backend that auto-challenges fraud."
+> "Rollup mechanics lab — three Anvil chains, real Solidity, and a user-driven optimistic challenge flow."
 
 ### 0:20–0:45 — Start a fraud run
 
@@ -51,7 +51,7 @@ Intro chapter → step through honest vs claimed storage → verdict with **Soli
 
 Seed **88** (Clean run) or a blue batch still counting down.
 
-> "Honest batches wait 120 seconds here — mainnet uses ~7 days. No dispute → bond back. Fraud proven → challenger takes both bonds, 10% burned."
+> "Honest batches wait 120 seconds here — mainnet uses ~7 days. Suspicious roots are not auto-challenged. The user verifies locally, posts a challenge bond only if a mismatch is found, and then L1 settles the bonds."
 
 Point at countdown and bond-settlement copy in Block Inspector.
 

@@ -17,8 +17,8 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 2. **Bots** send swap transactions to L2 swap engines.
 3. The **OP sequencer** (seeded PRNG) batches txs, posts state roots to L1 with a **0.1 ETH bond**.
 4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged`.
-5. The **auto-challenger** opens `FraudProofGame` on L1 (Merkle bisection + on-chain step re-execution), finalizes the batch, and settles bonds (`bond_settled`).
-6. **Honest batches** finalize after a **120s challenge window** if undisputed; the sequencer recovers its bond.
+5. The user opens a suspicious batch, clicks **Verify locally**, then chooses whether to post the L1 challenge bond and open `FraudProofGame` (Merkle bisection + on-chain step re-execution).
+6. **Honest batches** finalize after a **120s challenge window** if undisputed; failed challenges slash the challenger and successful challenges reject the bad root.
 7. The **ZK sequencer** submits batches with a witness to `ZkValidityVerifier` (re-execution stand-in for a succinct proof) — no challenge window.
 8. The **frontend** streams WebSocket events into a three-lane canvas, Block Inspector (countdown + bond notes), Scoreboard, and Proof lab overlays (opcode walkthrough with source-map line citations).
 
@@ -49,7 +49,7 @@ Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.s
 
 ### WebSocket events
 
-`block_mined` · `batch_posted` · `batch_flagged` · `batch_challenged` · `dispute_resolved` · `bond_settled` · `zk_inspect_ready` · `session_state_changed` · `error_occurred`
+`block_mined` · `batch_posted` · `batch_flagged` · `batch_verified` · `batch_challenged` · `dispute_stage` · `dispute_resolved` · `bond_settled` · `zk_inspect_ready` · `session_state_changed` · `error_occurred`
 
 ## Quick start
 
@@ -157,7 +157,7 @@ Rollup mechanics live on-chain. **Foundry** compiles Solidity mocks (`FraudProof
 Three chains with instant finality. **`--steps-tracing`** and `debug_traceCall` power the watcher and opcode diff.
 
 ### Go
-One binary coordinates Anvil, bots, sequencers, watcher, and the challenge loop. `go-ethereum` handles ABI encoding and transaction lifecycle.
+One binary coordinates Anvil, bots, sequencers, watcher, local verification, user-triggered challenges, and finalization. `go-ethereum` handles ABI encoding and transaction lifecycle.
 
 ### Next.js + Tailwind v4 + Framer Motion
 Client-side reducer over a WebSocket event stream; motion for block entry and proof overlays.

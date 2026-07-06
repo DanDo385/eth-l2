@@ -41,6 +41,17 @@ func TestAddBatch_and_GetBatch(t *testing.T) {
 	}
 }
 
+func TestAddBatch_emptyWarmupStatus(t *testing.T) {
+	s := New()
+	b := makeBatch(0)
+	b.TxCount = 0
+	s.AddBatch(b)
+	got := s.GetBatch(0)
+	if got.Status != "empty_warmup" {
+		t.Fatalf("empty batch status = %q, want empty_warmup", got.Status)
+	}
+}
+
 func TestGetBatch_missing(t *testing.T) {
 	s := New()
 	if s.GetBatch(999) != nil {
@@ -70,6 +81,26 @@ func TestSetChallenged(t *testing.T) {
 	b := s.GetBatch(3)
 	if !b.Challenged {
 		t.Error("expected Challenged=true")
+	}
+}
+
+func TestSetVerified_setsLifecycleStatus(t *testing.T) {
+	s := New()
+	s.AddBatch(makeBatch(8))
+	s.SetVerified(8, &VerificationInfo{
+		Result:  "verified_mismatch",
+		CostWei: "20000000000000000",
+		Reason:  "mismatch",
+	})
+	b := s.GetBatch(8)
+	if b.Verification == nil {
+		t.Fatal("expected verification info")
+	}
+	if b.Status != "verified_mismatch" {
+		t.Fatalf("status = %q, want verified_mismatch", b.Status)
+	}
+	if !b.Flagged {
+		t.Fatal("verified mismatch should mark batch flagged")
 	}
 }
 

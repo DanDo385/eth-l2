@@ -4,12 +4,17 @@ import type {
   AppState,
   BatchInfo,
   BatchPostedPayload,
+  BatchVerifiedPayload,
   BondSettledPayload,
+  DisputeStagePayload,
   ErrorPayload,
+  EventLogEntry,
+  WsEvent,
 } from "../types";
 import { safeNum } from "./numbers";
 
 const MAX_BLOCK_LOG = 60;
+const MAX_EVENT_LOG = 160;
 
 function normalizeScoreboard(
   sb: AppState["scoreboard"],
@@ -24,12 +29,70 @@ function normalizeScoreboard(
   };
 }
 
+function layerForEvent(type: WsEvent["type"]): EventLogEntry["layer"] {
+  if (type === "batch_verified") return "local";
+  if (type === "block_mined" || type === "batch_posted") return type === "block_mined" ? "L2" : "L1";
+  return "L1";
+}
+
+function eventSummary(event: WsEvent): string {
+  switch (event.type) {
+    case "block_mined":
+      return `${event.payload.chain} block #${event.payload.blockNum}`;
+    case "batch_posted":
+      return `Batch #${event.payload.batchId} posted to L1 with ${event.payload.txCount} swap(s)`;
+    case "batch_flagged":
+      return `Batch #${event.payload.batchId} flagged suspicious: root mismatch`;
+    case "batch_verified":
+      return `Batch #${event.payload.batchId} ${event.payload.result === "verified_mismatch" ? "verified mismatch" : "verified valid"}`;
+    case "batch_challenged":
+      return `Batch #${event.payload.batchId} challenged on L1, bond locked`;
+    case "dispute_stage":
+      return `Batch #${event.payload.batchId}: ${event.payload.explanation}`;
+    case "dispute_resolved":
+      return `Batch #${event.payload.batchId} dispute resolved at ${event.payload.op}`;
+    case "bond_settled":
+      return `Batch #${event.payload.batchId} bonds settled: ${event.payload.outcome}`;
+    case "zk_inspect_ready":
+      return `ZK batch #${event.payload.batchId} ${event.payload.accepted ? "verified" : "rejected"} at validity gate`;
+    case "session_state_changed":
+      return event.payload.running
+        ? event.payload.paused
+          ? "Simulation paused"
+          : "Simulation running"
+        : "Simulation stopped";
+    case "error_occurred":
+      return `${event.payload.chain}: ${event.payload.message}`;
+  }
+}
+
+function eventBatchId(event: WsEvent): number | undefined {
+  const payload = event.payload as { batchId?: number };
+  return typeof payload.batchId === "number" ? payload.batchId : undefined;
+}
+
+function appendEventLog(state: AppState, event: WsEvent): EventLogEntry[] {
+  if (event.type === "block_mined" && state.blockLog.length % 5 !== 0) {
+    return state.eventLog;
+  }
+  const next: EventLogEntry = {
+    seq: state.eventLog.length + 1,
+    event: event.type,
+    layer: layerForEvent(event.type),
+    batchId: eventBatchId(event),
+    summary: eventSummary(event),
+    status: "recorded",
+  };
+  return [...state.eventLog.slice(-(MAX_EVENT_LOG - 1)), next];
+}
+
 export const initialState: AppState = {
   connected: false,
   running: false,
   paused: false,
   blocks: { l1: 0, "op-l2": 0, "zk-l2": 0 },
   blockLog: [],
+  eventLog: [],
   batches: {},
   inspectedBatch: null,
   opcodeRaceData: null,
@@ -92,6 +155,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               ...state.blockLog.slice(-(MAX_BLOCK_LOG - 1)),
               { chain, blockNum },
             ],
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -105,12 +169,16 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             l2StartBlock: p.l2StartBlock,
             l2EndBlock: p.l2EndBlock,
             txCount: p.txCount,
+            swaps: p.swaps ?? existing?.swaps,
             flagged: existing?.flagged ?? false,
             challenged: existing?.challenged ?? false,
             resolved: existing?.resolved ?? false,
             finalized: existing?.finalized,
             submittedAt: existing?.submittedAt,
             bondSettlement: existing?.bondSettlement,
+            status: existing?.status ?? (p.txCount === 0 ? "empty_warmup" : "challenge_window_open"),
+            verification: existing?.verification,
+            disputeStage: existing?.disputeStage,
             postedRoot: existing?.postedRoot,
             expectedRoot: existing?.expectedRoot,
             flagReason: existing?.flagReason,
@@ -119,6 +187,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           return {
             ...state,
             batches: { ...state.batches, [p.batchId]: info },
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -144,6 +213,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               [p.batchId]: {
                 ...base,
                 flagged: true,
+                status: "suspicious",
                 postedRoot: p.postedRoot,
                 expectedRoot: p.expectedRoot,
                 flagReason: p.reason,
@@ -154,6 +224,32 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 ? state.scoreboard.opChallenges
                 : safeNum(state.scoreboard.opChallenges) + 1,
             }),
+            eventLog: appendEventLog(state, event),
+          };
+        }
+
+        case "batch_verified": {
+          const p = event.payload as BatchVerifiedPayload;
+          const existing = state.batches[p.batchId];
+          if (!existing) return { ...state, eventLog: appendEventLog(state, event) };
+          return {
+            ...state,
+            batches: {
+              ...state.batches,
+              [p.batchId]: {
+                ...existing,
+                flagged: existing.flagged || p.result === "verified_mismatch",
+                status: p.result,
+                verification: {
+                  result: p.result,
+                  costWei: p.costWei,
+                  postedRoot: p.postedRoot,
+                  expectedRoot: p.expectedRoot,
+                  reason: p.reason,
+                },
+              },
+            },
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -166,8 +262,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             ...state,
             batches: {
               ...state.batches,
-              [p.batchId]: { ...existing, challenged: true, flagged: true },
+              [p.batchId]: { ...existing, challenged: true, flagged: true, status: "challenged", disputeStage: "dispute_open" },
             },
+            eventLog: appendEventLog(state, event),
+          };
+        }
+
+        case "dispute_stage": {
+          const p = event.payload as DisputeStagePayload;
+          const existing = state.batches[p.batchId];
+          if (!existing) return { ...state, eventLog: appendEventLog(state, event) };
+          return {
+            ...state,
+            batches: {
+              ...state.batches,
+              [p.batchId]: { ...existing, status: p.stage, disputeStage: p.stage },
+            },
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -210,6 +321,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 challenged: true,
                 resolved: true,
                 finalized: true,
+                status: "rejected",
+                disputeStage: "rejected",
                 divergence: divInfo,
               },
             },
@@ -218,6 +331,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 ? state.scoreboard.opResolved
                 : safeNum(state.scoreboard.opResolved) + 1,
             }),
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -232,9 +346,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               [p.batchId]: {
                 ...existing,
                 finalized: true,
+                status: p.outcome === "fraud" ? "rejected" : p.outcome === "challenge_failed" ? "accepted" : "finalized",
                 bondSettlement: p,
               },
             },
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -250,6 +366,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               zkRejected:
                 safeNum(state.scoreboard.zkRejected) + (p.accepted ? 0 : 1),
             }),
+            eventLog: appendEventLog(state, event),
           };
         }
 
@@ -263,16 +380,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               inspectedBatch: null,
               opcodeRaceData: null,
               zkRollups: {},
+              eventLog: appendEventLog(state, event),
             };
           }
           return {
             ...state,
             running: event.payload.running,
             paused: event.payload.paused ?? false,
+            eventLog: appendEventLog(state, event),
           };
 
         case "error_occurred":
-          return { ...state, lastError: event.payload as ErrorPayload };
+          return { ...state, lastError: event.payload as ErrorPayload, eventLog: appendEventLog(state, event) };
 
         default:
           return state;

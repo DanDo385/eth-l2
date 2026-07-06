@@ -25,6 +25,7 @@ func Handler(sess *engine.Session, hub *Hub) http.Handler {
 	mux.HandleFunc("/api/resume", requirePost(handleResume(sess)))
 	mux.HandleFunc("/api/stop", requirePost(handleStop(sess)))
 	mux.HandleFunc("/api/reseed", requirePost(handleReseed(sess)))
+	mux.HandleFunc("/api/verify", requirePost(handleVerify(sess)))
 	mux.HandleFunc("/api/challenge", requirePost(handleChallenge(sess)))
 	mux.HandleFunc("/api/state", requireGet(handleState(sess)))
 	mux.HandleFunc("/api/batch/", requireGet(handleBatch(sess)))
@@ -101,6 +102,28 @@ func handleReseed(sess *engine.Session) http.HandlerFunc {
 	}
 }
 
+func handleVerify(sess *engine.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			BatchID uint64 `json:"batchId"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			httpError(w, "batchId required", http.StatusBadRequest)
+			return
+		}
+		ch := sess.Challenger()
+		if ch == nil {
+			httpError(w, "session not running", http.StatusServiceUnavailable)
+			return
+		}
+		if err := ch.Verify(r.Context(), body.BatchID); err != nil {
+			httpError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, map[string]string{"status": "verified"})
+	}
+}
+
 func handleChallenge(sess *engine.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
@@ -115,13 +138,11 @@ func handleChallenge(sess *engine.Session) http.HandlerFunc {
 			httpError(w, "session not running", http.StatusServiceUnavailable)
 			return
 		}
-		go func() {
-			if err := ch.Challenge(r.Context(), body.BatchID); err != nil {
-				// Non-fatal: error surfaced via logs
-				_ = err
-			}
-		}()
-		writeJSON(w, map[string]string{"status": "challenge initiated"})
+		if err := ch.Challenge(r.Context(), body.BatchID); err != nil {
+			httpError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, map[string]string{"status": "challenge complete"})
 	}
 }
 

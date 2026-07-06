@@ -299,19 +299,20 @@ func (s *ZKSequencer) toWitnessSwaps(swaps []decodedSwap) []zkSwapOp {
 	return out
 }
 
-// chooseMode picks the claim the sequencer posts. ~15% invalid: 1-in-20 obvious
-// lie, 1-in-20 subtle lie, 1-in-20 honest-intent bug, the rest honest.
+// chooseMode picks the claim the sequencer posts. Invalid claims occur at about
+// 1/60, half the optimistic fault rate, and are rejected by validity checking.
 func (s *ZKSequencer) chooseMode(batchID uint64) string {
 	derived := s.prng.KeccakDerive(fmt.Sprintf("zk-mode:%d", batchID))
-	switch binary.BigEndian.Uint64(derived[:8]) % 20 {
+	if binary.BigEndian.Uint64(derived[:8])%ZKSuspicionDenominator != 0 {
+		return "honest"
+	}
+	switch derived[8] % 3 {
 	case 0:
 		return "obvious"
 	case 1:
 		return "subtle"
-	case 2:
-		return "buggy"
 	default:
-		return "honest"
+		return "buggy"
 	}
 }
 
