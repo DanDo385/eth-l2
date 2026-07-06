@@ -6,7 +6,7 @@ Do not add separate root-level `.cursorrules`, `CLAUDE.md`, `GEMINI.md`, or tool
 
 ## Project purpose
 
-`eth-l2` is a rollup mechanics lab. It visualizes optimistic rollup security: L2 trades become batches, a sequencer posts a claimed state root, a challenger disputes a bad batch, bisection narrows the disagreement, and a fraud-proof step exposes the invalid state transition.
+`eth-l2` is a rollup mechanics lab. It visualizes optimistic and ZK rollup security: L2 trades become batches, a sequencer posts a claimed state root, a challenger disputes a bad batch, **FraudProofGame** bisects Merkle-committed traces and re-executes one step on L1, and the frontend walks the proof from first principles.
 
 Portfolio lane: `deep-weeds`.
 
@@ -16,26 +16,37 @@ This should feel like a technical walkthrough that opens the black box.
 The viewer should leave understanding how optimistic trust turns back into verification.
 
 The emotional hook is: catch the lying sequencer.
-The technical hook is: bad batch -> bisection -> opcode/state mismatch -> invalid result.
+The technical hook is: bad batch → watcher flags → FraudProofGame → opcode/storage mismatch + source line → bond settlement.
+
+## Documentation
+
+Keep these in sync when behaviour changes:
+
+| File | Role |
+|------|------|
+| [README.md](README.md) | Setup, architecture, protocol constants, tests |
+| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Loom recording script (~2–3 min) |
+| [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
 
 ## Engineering principles
 
 - Keep the app deterministic enough for repeatable Loom recordings.
 - Prefer focused protocol mechanics over pretending this is a full production rollup.
-- Make state transitions and disputes visually inspectable.
-- README and `DEMO_GUIDE.md` must match current behavior.
+- Make state transitions, bonds, and disputes visually inspectable.
+- README and `DEMO_GUIDE.md` must match current behaviour.
 
 ## Frontend rules
 
-- Preserve `DeepWeedsDemoDirector` and `FraudProofWar` as demo-facing surfaces.
-- Keep protocol vocabulary accurate, but define mechanisms when introduced.
-- Use deterministic fallback data from `app/data/demoData.ts` for recordable demos.
+- Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `BlockInspector`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`.
+- Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
+- Overlays (opcode proof, ZK inspect) open from Proof lab or Block Inspector — never auto-popup.
 - Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths.
 
-## Contract/artifact rules
+## Contract / artifact rules
 
-- Keep mock contracts clear and mechanism-focused.
-- Generated artifacts should be reproducible from repo commands.
+- Mock contracts stay mechanism-focused (`FraudProofGame`, `ZkValidityVerifier` are teaching stand-ins, not production provers).
+- `broadcast/` is gitignored — deployments are reproduced at `make dev` / backend start.
+- Generated artifacts should be reproducible from repo commands (`forge build`, `make build`).
 - Do not commit accidental package manager lockfiles that conflict with the repo's package manager convention.
 
 ## Verification
@@ -43,9 +54,11 @@ The technical hook is: bad batch -> bisection -> opcode/state mismatch -> invali
 Before reporting success after code changes:
 
 ```bash
-cd /Users/openclaw/eth-l2
-npm run build
+make build
+# or: npm run build && forge test && cd backend && go test ./...
 ```
+
+E2E (optional): `pnpm exec playwright install chromium` then `make test-e2e`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know

@@ -1,158 +1,167 @@
 # Rollup Mechanics Lab
 
-A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2, a lying sequencer, bisection-based fraud proofs, and a real-time frontend that visualizes every step.
+A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2, a lying sequencer, Merkle bisection fraud proofs, bond economics, and a real-time frontend that visualizes every step.
+
+## Documentation
+
+| Doc | Use when |
+|-----|----------|
+| **This file** | Setup, architecture, protocol constants, running tests |
+| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Recording a ~2–3 min portfolio walkthrough (Loom) |
+| [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
+| [AGENTS.md](AGENTS.md) | Agent / contributor conventions |
 
 ## How it works
 
 1. **Three local chains** (L1 + OP-L2 + ZK-L2) are spawned by the Go backend using Anvil.
 2. **Bots** send swap transactions to L2 swap engines.
-3. The **OP sequencer** (seeded PRNG controls honesty) batches txs and posts state roots to L1.
-4. The **honest watcher** detects root mismatches and fires a `BatchFlagged` event.
-5. The **auto-challenger** opens a dispute on L1, runs **FraudProofGame** (Merkle bisection + on-chain step re-execution), and finalizes the batch with bond settlement.
-6. The **frontend** receives all events over WebSocket and renders the live blockchain canvas, scoreboard, challenge-window countdown, bond payouts, and a step-by-step fraud-proof walkthrough (intro chapter + filtered opcode trace with human-readable storage narration and source-map line citations).
+3. The **OP sequencer** (seeded PRNG) batches txs, posts state roots to L1 with a **0.1 ETH bond**.
+4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged`.
+5. The **auto-challenger** opens `FraudProofGame` on L1 (Merkle bisection + on-chain step re-execution), finalizes the batch, and settles bonds (`bond_settled`).
+6. **Honest batches** finalize after a **120s challenge window** if undisputed; the sequencer recovers its bond.
+7. The **ZK sequencer** submits batches with a witness to `ZkValidityVerifier` (re-execution stand-in for a succinct proof) — no challenge window.
+8. The **frontend** streams WebSocket events into a three-lane canvas, Block Inspector (countdown + bond notes), Scoreboard, and Proof lab overlays (opcode walkthrough with source-map line citations).
+
+## Protocol summary
+
+Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.sol`.
+
+| Mechanism | Sim value | Production analogy |
+|-----------|-----------|-------------------|
+| Sequencer bond | 0.1 ETH | Economic stake on each posted batch |
+| Challenger bond | 0.1 ETH | Cost to open a dispute |
+| Challenge window | 120 s | ~7 days on mainnet OP Stack |
+| Fraud slashing burn | 10% of loser's bond | Anti-griefing; winner takes the pot minus burn |
+| Batch window | 5 L2 blocks | One state root per batch |
+| OP fraud path | Watcher → `FraudProofGame` | Bisection + fault proof |
+| ZK validity path | `ZkValidityVerifier` witness | Validity proof at submission |
+
+### Key contracts
+
+| Contract | Role |
+|----------|------|
+| `OptimisticPortalMock` | Batch posting, bonds, challenge window, finalization |
+| `FraudProofGame` | Merkle bisection over swap-VM traces; `resolveOneStep` re-executes on L1 |
+| `SwapStepVM` | Minimal step machine mirroring swap fee math |
+| `HonestSwapEngine` / lying engines | L2 swap logic; router hot-swaps implementation |
+| `ZkValidityVerifier` | Re-runs batch witness; rejects bad post-state (fraud or bug) |
+| `ZkRollupMock` | ZK lane batch submission + canonical root |
+
+### WebSocket events
+
+`block_mined` · `batch_posted` · `batch_flagged` · `batch_challenged` · `dispute_resolved` · `bond_settled` · `zk_inspect_ready` · `session_state_changed` · `error_occurred`
 
 ## Quick start
 
 ```bash
-# Install dependencies (Foundry + pnpm + Playwright browsers)
-make install
+make install   # Foundry + pnpm + Playwright chromium
+make dev       # backend + frontend on :3001
 ```
 
-## Terminal setup (exact commands)
+Open [http://localhost:3001](http://localhost:3001).
 
-You can run the project with **1 terminal** (fastest) or **2 terminals** (easier debugging).
+### Terminal options
 
-### Option A: 1 terminal (recommended)
+**1 terminal (recommended):** `make dev`
 
-Open **1 terminal** in the repo root and run:
+**2 terminals (debugging):** `make backend` + `make frontend`
 
-```bash
-make dev
-```
+**E2E tests:** backend + frontend running, then `make test-e2e` (or `pnpm test:e2e` — Playwright starts the frontend automatically if configured in `playwright.config.ts`).
 
-This starts:
-- Go backend (`backend/cmd/server`)
-- Next.js frontend on port `3001`
-- Local Anvil chains (managed by the backend)
+### First demo
 
-Then open [http://localhost:3001](http://localhost:3001).
+1. Read the **How this lab works** welcome banner.
+2. Click **Clean run** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
+3. Watch batch colours on the OP lane; open **Block Inspector** for window countdown and bond notes.
+4. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
 
-### Option B: 2 terminals (best for debugging)
-
-Open **2 terminals** in the repo root.
-
-**Terminal 1 (backend + chains):**
-
-```bash
-make backend
-```
-
-**Terminal 2 (frontend):**
-
-```bash
-make frontend
-```
-
-Then open [http://localhost:3001](http://localhost:3001).
-
-### Running tests with terminals
-
-- `make test`, `make test-contracts`, and `make test-go` do **not** require dev servers.
-- `make test-e2e` works best with **3 terminals**:
-  - Terminal 1: `make backend`
-  - Terminal 2: `make frontend`
-  - Terminal 3: `make test-e2e`
-
-- Read the **How this lab works** welcome banner (dismissible) for the five-step rollup story.
-- Pick a **seed** in the control panel (default **42**) or click a Demo Gallery card.
-- Press **Start** — chains are created, contracts deployed, and bots begin trading (default speed **3×**).
-- Watch batches appear on the canvas; flagged/challenged/resolved batches change colour; honest batches finalize after the **120s** challenge window.
-- Click a batch to open the **Block Inspector**; when a batch turns red, click **Walk opcode proof step-by-step** or open it from **Proof lab** below the canvas (overlays never auto-popup).
+Default speed: **3×**. Default seed: **42**.
 
 ## Prerequisites
 
-- **Foundry** (forge + anvil): [getfoundry.sh](https://getfoundry.sh) or `brew install foundry`
-- **Go 1.22+**: [go.dev](https://go.dev/dl/)
-- **Node.js 20+ + pnpm**: `npm install -g pnpm`
+- **Foundry** — [getfoundry.sh](https://getfoundry.sh) or `brew install foundry`
+- **Go 1.22+** — [go.dev](https://go.dev/dl/)
+- **Node.js 20+ + pnpm** — `npm install -g pnpm`
 
 ## Makefile targets
 
 | Target | Description |
 |--------|-------------|
-| `make dev` | Start Go backend + Next.js frontend (recommended) |
+| `make dev` | Go backend + Next.js frontend (recommended) |
 | `make stop` | Kill stale processes on ports 3001, 8080, and Anvil RPC ports |
-| `make backend` | Go backend only (manages anvil + chains) |
-| `make frontend` | Next.js dev server only (port 3001) |
-| `make build` | Build contracts, Go binary, and Next.js |
-| `make test` | Run forge tests + Go unit tests |
-| `make test-contracts` | Forge tests with verbose output |
-| `make test-go` | Go unit tests with verbose output |
-| `make test-e2e` | Playwright E2E tests (requires dev server running) |
-| `make install` | Install all dependencies |
-| `make clean` | Remove build artefacts |
+| `make backend` | Go backend only |
+| `make frontend` | Next.js on port 3001 |
+| `make build` | Contracts + Go + Next.js |
+| `make test` | `forge test` + `go test ./...` |
+| `make test-contracts` | Forge verbose |
+| `make test-go` | Go verbose |
+| `make test-e2e` | Playwright (`pnpm exec playwright test`) |
+| `make install` | All dependencies |
+| `make clean` | Remove `out/`, `.next/`, screenshots |
 
 ## Architecture
 
 ```
-contracts/          Solidity — OptimisticPortal, FraudProofGame, SwapStepVM, ZkValidityVerifier, SwapEngines
+contracts/
+  l1/               OptimisticPortal, FraudProofGame, SwapStepVM, ZkRollup, ZkValidityVerifier
+  l2/               Swap engines, SwapRouter, SwapEngineStorage
+  shared/           Merkle, Hashing, DataTypes
 backend/
-  cmd/server/       HTTP + WebSocket server entrypoint
+  cmd/server/       HTTP :8080 (or GOAPI_ADDR) + WebSocket /stream
   internal/
-    chain/          Anvil process management, RPC client, deploy helpers
-    bots/           Transfer bot + swap bots (seeded PRNG)
-    sequencer/      OP sequencer (honest/lying), ZK sequencer
-    watcher/        Honest state-root tracker (pure Go mirror of HonestSwapEngine)
-    challenge/      Auto-challenger: FraudProofGame bisection + trace diff + bond settlement
-    trace/          debug_traceCall wrapper, Filter, Diff, source-map resolution
-    store/          In-memory batch/block state (thread-safe)
+    chain/          Anvil lifecycle, deploy, demo economics
+    bots/           L1 transfers + L2 swaps
+    sequencer/      OP (fraud injection) + ZK (honest ledger + witness)
+    watcher/          Honest state-root replay
+    challenge/      FraudProofGame driver, trace diff, bond settlement
+    sourcemap/      PC → Solidity line (forge artifacts)
+    trace/          debug_traceCall, filter, diff
+    store/          Batch/block snapshot
     events/         Typed pub/sub bus
-    seed/           Deterministic PRNG (keccak256 chain, fork-safe)
-    server/         REST endpoints + WebSocket hub
-app/                Next.js 16 frontend
-  components/       BlockchainCanvas, BlockInspector, OpcodeRace (fraud-proof overlay),
-                    WelcomeBanner, ResearchPanel (Proof lab), Scoreboard, DemoGallery, …
-  data/             batchEducation, traceNarrative (hex → human swap narration), protocol
-  lib/              WS client, reducer, URL hash helpers
+    seed/           Deterministic PRNG
+    server/         REST + WebSocket
+app/                Next.js 16
+  components/       Canvas, Inspector, OpcodeRace, WelcomeBanner, ResearchPanel, …
+  data/             batchEducation, traceNarrative, zkEducation, protocol
+  lib/              WS client, reducer, URL helpers
 ```
+
+Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist).
 
 ## Seeds
 
-| Seed | Behaviour |
-|------|-----------|
-| 42 | Subtle fraud — fee rounding in SSTORE |
-| 88 | Clean run — honest batches finalize after the challenge window |
-| 17 | Obvious fraud — wrong output amount |
-| 99 | Mixed — both fraud types appear |
+| Seed | Demo card | Behaviour |
+|------|-----------|-----------|
+| 88 | Clean run | All batches honest; finalize after challenge window |
+| 42 | Subtle fraud | Fee-rounding SSTORE lie |
+| 17 | Obvious fraud | Wrong output amount; fast divergence |
+| 99 | Mixed | Both fraud types over a long run |
 
 ## Tests
 
 ```bash
-make test-contracts   # Solidity tests (FraudProofGame, Portal bonds, SwapEngines, ZkValidityVerifier)
-make test-go          # Go unit tests (seed, store, trace, watcher, engine)
-make test-e2e         # 28 Playwright tests across 7 describe blocks
+make test              # 60 forge + all Go packages
+make test-contracts    # FraudProofGame, Portal bonds, SwapEngines, ZkValidityVerifier, …
+make test-go
+make test-e2e          # 28 Playwright layout tests (7 describe blocks)
 ```
 
 ## Why this tech stack?
 
-Every tool here was chosen to make the educational goal — *showing exactly what a rollup does, step by step* — as clear and reproducible as possible.
+### Foundry
+Rollup mechanics live on-chain. **Foundry** compiles Solidity mocks (`FraudProofGame`, `ZkValidityVerifier`, swap engines) and runs `forge test` in one command — same language family as OP Stack / zkSync.
 
-### Foundry (Solidity contracts)
-Rollup mechanics live on-chain: fraud-proof disputes, ZK verifiers, swap engines, and state-root commitments are all L1/L2 contracts. **Foundry** lets us write those contracts in Solidity (the language of production rollups like OP-Stack and zkSync) and test them with `forge test` in a single command. Mock contracts (`DisputeGameMock`, `VerifierMock`, `LyingSwapEngine`) keep the demo deterministic without the complexity of a production prover or challenge game.
+### Anvil
+Three chains with instant finality. **`--steps-tracing`** and `debug_traceCall` power the watcher and opcode diff.
 
-### Anvil (local EVM nodes)
-Three chains (L1, OP-L2, ZK-L2) need to run locally with instant finality so the demo completes in seconds rather than days. **Anvil** is a development-only EVM node from the Foundry suite that supports `anvil_mine` (manual block production), `--steps-tracing` (opcode-level execution traces), and `debug_traceCall` with state overrides — all the hooks the challenger and tracer need to reconstruct and diff execution paths.
+### Go
+One binary coordinates Anvil, bots, sequencers, watcher, and the challenge loop. `go-ethereum` handles ABI encoding and transaction lifecycle.
 
-### Go (backend)
-The backend coordinates five concurrent concerns: Anvil process lifecycle, RPC polling, bot transactions, sequencer batching, and the fraud-proof challenge loop. **Go** is a natural fit because its goroutine model maps cleanly onto "one goroutine per chain" polling, its typed struct system gives rigorous wire-type safety between chain and event bus, and the entire binary ships as a single self-contained executable. Go is also the language of Geth (the dominant Ethereum client), so the `go-ethereum` SDK gives us full access to ABI encoding, transaction signing, and `bind.WaitMined` out of the box.
+### Next.js + Tailwind v4 + Framer Motion
+Client-side reducer over a WebSocket event stream; motion for block entry and proof overlays.
 
-### Next.js + TailwindCSS v4 + Framer Motion (frontend)
-The frontend needs to respond to a stream of real-time events (blocks mined, batches flagged, disputes resolved) and animate them into a coherent visual narrative. **Next.js** with the App Router gives us React Server Components for static shell and client components for live state, all in one codebase. **TailwindCSS v4** keeps styling co-located with markup — every `border-red-500` on a flagged block is readable at a glance. **Framer Motion** handles the animated elements (block boxes sliding in, FRAUD flash overlays, the opcode race tape) without requiring manual `requestAnimationFrame` loops.
+### Seeded PRNG
+`keccak256`-chain PRNG with fork-safe sub-streams — same seed ⇒ same fraud pattern for repeatable recordings.
 
-### WebSocket pub/sub event bus
-The backend never pushes HTML — it publishes typed events (`block_mined`, `batch_posted`, `dispute_resolved`, …) over a single WebSocket. The frontend's `useReducer` accumulates them into app state. This separation mirrors what a real L2 dashboard would look like: an indexer emitting events, a client rendering them. It also makes testing easy — the reducer is a pure function you can unit-test without a network.
-
-### Seeded PRNG (`seed/`)
-Reproducibility is the whole point of a lab. A **keccak256-chain PRNG** means seed `42` always produces the same sequence of honest/lying sequencer decisions, bot trade amounts, and proof nonces. Fork-safe sub-streams (`prng.Fork("op-swap")`) ensure that changing the number of bots does not shift the sequencer's random draws, so each demo URL is a stable, shareable scenario.
-
-### Playwright (E2E tests)
-The UI correctness that matters is "does the layout render and do controls respond?" — something a unit test of the reducer cannot fully answer. **Playwright** drives a real Chromium browser against the live dev server and asserts DOM state across the idle layout, control panel, demo gallery, canvas, and scoreboard. The 28 E2E tests (7 describe blocks) include full-page and responsive screenshots, giving confidence that visual regressions are caught before recording a Loom.
+### Playwright
+Layout and control regressions across idle, mobile, and tablet viewports; screenshots under `public/screenshots/`.
