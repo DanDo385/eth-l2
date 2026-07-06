@@ -45,15 +45,17 @@ contract SwapEnginesTest is Test {
         assertTrue(router.stateRoot() != bytes32(0));
     }
 
-    function test_honest_stateRoot_isPathDependent() public {
+    // WO-1: the root is a commitment over final balances, so the same swaps
+    // applied in a different order (across distinct accounts, same registration
+    // order) commit to the SAME root. This is the correct state-commitment
+    // semantics, replacing the old path-dependent history hash.
+    function test_honest_stateRoot_commitsToFinalBalances() public {
         ISwapEngine(address(router)).seed(trader, 1000);
         ISwapEngine(address(router)).seed(other, 1000);
-
         ISwapEngine(address(router)).swap(trader, 10, 0);
         ISwapEngine(address(router)).swap(other, 5, 0);
         bytes32 rootA = router.stateRoot();
 
-        // Reset to a fresh router with same setup but different order
         SwapRouter router2 = new SwapRouter(sequencer, address(honest));
         ISwapEngine(address(router2)).seed(trader, 1000);
         ISwapEngine(address(router2)).seed(other, 1000);
@@ -61,7 +63,38 @@ contract SwapEnginesTest is Test {
         ISwapEngine(address(router2)).swap(trader, 10, 0);
         bytes32 rootB = router2.stateRoot();
 
-        assertTrue(rootA != rootB);
+        assertEq(rootA, rootB, "same final balances must commit to the same root");
+    }
+
+    // Registration order is part of the commitment (mirrors the Go fold order).
+    function test_honest_stateRoot_registrationOrderMatters() public {
+        ISwapEngine(address(router)).seed(trader, 1000);
+        ISwapEngine(address(router)).seed(other, 1000);
+        bytes32 rootA = router.stateRoot();
+
+        SwapRouter router2 = new SwapRouter(sequencer, address(honest));
+        ISwapEngine(address(router2)).seed(other, 1000);
+        ISwapEngine(address(router2)).seed(trader, 1000);
+        bytes32 rootB = router2.stateRoot();
+
+        assertTrue(rootA != rootB, "different registration order must differ");
+    }
+
+    // Cross-language parity: this exact one-account scenario is pinned to the
+    // SAME literal in the Go re-implementation
+    // (watcher/honest_test.go TestHonestSim_root_pinnedFormula). If either the
+    // Solidity _accountLeaf/_recomputeRoot encoding or the Go fold drifts, one
+    // side breaks. Scenario: single account 0x1111..1111, balanceA=1000,
+    // balanceB=0, nonce=0.
+    function test_root_matchesGoReferenceScenario() public {
+        address ref = 0x1111111111111111111111111111111111111111;
+        SwapRouter r = new SwapRouter(sequencer, address(honest));
+        ISwapEngine(address(r)).seed(ref, 1000);
+        assertEq(
+            r.stateRoot(),
+            bytes32(0xea057b0a0638c94375c460077254704b78263d17ea3eaad67a845af4953fabbf),
+            "Solidity root must match the Go reference root"
+        );
     }
 
     function test_honest_nonceMustMatch() public {

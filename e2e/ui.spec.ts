@@ -19,51 +19,53 @@ test.describe("Initial layout", () => {
   test("renders header with title", async ({ page }) => {
     await shot(page, "01-initial-load");
     await expect(page.locator("h1")).toContainText("Rollup Mechanics Lab");
-    // Tagline in header (use first() since "OP Optimistic" also contains "Optimistic")
-    await expect(page.locator("text=Optimistic · ZK · Fraud proofs")).toBeVisible();
+    await expect(
+      page.getByText("Live simulation · Optimistic fraud proofs · ZK validity proofs"),
+    ).toBeVisible();
   });
 
   test("shows connection status indicator in header", async ({ page }) => {
     const header = page.locator("header");
     const statusText = await header.textContent();
     // Status can be any valid state depending on WS availability
-    expect(statusText).toMatch(/connected|disconnected|running|idle/i);
+    expect(statusText).toMatch(/connected|disconnected|running|idle|ready|backend/i);
     await shot(page, "02-connection-status");
   });
 
   test("renders three-lane BlockchainCanvas", async ({ page }) => {
-    await expect(page.locator("text=L1 Mainnet")).toBeVisible();
-    await expect(page.locator("text=OP L2")).toBeVisible();
-    await expect(page.locator("text=ZK L2")).toBeVisible();
+    await expect(page.getByText("L1 Mainnet", { exact: true })).toBeVisible();
+    await expect(page.getByText("OP L2", { exact: true })).toBeVisible();
+    await expect(page.getByText("ZK L2", { exact: true })).toBeVisible();
     await shot(page, "03-canvas-empty");
   });
 
   test("renders ControlPanel with seed and speed inputs", async ({ page }) => {
     await expect(page.locator('input[type="number"]')).toBeVisible();
     await expect(page.locator('input[type="range"]')).toBeVisible();
-    await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start simulation" })).toBeVisible();
   });
 
   test("renders DemoGallery with four seed cards", async ({ page }) => {
-    await expect(page.locator("text=Demo gallery")).toBeVisible();
-    await expect(page.locator("text=Subtle fraud")).toBeVisible();
-    await expect(page.locator("text=Honest run")).toBeVisible();
-    await expect(page.locator("text=Obvious fraud")).toBeVisible();
-    await expect(page.locator("text=Mixed")).toBeVisible();
+    await expect(page.getByText("Demo gallery", { exact: true })).toBeVisible();
+    await expect(page.getByText("Clean run", { exact: true })).toBeVisible();
+    await expect(page.getByText("Subtle fraud", { exact: true })).toBeVisible();
+    await expect(page.getByText("Obvious fraud", { exact: true })).toBeVisible();
+    await expect(page.getByText("Mixed", { exact: true })).toBeVisible();
     await shot(page, "04-demo-gallery");
   });
 
   test("renders AccountSidebar with known roles", async ({ page }) => {
-    await expect(page.locator("text=Deployer")).toBeVisible();
-    await expect(page.locator("text=Sequencer")).toBeVisible();
-    await expect(page.locator("text=Challenger")).toBeVisible();
-    await expect(page.locator("text=Trader 0")).toBeVisible();
+    const accounts = page.getByText("Accounts", { exact: true }).locator("..");
+    await expect(accounts.getByText("Deployer", { exact: true })).toBeVisible();
+    await expect(accounts.getByText("Sequencer", { exact: true })).toBeVisible();
+    await expect(accounts.getByText("Challenger", { exact: true })).toBeVisible();
+    await expect(accounts.getByText("Trader 0", { exact: true })).toBeVisible();
   });
 
   test("renders Scoreboard with OP and ZK columns", async ({ page }) => {
-    await expect(page.locator("text=Scoreboard")).toBeVisible();
-    await expect(page.locator("text=OP Optimistic")).toBeVisible();
-    await expect(page.locator("text=ZK Rollup")).toBeVisible();
+    const scoreboard = page.getByText("Scoreboard", { exact: true }).locator("..");
+    await expect(scoreboard.getByText("OP: Optimistic")).toBeVisible();
+    await expect(scoreboard.getByText("ZK: Validity")).toBeVisible();
     await shot(page, "05-scoreboard");
   });
 });
@@ -77,12 +79,9 @@ test.describe("ControlPanel", () => {
   });
 
   test("Start button is rendered and reacts to connection state", async ({ page }) => {
-    // Start button exists; it's disabled when disconnected, enabled when connected
-    const btn = page.getByRole("button", { name: "Start" });
+    const btn = page.getByRole("button", { name: "Start simulation" });
     await expect(btn).toBeVisible();
-    // Disabled attribute depends on WS state; just check it renders
     const isDisabled = await btn.isDisabled();
-    // If connected: enabled. If disconnected: disabled. Both are valid.
     expect(typeof isDisabled).toBe("boolean");
     await shot(page, "06-start-button");
   });
@@ -93,11 +92,10 @@ test.describe("ControlPanel", () => {
     await expect(input).toHaveValue("99");
   });
 
-  test("speed slider changes label text", async ({ page }) => {
+  test("speed slider changes multiplier label", async ({ page }) => {
     const slider = page.locator('input[type="range"]');
     await slider.fill("7");
-    // Label updates to reflect new value
-    await expect(page.locator("text=Speed: 7×")).toBeVisible();
+    await expect(page.getByText("7×", { exact: true })).toBeVisible();
     await shot(page, "06-speed-slider-7x");
   });
 
@@ -106,8 +104,8 @@ test.describe("ControlPanel", () => {
     await expect(input).toHaveValue("42");
   });
 
-  test("speed defaults to 3 (label visible)", async ({ page }) => {
-    await expect(page.locator("text=Speed: 3×")).toBeVisible();
+  test("speed defaults to 3 (multiplier label visible)", async ({ page }) => {
+    await expect(page.getByText("3×", { exact: true })).toBeVisible();
   });
 });
 
@@ -120,28 +118,26 @@ test.describe("DemoGallery", () => {
   });
 
   test("seed-42 caption renders", async ({ page }) => {
-    await expect(
-      page.locator("text=Fee rounding attack")
-    ).toBeVisible();
+    await expect(page.getByText(/Rare fee-rounding attack/)).toBeVisible();
   });
 
   test("seed-17 caption renders", async ({ page }) => {
-    await expect(page.locator("text=Wrong output amount")).toBeVisible();
+    await expect(page.getByText(/Blatant output doubling/)).toBeVisible();
   });
 
   test("seed-99 caption renders", async ({ page }) => {
-    await expect(page.locator("text=Both fraud types appear")).toBeVisible();
+    await expect(page.getByText(/Both fraud types appear over time/)).toBeVisible();
   });
 
-  test("seed cards have data-testid classes for border (visual check via screenshot)", async ({ page }) => {
-    // Just ensure all 4 buttons are rendered as buttons
-    const cards = page.getByRole("button").filter({ hasText: /Subtle fraud|Honest run|Obvious fraud|Mixed/ });
+  test("seed cards render as four demo buttons", async ({ page }) => {
+    const cards = page
+      .getByRole("button")
+      .filter({ hasText: /Clean run|Subtle fraud|Obvious fraud|Mixed/ });
     await expect(cards).toHaveCount(4);
     await shot(page, "07-demo-gallery-cards");
   });
 
   test("clicking a demo card fires POST requests to /api/stop and /api/start", async ({ page }) => {
-    // Mock the API so the click doesn't fail with "Failed to fetch"
     await page.route("**/api/stop", (route) => route.fulfill({ status: 200, body: '{"status":"stopped"}' }));
     await page.route("**/api/start", (route) => route.fulfill({ status: 200, body: '{"status":"started"}' }));
 
@@ -172,16 +168,16 @@ test.describe("AccountSidebar", () => {
   });
 
   test("shows batch counters section initially", async ({ page }) => {
-    // Use first() since "Batches" appears in both Scoreboard and AccountSidebar
-    await expect(page.locator("text=Batches").first()).toBeVisible();
-    await expect(page.locator("text=Total").first()).toBeVisible();
+    const sidebar = page.getByText("Accounts", { exact: true }).locator("..");
+    await expect(sidebar.getByText("Batches", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("Total", { exact: true })).toBeVisible();
   });
 
   test("shows block heights for all three chains", async ({ page }) => {
-    // Use getByText with exact to avoid matching "L1 Mainnet" via substring
-    await expect(page.getByText("l1", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("op-l2", { exact: true })).toBeVisible();
-    await expect(page.getByText("zk-l2", { exact: true })).toBeVisible();
+    const sidebar = page.getByText("Latest blocks", { exact: true }).locator("..");
+    await expect(sidebar.getByText("l1", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("op-l2", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("zk-l2", { exact: true })).toBeVisible();
   });
 });
 
@@ -194,20 +190,17 @@ test.describe("BlockchainCanvas", () => {
   });
 
   test("shows chain activity header", async ({ page }) => {
-    await expect(page.locator("text=Chain activity")).toBeVisible();
+    await expect(page.getByText("Chain activity", { exact: true })).toBeVisible();
   });
 
   test("each lane shows block number #0", async ({ page }) => {
-    // All three lanes show #0 initially
     const hashes = page.locator("text=#0");
     await expect(hashes.first()).toBeVisible();
     await shot(page, "08-canvas-initial");
   });
 
   test("BlockInspector panel is hidden when no batch selected", async ({ page }) => {
-    // The right aside should be empty
     const rightAside = page.locator("aside").nth(1);
-    // It should not contain "Batch #"
     await expect(rightAside.locator("text=Batch #")).toHaveCount(0);
   });
 });
@@ -221,17 +214,17 @@ test.describe("Scoreboard", () => {
   });
 
   test("shows all OP metrics at zero", async ({ page }) => {
-    // Use exact match to avoid picking up "Honest run" from DemoGallery
-    await expect(page.getByText("Honest", { exact: true })).toBeVisible();
-    await expect(page.getByText("Fraudulent", { exact: true })).toBeVisible();
-    await expect(page.getByText("Flagged", { exact: true })).toBeVisible();
-    await expect(page.getByText("In dispute", { exact: true })).toBeVisible();
-    await expect(page.getByText("Resolved", { exact: true }).first()).toBeVisible();
+    const scoreboard = page.getByText("Scoreboard", { exact: true }).locator("..");
+    await expect(scoreboard.getByText("✓ Honest", { exact: true })).toBeVisible();
+    await expect(scoreboard.getByText("⚠ Fraudulent", { exact: true })).toBeVisible();
+    await expect(scoreboard.getByText("⚡ In dispute", { exact: true })).toBeVisible();
+    await expect(scoreboard.getByText("✗ Resolved fraud", { exact: true })).toBeVisible();
   });
 
-  test("detection rate shows 0% initially", async ({ page }) => {
-    await expect(page.locator("text=Detection rate")).toBeVisible();
-    await expect(page.locator("text=0%")).toBeVisible();
+  test("fraud detection shows 0% initially", async ({ page }) => {
+    const scoreboard = page.getByText("Scoreboard", { exact: true }).locator("..");
+    await expect(scoreboard.getByText("OP fraud detection")).toBeVisible();
+    await expect(scoreboard.getByText("0%", { exact: true })).toBeVisible();
   });
 });
 
@@ -246,7 +239,7 @@ test("full-page screenshot — idle state", async ({ page }) => {
     fullPage: true,
   });
   await expect(page.locator("h1")).toContainText("Rollup Mechanics Lab");
-  await expect(page.locator("text=Chain activity")).toBeVisible();
+  await expect(page.getByText("Chain activity", { exact: true })).toBeVisible();
 });
 
 test("mobile viewport (375px)", async ({ page }) => {
@@ -257,7 +250,6 @@ test("mobile viewport (375px)", async ({ page }) => {
     path: join(SCREENSHOT_DIR, "09-mobile-375px.png"),
     fullPage: true,
   });
-  // Title still visible on mobile
   await expect(page.locator("h1")).toBeVisible();
 });
 

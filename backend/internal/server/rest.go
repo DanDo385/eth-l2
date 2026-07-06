@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -182,9 +183,37 @@ func requireGet(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// allowedOrigins is the CORS allowlist parsed once from ETH_L2_ALLOWED_ORIGINS
+// (comma-separated). When empty, CORS stays permissive (the dev default). With
+// same-origin nginx routing in production a permissive value is harmless because
+// browsers do not send cross-origin requests; set the allowlist to lock the demo
+// to your frontend origin if you ever serve the API from a separate host.
+var allowedOrigins = parseAllowedOrigins()
+
+func parseAllowedOrigins() map[string]struct{} {
+	raw := strings.TrimSpace(os.Getenv("ETH_L2_ALLOWED_ORIGINS"))
+	if raw == "" {
+		return nil
+	}
+	set := make(map[string]struct{})
+	for _, o := range strings.Split(raw, ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			set[o] = struct{}{}
+		}
+	}
+	return set
+}
+
 func cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if allowedOrigins == nil {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		} else if origin := r.Header.Get("Origin"); origin != "" {
+			if _, ok := allowedOrigins[origin]; ok {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+			}
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {

@@ -1,10 +1,12 @@
 package watcher
 
 import (
+	"bytes"
 	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var testTrader = common.HexToAddress("0x1111111111111111111111111111111111111111")
@@ -65,15 +67,6 @@ func TestHonestSim_apply_nonce_increments(t *testing.T) {
 	}
 }
 
-func TestHonestSim_apply_advancesSwapID(t *testing.T) {
-	sim := newHonestSim([]common.Address{testTrader}, 1_000_000)
-	_ = sim.apply(testTrader, big.NewInt(1), big.NewInt(0))
-	_ = sim.apply(testTrader, big.NewInt(1), big.NewInt(1))
-	if sim.nextSwapID != 2 {
-		t.Errorf("expected nextSwapID=2, got %d", sim.nextSwapID)
-	}
-}
-
 func TestHonestSim_stateRootChanges(t *testing.T) {
 	sim := newHonestSim([]common.Address{testTrader}, 1_000_000)
 	before := sim.stateRoot
@@ -94,73 +87,90 @@ func TestHonestSim_unknownTrader_initialised(t *testing.T) {
 	}
 }
 
-// ── computeSHash ──────────────────────────────────────────────────────────────
+// ── balance-set state root (WO-1) ────────────────────────────────────────────
 
-func TestComputeSHash_nonZero(t *testing.T) {
-	h := computeSHash(0, testTrader, big.NewInt(100), big.NewInt(9970), big.NewInt(0))
-	if h == [32]byte{} {
-		t.Error("expected non-zero sHash")
+var traderX = common.HexToAddress("0x1111111111111111111111111111111111111111")
+var traderY = common.HexToAddress("0x2222222222222222222222222222222222222222")
+
+// The root is a commitment over final balances, so applying the same swaps in a
+// different interleaving (across distinct accounts) yields the same root.
+func TestHonestSim_root_isOrderIndependentAcrossAccounts(t *testing.T) {
+	a := newHonestSim([]common.Address{traderX, traderY}, 1_000_000)
+	_ = a.apply(traderX, big.NewInt(10), big.NewInt(0))
+	_ = a.apply(traderY, big.NewInt(5), big.NewInt(0))
+
+	b := newHonestSim([]common.Address{traderX, traderY}, 1_000_000)
+	_ = b.apply(traderY, big.NewInt(5), big.NewInt(0))
+	_ = b.apply(traderX, big.NewInt(10), big.NewInt(0))
+
+	if a.stateRoot != b.stateRoot {
+		t.Error("same final balances should commit to the same root regardless of swap order")
 	}
 }
 
-func TestComputeSHash_deterministic(t *testing.T) {
-	a := computeSHash(1, testTrader, big.NewInt(500), big.NewInt(49850), big.NewInt(1))
-	b := computeSHash(1, testTrader, big.NewInt(500), big.NewInt(49850), big.NewInt(1))
-	if a != b {
-		t.Error("computeSHash should be deterministic")
+// Different final balances must produce different roots.
+func TestHonestSim_root_sensitiveToBalance(t *testing.T) {
+	a := newHonestSim([]common.Address{traderX}, 1_000_000)
+	_ = a.apply(traderX, big.NewInt(10), big.NewInt(0))
+
+	b := newHonestSim([]common.Address{traderX}, 1_000_000)
+	_ = b.apply(traderX, big.NewInt(11), big.NewInt(0))
+
+	if a.stateRoot == b.stateRoot {
+		t.Error("different balances should produce different roots")
 	}
 }
 
-func TestComputeSHash_swapIDDifferentiates(t *testing.T) {
-	a := computeSHash(0, testTrader, big.NewInt(100), big.NewInt(9970), big.NewInt(0))
-	b := computeSHash(1, testTrader, big.NewInt(100), big.NewInt(9970), big.NewInt(0))
-	if a == b {
-		t.Error("different swapIDs should produce different hashes")
+// Registration order is part of the commitment: the same balances registered in
+// a different order produce a different root (mirrors the contract's fold order).
+func TestHonestSim_root_sensitiveToRegistrationOrder(t *testing.T) {
+	a := newHonestSim([]common.Address{traderX, traderY}, 1_000_000)
+	b := newHonestSim([]common.Address{traderY, traderX}, 1_000_000)
+	if a.stateRoot == b.stateRoot {
+		t.Error("different registration order should produce different roots")
 	}
 }
 
-func TestComputeSHash_traderDifferentiates(t *testing.T) {
-	other := common.HexToAddress("0x2222222222222222222222222222222222222222")
-	a := computeSHash(0, testTrader, big.NewInt(100), big.NewInt(9970), big.NewInt(0))
-	b := computeSHash(0, other, big.NewInt(100), big.NewInt(9970), big.NewInt(0))
-	if a == b {
-		t.Error("different traders should produce different hashes")
+// A seed (trader top-up) updates balanceA and therefore the root.
+func TestHonestSim_applySeed_updatesRoot(t *testing.T) {
+	sim := newHonestSim([]common.Address{traderX}, 1_000)
+	before := sim.stateRoot
+	sim.applySeed(traderX, big.NewInt(10_000))
+	if sim.stateRoot == before {
+		t.Error("seeding a new balanceA should change the root")
+	}
+	if sim.balanceA[traderX].Int64() != 10_000 {
+		t.Errorf("expected balanceA=10000 after seed, got %s", sim.balanceA[traderX])
 	}
 }
 
-// ── computeNewRoot ────────────────────────────────────────────────────────────
+// Pin the exact leaf and root encoding independently of sim.accountLeaf, so any
+// drift from the Solidity _accountLeaf / _recomputeRoot encoding is caught. The
+// same one-account scenario is pinned to the SAME literal in Solidity
+// (SwapEngines.t.sol test_root_matchesGoReferenceScenario), proving cross-language
+// parity of the commitment.
+//
+// Scenario: single account traderX, balanceA=1000, balanceB=0, nonce=0.
+func TestHonestSim_root_pinnedFormula(t *testing.T) {
+	sim := newHonestSim([]common.Address{traderX}, 1_000)
 
-func TestComputeNewRoot_nonZero(t *testing.T) {
-	sHash := computeSHash(0, testTrader, big.NewInt(1), big.NewInt(99), big.NewInt(0))
-	root := computeNewRoot([32]byte{}, sHash)
-	if root == [32]byte{} {
-		t.Error("expected non-zero new root")
-	}
-}
+	// Build the leaf independently: address(20) | balanceA(32) | balanceB(32) | nonce(32).
+	var leafBuf []byte
+	leafBuf = append(leafBuf, traderX.Bytes()...)
+	leafBuf = append(leafBuf, padLeft32(big.NewInt(1000))...)
+	leafBuf = append(leafBuf, padLeft32(big.NewInt(0))...)
+	leafBuf = append(leafBuf, padLeft32(big.NewInt(0))...)
+	leaf := crypto.Keccak256(leafBuf)
 
-func TestComputeNewRoot_deterministic(t *testing.T) {
-	var oldRoot [32]byte
-	oldRoot[0] = 0xab
-	var sHash [32]byte
-	sHash[0] = 0xcd
-	a := computeNewRoot(oldRoot, sHash)
-	b := computeNewRoot(oldRoot, sHash)
-	if a != b {
-		t.Error("computeNewRoot should be deterministic")
-	}
-}
+	// root = keccak256(0x00..00(32) | leaf(32)).
+	rootBuf := make([]byte, 64)
+	copy(rootBuf[32:], leaf)
+	want := crypto.Keccak256(rootBuf)
 
-func TestComputeNewRoot_oldRootMatters(t *testing.T) {
-	var sHash [32]byte
-	sHash[1] = 0xff
-	var rootA, rootB [32]byte
-	rootA[0] = 0x01
-	rootB[0] = 0x02
-	a := computeNewRoot(rootA, sHash)
-	b := computeNewRoot(rootB, sHash)
-	if a == b {
-		t.Error("different old roots should produce different new roots")
+	if !bytes.Equal(sim.stateRoot[:], want) {
+		t.Errorf("pinned root mismatch:\n got  %x\n want %x", sim.stateRoot[:], want)
 	}
+	t.Logf("reference one-account root = %x", want)
 }
 
 // ── padLeft32 ─────────────────────────────────────────────────────────────────

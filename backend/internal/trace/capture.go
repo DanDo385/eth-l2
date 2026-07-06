@@ -49,13 +49,14 @@ func Transaction(ctx context.Context, ec *ethclient.Client, txHash common.Hash) 
 // given calldata. It overrides the router's implementation storage slot so Anvil replays
 // the call through the honest engine without mutating chain state.
 //
-// Implementation slot (slot 7) layout:
+// Implementation slot (slot 9) layout:
 //
-//	SwapEngineStorage: _balanceA(0) _balanceB(1) _nonces(2) _nextSwapId+_swapCount(3) _stateRoot(4) _swapHashes(5)
-//	SwapRouter:        sequencer(6)  implementation(7)
+//	SwapEngineStorage: _balanceA(0) _balanceB(1) _nonces(2) _nextSwapId+_swapCount(3)
+//	                   _stateRoot(4) _swapHashes(5) _accounts(6) _registered(7)
+//	SwapRouter:        sequencer(8)  implementation(9)
 //
-// Slot number is derived from SwapRouter's storage layout: two inherited
-// SwapEngineStorage slots (0–5) + sequencer (6) + implementation (7).
+// Slot number is derived from SwapRouter's storage layout: eight inherited
+// SwapEngineStorage slots (0-7) + sequencer (8) + implementation (9).
 // If SwapRouter storage order changes, this slot number must be updated to match.
 func HonestReplay(
 	ctx context.Context,
@@ -77,9 +78,9 @@ func HonestReplay(
 		"gas":  "0x200000",
 	}
 
-	// Override slot 7 of the router to point to HonestSwapEngine.
+	// Override slot 9 of the router to point to HonestSwapEngine.
 	// Address values in state overrides must be padded to 32 bytes (left-padded with zeros).
-	implSlot := "0x0000000000000000000000000000000000000000000000000000000000000007"
+	implSlot := "0x0000000000000000000000000000000000000000000000000000000000000009"
 	implValue := "0x000000000000000000000000" + honestEngineAddr.Hex()[2:]
 	stateOverride := map[string]interface{}{
 		routerAddr.Hex(): map[string]interface{}{

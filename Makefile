@@ -45,7 +45,7 @@ test-go:
 
 
 test-e2e:
-	pnpm dlx playwright test
+	pnpm exec playwright test
 
 # ── Install ──────────────────────────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ install:
 	@command -v forge >/dev/null 2>&1 || brew install foundry
 	@forge install foundry-rs/forge-std --no-git 2>/dev/null || true
 	pnpm install
-	pnpm dlx playwright install chromium
+	pnpm exec playwright install chromium
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

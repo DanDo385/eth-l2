@@ -38,15 +38,17 @@ contract LyingSwapEngineObvious is SwapEngineStorage, ISwapEngine {
             keccak256(abi.encodePacked(swapId, trader, amountIn, amountOut, nonce));
         _swapHashes[swapId] = sHash;
 
+        _register(trader);
         bytes32 oldRoot = _stateRoot;
-        bytes32 newRoot = keccak256(abi.encodePacked(oldRoot, sHash));
-        _stateRoot = newRoot;
+        _recomputeRoot();
 
         emit Swapped(swapId, trader, amountIn, amountOut, nonce);
-        emit StateRootUpdated(oldRoot, newRoot, swapId);
+        emit StateRootUpdated(oldRoot, _stateRoot, swapId);
     }
 
     function seed(address trader, uint256 amountA) external override {
+        _register(trader);
         _balanceA[trader] = amountA;
+        _recomputeRoot();
     }
 }

@@ -52,12 +52,12 @@ func main() {
 	}()
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    resolveAddr(),
 		Handler: server.Handler(sess, hub),
 	}
 
 	go func() {
-		log.Println("HTTP server listening on :8080")
+		log.Printf("HTTP server listening on %s", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("http: %v", err)
 		}
@@ -69,6 +69,20 @@ func main() {
 	log.Println("shutting down...")
 	_ = srv.Shutdown(context.Background())
 	sess.Stop()
+}
+
+// resolveAddr returns the HTTP bind address.
+// Priority: GOAPI_ADDR (full host:port) > PORT (":"+port) > ":8080".
+// The dev default binds all interfaces so LAN/phone testing keeps working; in
+// production set GOAPI_ADDR=127.0.0.1:8101 so only nginx can reach the backend.
+func resolveAddr() string {
+	if addr := os.Getenv("GOAPI_ADDR"); addr != "" {
+		return addr
+	}
+	if port := os.Getenv("PORT"); port != "" {
+		return ":" + port
+	}
+	return ":8080"
 }
 
 // findRepoRoot walks up from cwd until it finds foundry.toml.
