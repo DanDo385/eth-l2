@@ -38,8 +38,11 @@ export function Scoreboard({ mode = "all" }: Props) {
   const verifiedMismatch = batchList.filter((b) => b.verification?.result === "verified_mismatch").length;
   const inDispute = batchList.filter((b) => b.challenged && !b.resolved).length;
   const resolved = batchList.filter((b) => b.resolved).length;
-  const detectionRate =
-    fraud > 0 ? Math.round((resolved / fraud) * 100) : 0;
+  const flaggedFraud = batchList.filter(
+    (b) => b.engineType !== "honest" && (b.flagged || b.challenged || b.resolved),
+  ).length;
+  const flagRate = fraud > 0 ? Math.round((flaggedFraud / fraud) * 100) : 0;
+  const resolutionRate = fraud > 0 ? Math.round((resolved / fraud) * 100) : 0;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
@@ -125,12 +128,18 @@ export function Scoreboard({ mode = "all" }: Props) {
 
       {showOp && (
       <div className="border-t border-zinc-800 pt-2 space-y-1">
-        <div className="flex gap-3 text-xs">
-          <span className="text-zinc-500" title="Percentage of fraudulent batches that were caught and resolved">OP fraud detection</span>
-          <span className="font-mono text-emerald-400">{detectionRate}%</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <span className="flex gap-2" title="Percentage of fraudulent batches the off-chain watcher flagged">
+            <span className="text-zinc-500">Watcher flagged</span>
+            <span className="font-mono text-yellow-400">{flagRate}%</span>
+          </span>
+          <span className="flex gap-2" title="Percentage of fraudulent batches rejected on L1 after a user challenged and won the fraud proof">
+            <span className="text-zinc-500">Fraud resolved on L1</span>
+            <span className="font-mono text-emerald-400">{resolutionRate}%</span>
+          </span>
         </div>
         <p className="text-[10px] text-zinc-700 leading-relaxed">
-          This reaches 100% because the honest watcher catches every state root mismatch. In production, any full node running the OP software can play the watcher role.
+          Flagging reaches 100% because this demo's honest watcher replays every batch. Resolution only rises when a user verifies and challenges — detection alone rejects nothing on L1.
         </p>
       </div>
       )}

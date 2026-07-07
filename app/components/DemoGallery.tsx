@@ -37,7 +37,7 @@ const OP_DEMOS = [
   {
     seed: 99,
     title: "Mixed",
-    caption: "Both fraud types appear over time, tuned for 1-2 disputes per minute.",
+    caption: "Both fraud types appear over time, surfacing 1-2 suspicious batches per minute.",
     detail: "Shows why the 7-day challenge window exists: fraud is rare, but economic bonds make it unprofitable.",
     color: "border-violet-700 hover:border-violet-500",
     badge: "bg-violet-900/40 text-violet-300",
@@ -138,7 +138,7 @@ export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
       <p className="text-[10px] text-zinc-700 leading-relaxed border-t border-zinc-800 pt-2">
         {isZk
           ? "Invalid proof claims are rare by design here. L1 rejects them at the verifier before accepting the new state root."
-          : "Fraud is tuned for the recording window: usually 1-2 challenges in 60s and 3-4 in 120s. Economic bonds make cheating unprofitable even when technically possible."}
+          : "Fraud is tuned for the demo window: usually 1-2 suspicious batches to verify and challenge in 60s, 3-4 in 120s. Economic bonds make cheating unprofitable even when technically possible."}
       </p>
     </div>
   );

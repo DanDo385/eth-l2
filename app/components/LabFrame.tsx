@@ -21,7 +21,7 @@ function LabHeader({ mode }: HeaderProps) {
   const isOptimistic = mode === "optimistic";
 
   return (
-    <header className="border-b border-zinc-800 px-6 py-3">
+    <header className="border-b border-zinc-800 px-4 sm:px-6 py-3">
       <div className="flex flex-wrap items-center gap-4">
         <div>
           <h1 className="text-lg font-bold leading-tight tracking-tight">

@@ -89,7 +89,14 @@ type DisputeStagePayload struct {
 
 type ZkInspectReadyPayload struct {
 	BatchID     uint64 `json:"batchId"`
+	L2StartBlock uint64 `json:"l2StartBlock"`
 	L2EndBlock  uint64 `json:"l2EndBlock"`
+	HeaderHash  string `json:"headerHash"`
+	PrevStateRoot string `json:"prevStateRoot"`
+	ClaimedPostRoot string `json:"claimedPostRoot"`
+	RecomputedRoot string `json:"recomputedRoot"`
+	BatchDataHash string `json:"batchDataHash"`
+	WitnessAccounts int `json:"witnessAccounts"`
 	Constraints int    `json:"constraints"`
 	ProveMs     int64  `json:"proveMs"`
 	VerifyGas   uint64 `json:"verifyGas"`

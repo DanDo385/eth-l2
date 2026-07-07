@@ -122,11 +122,13 @@ export function ResearchPanel({ mode = "all" }: Props) {
                       )}
                     </p>
                     <p className="text-[10px] text-zinc-500 mt-0.5">
-                      Block {z.l2EndBlock} ·{" "}
+                      Blocks {z.l2StartBlock ?? "?"}→{z.l2EndBlock}
+                      {z.txCount != null ? ` · ${z.txCount} swap${z.txCount === 1 ? "" : "s"}` : ""}
+                      {" · "}
                       {z.accepted ? (
-                        <span className="text-emerald-500">verified on L1</span>
+                        <span className="text-emerald-500">verifier accepted</span>
                       ) : (
-                        <span className="text-red-400">rejected on L1</span>
+                        <span className="text-red-400">verifier rejected</span>
                       )}
                     </p>
                   </div>

@@ -15,17 +15,24 @@ const ZK_STEPS = [
   },
   {
     n: "2",
-    title: "Generate a validity proof",
-    body: "The prover commits to witness inputs and proof data for the claimed state transition.",
+    title: "Form public inputs",
+    body: "The batch header binds previous root, claimed post root, batch data hash, and block range. These become the public inputs the proof must match.",
     color: "text-emerald-300",
     border: "border-emerald-900/70",
   },
   {
     n: "3",
-    title: "Verify before settlement",
-    body: "The verifier contract accepts valid proofs and rejects invalid claims before bridge finality advances.",
+    title: "Generate a validity proof",
+    body: "The prover commits to witness inputs and proof data for the claimed state transition off-chain.",
     color: "text-violet-300",
     border: "border-violet-900/70",
+  },
+  {
+    n: "4",
+    title: "Verify before settlement",
+    body: "The verifier contract accepts valid proofs and rejects invalid claims. This demo focuses on validity, not privacy or data availability.",
+    color: "text-amber-300",
+    border: "border-amber-900/70",
   },
 ];
 
@@ -88,7 +95,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
           <p className="text-[11px] text-zinc-600 leading-relaxed border-t border-zinc-800 pt-3">
             {isZk
               ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
-              : "Fraud is frequent enough for a short recording: usually 1-2 challenges in 60s and 3-4 in 120s. The system is designed to make cheating economically irrational, not just technically detectable. Click a demo card to start."}
+              : "Fraud is frequent enough for a short run: usually 1-2 suspicious batches in 60s and 3-4 in 120s. A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
           </p>
         </motion.div>
       )}

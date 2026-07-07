@@ -181,7 +181,8 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 	// 3. Compute the claimed post root. Honest batches carry the true root;
 	//    fraud/bug batches carry what that engine would have produced.
 	mode := s.chooseMode(batchID)
-	claimedPost := s.ledger.projectedRoot(swaps, "honest")
+	recomputedPost := s.ledger.projectedRoot(swaps, "honest")
+	claimedPost := recomputedPost
 	if mode != "honest" {
 		claimedPost = s.ledger.projectedRoot(swaps, mode)
 	}
@@ -221,16 +222,24 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 	// 6. Publish. verifyGas is real (measured on L1); constraints/proveMs are
 	//    a labeled simulation of what a real prover would report.
 	txCount := len(swaps)
+	headerHash := hashBatchHeader(header)
 	s.bus.Publish(events.New(events.ZkInspectReady, events.ZkInspectReadyPayload{
-		BatchID:     batchID,
-		L2EndBlock:  l2EndBlock,
-		Constraints: 48_000 + txCount*8_500,
-		ProveMs:     int64(180 + txCount*45),
-		VerifyGas:   verifyGas,
-		Accepted:    accepted,
-		Reason:      zkRejectReason(mode, accepted),
-		EngineType:  mode,
-		TxCount:     txCount,
+		BatchID:         batchID,
+		L2StartBlock:    windowStart,
+		L2EndBlock:      l2EndBlock,
+		HeaderHash:      fmt.Sprintf("0x%x", headerHash),
+		PrevStateRoot:   fmt.Sprintf("0x%x", prevRoot),
+		ClaimedPostRoot: fmt.Sprintf("0x%x", claimedPost),
+		RecomputedRoot:  fmt.Sprintf("0x%x", recomputedPost),
+		BatchDataHash:   fmt.Sprintf("0x%x", header.BatchDataHash),
+		WitnessAccounts: len(pre),
+		Constraints:     48_000 + txCount*8_500,
+		ProveMs:         int64(180 + txCount*45),
+		VerifyGas:       verifyGas,
+		Accepted:        accepted,
+		Reason:          zkRejectReason(mode, accepted),
+		EngineType:      mode,
+		TxCount:         txCount,
 	}))
 	return nil
 }
@@ -300,7 +309,7 @@ func (s *ZKSequencer) toWitnessSwaps(swaps []decodedSwap) []zkSwapOp {
 }
 
 // chooseMode picks the claim the sequencer posts. Invalid claims occur at about
-// 1/60, half the optimistic fault rate, and are rejected by validity checking.
+// 1/16, half the optimistic fault rate, and are rejected by validity checking.
 func (s *ZKSequencer) chooseMode(batchID uint64) string {
 	derived := s.prng.KeccakDerive(fmt.Sprintf("zk-mode:%d", batchID))
 	if binary.BigEndian.Uint64(derived[:8])%ZKSuspicionDenominator != 0 {
@@ -318,7 +327,7 @@ func (s *ZKSequencer) chooseMode(batchID uint64) string {
 
 func zkRejectReason(mode string, accepted bool) string {
 	if accepted {
-		return "Proof verified on L1 by re-execution. Batch finalized immediately with no challenge window."
+		return "Proof verified on L1 by re-execution. In this simplified model, L1 accepts the new root as soon as the verifier succeeds."
 	}
 	switch mode {
 	case "obvious":

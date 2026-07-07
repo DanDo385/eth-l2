@@ -23,6 +23,12 @@ function LabContent({ mode }: { mode: LabMode }) {
     dispatch({ type: "INSPECT_BATCH", batchId });
   }
 
+  function handleZkBatchClick(batchId: number) {
+    dispatch({ type: "INSPECT_ZK_BATCH", batchId });
+    dispatch({ type: "SHOW_ZK_INSPECT", batchId });
+    dispatch({ type: "MARK_EXPLORED", lane: "zk", batchId });
+  }
+
   function handleOpcodeRace(batchId: number) {
     dispatch({ type: "SHOW_OPCODE_RACE", batchId });
     dispatch({ type: "MARK_EXPLORED", lane: "op", batchId });
@@ -43,7 +49,7 @@ function LabContent({ mode }: { mode: LabMode }) {
           <div
             className={
               selectedBatch
-                ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]"
+                ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)]"
                 : "grid gap-4"
             }
           >
@@ -56,10 +62,14 @@ function LabContent({ mode }: { mode: LabMode }) {
             )}
           </div>
         ) : (
-          <>
-            <BlockchainCanvas mode={mode} onBatchClick={handleBatchClick} />
+          <div className="space-y-4">
+            <BlockchainCanvas
+              mode={mode}
+              onBatchClick={handleBatchClick}
+              onZkBatchClick={handleZkBatchClick}
+            />
             <Scoreboard mode={mode} />
-          </>
+          </div>
         )}
 
         {isOptimistic && (

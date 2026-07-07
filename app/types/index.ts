@@ -157,7 +157,14 @@ export interface DisputeResolvedPayload {
 
 export interface ZkInspectPayload {
   batchId: number;
+  l2StartBlock?: number;
   l2EndBlock: number;
+  headerHash?: string;
+  prevStateRoot?: string;
+  claimedPostRoot?: string;
+  recomputedRoot?: string;
+  batchDataHash?: string;
+  witnessAccounts?: number;
   constraints: number;
   proveMs: number;
   verifyGas: number;
@@ -215,6 +222,7 @@ export interface AppState {
   eventLog: EventLogEntry[];
   batches: Record<number, BatchInfo>;
   inspectedBatch: number | null;
+  inspectedZkBatch: number | null;
   opcodeRaceData: DisputeResolvedPayload | null;
   zkInspectData: ZkInspectPayload | null;
   /** ZK batch outcomes keyed by batchId, populated from WS, never auto-opens modals. */
@@ -259,6 +267,7 @@ export type AppAction =
   | { type: "WS_EVENT"; event: WsEvent }
   | { type: "HYDRATE_STATE"; snapshot: ApiStateSnapshot }
   | { type: "INSPECT_BATCH"; batchId: number | null }
+  | { type: "INSPECT_ZK_BATCH"; batchId: number | null }
   | { type: "SHOW_OPCODE_RACE"; batchId: number }
   | { type: "CLOSE_OPCODE_RACE" }
   | { type: "SHOW_ZK_INSPECT"; batchId: number }

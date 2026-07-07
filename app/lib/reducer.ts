@@ -95,6 +95,7 @@ export const initialState: AppState = {
   eventLog: [],
   batches: {},
   inspectedBatch: null,
+  inspectedZkBatch: null,
   opcodeRaceData: null,
   zkInspectData: null,
   zkRollups: {},
@@ -378,8 +379,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
               paused: false,
               batches: {},
               inspectedBatch: null,
+              inspectedZkBatch: null,
               opcodeRaceData: null,
+              zkInspectData: null,
               zkRollups: {},
+              scoreboard: {
+                opChallenges: 0,
+                opResolved: 0,
+                zkBatches: 0,
+                zkAccepted: 0,
+                zkRejected: 0,
+              },
               eventLog: appendEventLog(state, event),
             };
           }
@@ -404,6 +414,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         inspectedBatch: action.batchId,
+        inspectedZkBatch: null,
+        ...(switching ? { opcodeRaceData: null, zkInspectData: null } : {}),
+      };
+    }
+
+    case "INSPECT_ZK_BATCH": {
+      const switching =
+        action.batchId !== null && action.batchId !== state.inspectedZkBatch;
+      return {
+        ...state,
+        inspectedZkBatch: action.batchId,
+        inspectedBatch: null,
         ...(switching ? { opcodeRaceData: null, zkInspectData: null } : {}),
       };
     }
@@ -441,6 +463,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         zkInspectData: data,
+        inspectedZkBatch: action.batchId,
         opcodeRaceData: null,
       };
     }

@@ -28,7 +28,7 @@ export interface EconomicEvent {
 
 export interface BondLedger {
   sequencer: { posted: number; returned: number; slashed: number };
-  challenger: { posted: number; returned: number; won: number };
+  challenger: { posted: number; returned: number; won: number; lost: number };
 }
 
 function weiToEth(wei: string): number {
@@ -38,7 +38,7 @@ function weiToEth(wei: string): number {
 export function computeBondLedger(batches: BatchInfo[]): BondLedger {
   const ledger: BondLedger = {
     sequencer: { posted: 0, returned: 0, slashed: 0 },
-    challenger: { posted: 0, returned: 0, won: 0 },
+    challenger: { posted: 0, returned: 0, won: 0, lost: 0 },
   };
   for (const b of batches) {
     ledger.sequencer.posted += PORTAL_BOND_ETH;
@@ -53,6 +53,7 @@ export function computeBondLedger(batches: BatchInfo[]): BondLedger {
       ledger.challenger.returned += weiToEth(settle.chalBondWei);
     } else if (settle.outcome === "challenge_failed") {
       ledger.challenger.posted += PORTAL_BOND_ETH;
+      ledger.challenger.lost += PORTAL_BOND_ETH;
       ledger.sequencer.returned += weiToEth(settle.payoutWei);
     }
   }

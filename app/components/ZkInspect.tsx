@@ -6,10 +6,17 @@ import type { ZkInspectPayload } from "../types";
 import { safeNum } from "../lib/numbers";
 import {
   OP_VS_ZK_ROWS,
+  ZK_DA_CAVEAT,
   ZK_TOUR_STEPS,
+  ZK_VALIDITY_CAVEAT,
   zkOneLiner,
   zkVerdictLabel,
 } from "../data/zkEducation";
+
+function shortHash(h?: string) {
+  if (!h) return "—";
+  return h.length > 14 ? h.slice(0, 10) + "…" + h.slice(-4) : h;
+}
 
 interface Props {
   data: ZkInspectPayload;
@@ -33,24 +40,34 @@ export function ZkInspect({ data, onClose }: Props) {
     setStep(0);
   }, [data.batchId]);
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 p-2 sm:p-4"
     >
       <motion.div
         initial={{ scale: 0.92, y: 12 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.92, y: 12 }}
-        className="bg-zinc-950 border border-zinc-700 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-zinc-950 border border-zinc-700 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl p-4 sm:p-6 space-y-4 shadow-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-emerald-400">ZK concept tour</h2>
             <p className="text-xs text-zinc-500 mt-1 font-mono">
-              Batch #{safeNum(data.batchId)} · block {safeNum(data.l2EndBlock)} ·{" "}
+              Batch #{safeNum(data.batchId)} · blocks {safeNum(data.l2StartBlock)}→{safeNum(data.l2EndBlock)}
+              {data.txCount != null && data.txCount > 0 ? ` · ${data.txCount} swap${data.txCount === 1 ? "" : "s"}` : ""}
+              {" · "}
               <span className={accepted ? "text-emerald-400" : "text-red-400"}>
                 {zkVerdictLabel(accepted)}
               </span>
@@ -68,6 +85,47 @@ export function ZkInspect({ data, onClose }: Props) {
           >
             ×
           </button>
+        </div>
+
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 space-y-2">
+          <p className="text-[10px] font-semibold text-zinc-300 uppercase tracking-wide">
+            Public inputs and L1 commitments
+          </p>
+          <p className="text-[10px] text-zinc-500 leading-relaxed">
+            Public inputs bind the proof to visible commitments. If any value changes, the proof no longer verifies.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 text-[10px]">
+            <div>
+              <p className="text-zinc-500">Header hash</p>
+              <p className="font-mono text-zinc-300 break-all">{shortHash(data.headerHash)}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Batch data hash</p>
+              <p className="font-mono text-zinc-300 break-all">{shortHash(data.batchDataHash)}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Previous root</p>
+              <p className="font-mono text-zinc-300 break-all">{shortHash(data.prevStateRoot)}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Claimed post root</p>
+              <p className="font-mono text-zinc-300 break-all">{shortHash(data.claimedPostRoot)}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Recomputed honest root</p>
+              <p className="font-mono text-zinc-300 break-all">{shortHash(data.recomputedRoot)}</p>
+            </div>
+            <div>
+              <p className="text-zinc-500">Witness accounts (demo)</p>
+              <p className="font-mono text-zinc-300">{data.witnessAccounts ?? "—"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-amber-900/50 bg-amber-950/15 px-3 py-2 space-y-1">
+          <p className="text-[10px] font-semibold text-amber-300">What this demo does not model</p>
+          <p className="text-[10px] text-zinc-500 leading-relaxed">{ZK_VALIDITY_CAVEAT}</p>
+          <p className="text-[10px] text-zinc-600 leading-relaxed">{ZK_DA_CAVEAT}</p>
         </div>
 
         <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-emerald-800 pl-3">
@@ -149,8 +207,8 @@ export function ZkInspect({ data, onClose }: Props) {
                 <p className="text-zinc-400 mt-2 leading-relaxed">
                   {data.reason ??
                     (accepted
-                      ? "L1 finalized this batch immediately, no challenge window."
-                      : "L1 rejected the proof, this state never became canonical.")}
+                      ? "In this simplified model, L1 accepts the new root as soon as the verifier succeeds."
+                      : "L1 rejected the claim; the canonical root did not move.")}
                 </p>
                 <p className="text-zinc-500 mt-2 font-mono">
                   Verify gas: {safeNum(data.verifyGas).toLocaleString()}

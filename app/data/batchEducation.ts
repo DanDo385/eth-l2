@@ -265,14 +265,14 @@ export const HOW_IT_WORKS_STEPS = [
   {
     n: "3",
     title: "Honest watcher checks",
-    body: "An independent node replays every swap in the batch using the verified engine. If its computed state root doesn't match the sequencer's posted root, it flags the batch yellow.",
+    body: "An independent node replays every swap in the batch using the verified engine. If its computed state root doesn't match the sequencer's posted root, it flags the batch yellow. A flag is off-chain detection only — L1 does not reject anything until someone challenges.",
     color: "text-yellow-400",
     border: "border-yellow-800",
   },
   {
     n: "4",
     title: "Challenger bisects on L1",
-    body: `The challenger posts a ${PORTAL_BOND_ETH} ETH bond and opens FraudProofGame. Merkle bisection narrows both execution traces to one disagreed-upon VM step, then the contract re-executes that step on-chain.`,
+    body: `You verify locally first, then post a ${PORTAL_BOND_ETH} ETH challenge bond and open FraudProofGame. Merkle bisection narrows both execution traces to one disagreed-upon VM step, then the contract re-executes that step on-chain.`,
     color: "text-orange-400",
     border: "border-orange-800",
   },

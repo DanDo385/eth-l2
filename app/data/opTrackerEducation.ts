@@ -52,6 +52,8 @@ export const MAINNET_SIMPLIFICATIONS = [
 export type SwapLifecycleStatus =
   | "canonical"
   | "challenge_window"
+  | "suspicious"
+  | "in_dispute"
   | "rolled_back"
   | "resequenced"
   | "invalid";
@@ -62,13 +64,14 @@ export function swapLifecycleStatus(
 ): SwapLifecycleStatus {
   if (batch.engineType === "honest") {
     if (batch.finalized) return "canonical";
-    if (batch.challenged) return "rolled_back";
+    if (batch.challenged && !batch.resolved) return "in_dispute";
     return "challenge_window";
   }
   if (batch.resolved) {
     return swap.isDivergent ? "invalid" : "resequenced";
   }
-  if (batch.flagged || batch.challenged) return "rolled_back";
+  if (batch.challenged) return "in_dispute";
+  if (batch.flagged) return "suspicious";
   return "challenge_window";
 }
 
@@ -78,6 +81,10 @@ export function swapStatusLabel(status: SwapLifecycleStatus): string {
       return "Canonical on L2";
     case "challenge_window":
       return "Soft-confirmed (window open)";
+    case "suspicious":
+      return "Flagged — awaiting challenge";
+    case "in_dispute":
+      return "Frozen — dispute live";
     case "rolled_back":
       return "Rolled back with batch";
     case "resequenced":
@@ -93,6 +100,10 @@ export function swapStatusColor(status: SwapLifecycleStatus): string {
       return "text-emerald-400 border-emerald-700 bg-emerald-950/30";
     case "challenge_window":
       return "text-blue-400 border-blue-700 bg-blue-950/30";
+    case "suspicious":
+      return "text-yellow-400 border-yellow-700 bg-yellow-950/30";
+    case "in_dispute":
+      return "text-orange-400 border-orange-700 bg-orange-950/30";
     case "rolled_back":
       return "text-orange-400 border-orange-700 bg-orange-950/30";
     case "resequenced":
@@ -158,8 +169,8 @@ export function batchPipelineStage(batch: BatchInfo): {
   }
   if (batch.flagged) {
     return {
-      stage: "Flagged by watcher",
-      detail: "Root mismatch detected; batch cannot finalize until resolved.",
+      stage: "Flagged by watcher (off-chain)",
+      detail: "Watcher found a root mismatch by local replay. L1 does not know yet — someone must challenge before the window closes.",
       pct: 50,
     };
   }
@@ -245,8 +256,14 @@ export function rerouteNarrative(batch: BatchInfo, swaps: SwapSummary[]): string
   if (batch.engineType === "honest") {
     return "All swaps in this batch share one honest state root. After the challenge window they remain canonical.";
   }
-  if (!batch.resolved && !batch.flagged) {
+  if (!batch.resolved && !batch.flagged && !batch.challenged) {
     return "If fraud is proven, every swap in the batch rolls back together — even swaps that would have been valid in isolation.";
+  }
+  if (!batch.resolved && batch.challenged) {
+    return "Challenge submitted on L1: both bonds are locked while FraudProofGame narrows the disagreement. If the challenger wins the one-step proof, every swap here rolls back together.";
+  }
+  if (!batch.resolved && batch.flagged) {
+    return "Watcher flagged this root off-chain. Nothing has been rejected on L1 yet — a participant must verify locally and submit a challenge before the window closes, or the bad root finalizes.";
   }
   const goodN = good.length;
   const badN = bad.length;

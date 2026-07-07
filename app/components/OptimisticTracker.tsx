@@ -17,7 +17,7 @@ import {
 } from "../data/opTrackerEducation";
 import { batchEconomicEvents, computeBondLedger, fraudBatches } from "../lib/opLedger";
 import type { BatchInfo, SourceLoc } from "../types";
-import { BATCH_WINDOW, PORTAL_BOND_ETH } from "../data/protocol";
+import { BATCH_WINDOW, CHALLENGE_WINDOW_SECONDS, PORTAL_BOND_ETH } from "../data/protocol";
 
 function shortHash(h: string) {
   return h.length > 14 ? h.slice(0, 8) + "…" + h.slice(-4) : h;
@@ -120,11 +120,32 @@ function BatchChip({
   );
 }
 
+/**
+ * Dispute phase for the reroute diagram. Only "rejected" (fraud proven on L1)
+ * may show rollback/slash outcomes — a watcher flag is off-chain detection,
+ * not an L1 rejection, and a live challenge has no outcome yet.
+ */
+function reroutePhase(batch: BatchInfo): "rejected" | "disputing" | "flagged" | "open" {
+  if (batch.resolved) return "rejected";
+  if (batch.challenged) return "disputing";
+  if (batch.flagged) return "flagged";
+  return "open";
+}
+
 function RerouteDiagram({ batch, swaps }: { batch: BatchInfo; swaps: ReturnType<typeof batchSwaps> }) {
   const good = swaps.filter((s) => !s.isDivergent);
   const bad = swaps.filter((s) => s.isDivergent);
   const nextId = batch.batchId + 1;
-  const rejected = batch.resolved || batch.flagged;
+  const phase = reroutePhase(batch);
+
+  const sourceBox =
+    phase === "rejected"
+      ? "border-red-800 bg-red-950/20"
+      : phase === "disputing"
+        ? "border-orange-800 bg-orange-950/20"
+        : phase === "flagged"
+          ? "border-yellow-800 bg-yellow-950/20"
+          : "border-blue-800 bg-blue-950/20";
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-3">
@@ -134,7 +155,7 @@ function RerouteDiagram({ batch, swaps }: { batch: BatchInfo; swaps: ReturnType<
 
       <div className="flex flex-col sm:flex-row items-stretch gap-2 text-[9px]">
         {/* Source batch */}
-        <div className={`flex-1 rounded border p-2 space-y-1 ${rejected ? "border-red-800 bg-red-950/20" : "border-blue-800 bg-blue-950/20"}`}>
+        <div className={`flex-1 rounded border p-2 space-y-1 ${sourceBox}`}>
           <p className="font-semibold text-zinc-300">Batch #{batch.batchId}</p>
           <p className="text-zinc-500">Blocks {batch.l2StartBlock}→{batch.l2EndBlock}</p>
           <div className="flex flex-wrap gap-1 pt-1">
@@ -152,8 +173,14 @@ function RerouteDiagram({ batch, swaps }: { batch: BatchInfo; swaps: ReturnType<
               </span>
             ))}
           </div>
-          {rejected && (
+          {phase === "rejected" && (
             <p className="text-red-400 font-semibold pt-1">✗ L1 rejects root</p>
+          )}
+          {phase === "disputing" && (
+            <p className="text-orange-400 font-semibold pt-1">⚖ Challenge live on L1</p>
+          )}
+          {phase === "flagged" && (
+            <p className="text-yellow-400 font-semibold pt-1">⚠ Flagged off-chain only</p>
           )}
         </div>
 
@@ -161,38 +188,68 @@ function RerouteDiagram({ batch, swaps }: { batch: BatchInfo; swaps: ReturnType<
 
         {/* Outcomes */}
         <div className="flex-1 space-y-2">
-          {bad.length > 0 && (
-            <div className="rounded border border-red-900/60 bg-red-950/10 p-2">
-              <p className="text-red-400 font-semibold">{bad.length} fraudulent</p>
+          {phase === "rejected" && (
+            <>
+              {bad.length > 0 && (
+                <div className="rounded border border-red-900/60 bg-red-950/10 p-2">
+                  <p className="text-red-400 font-semibold">{bad.length} fraudulent</p>
+                  <p className="text-zinc-500 mt-0.5">
+                    State transition discarded. Bond slashed; proof recorded on L1.
+                  </p>
+                </div>
+              )}
+              {good.length > 0 && (
+                <div className="rounded border border-violet-800 bg-violet-950/20 p-2">
+                  <p className="text-violet-300 font-semibold">
+                    {good.length}/{swaps.length} good swap{good.length === 1 ? "" : "s"}
+                  </p>
+                  <p className="text-zinc-500 mt-0.5">
+                    Re-included in batch #{nextId} (next {BATCH_WINDOW}-block window) with honest execution.
+                  </p>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {good.map((s, i) => (
+                      <span
+                        key={i}
+                        className="px-1 py-0.5 rounded border border-violet-600 bg-violet-950/40 text-violet-200 font-mono"
+                      >
+                        → #{nextId}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {phase === "disputing" && (
+            <div className="rounded border border-orange-800 bg-orange-950/10 p-2">
+              <p className="text-orange-400 font-semibold">Dispute in progress</p>
               <p className="text-zinc-500 mt-0.5">
-                State transition discarded. Bond slashed; proof recorded on L1.
+                Both bonds are locked while FraudProofGame narrows the trace. No rollback
+                happens unless the challenger wins the one-step proof.
               </p>
             </div>
           )}
-          {good.length > 0 && (
-            <div className="rounded border border-violet-800 bg-violet-950/20 p-2">
-              <p className="text-violet-300 font-semibold">
-                {good.length}/{swaps.length} good swap{good.length === 1 ? "" : "s"}
-              </p>
+          {phase === "flagged" && (
+            <div className="rounded border border-yellow-800 bg-yellow-950/10 p-2">
+              <p className="text-yellow-400 font-semibold">Nothing rejected on L1 yet</p>
               <p className="text-zinc-500 mt-0.5">
-                Re-included in batch #{nextId} (next {BATCH_WINDOW}-block window) with honest execution.
+                The watcher's flag is off-chain detection. A participant must verify locally
+                and post a challenge bond before L1 can reject this root.
               </p>
-              <div className="flex flex-wrap gap-1 pt-1">
-                {good.map((s, i) => (
-                  <span
-                    key={i}
-                    className="px-1 py-0.5 rounded border border-violet-600 bg-violet-950/40 text-violet-200 font-mono"
-                  >
-                    → #{nextId}
-                  </span>
-                ))}
-              </div>
             </div>
           )}
-          {batch.engineType === "honest" && (
+          {phase === "open" && batch.engineType === "honest" && (
             <div className="rounded border border-emerald-800 bg-emerald-950/20 p-2">
               <p className="text-emerald-400 font-semibold">All canonical</p>
               <p className="text-zinc-500">No rollback — root matches honest replay.</p>
+            </div>
+          )}
+          {phase === "open" && batch.engineType !== "honest" && (
+            <div className="rounded border border-blue-800 bg-blue-950/20 p-2">
+              <p className="text-blue-300 font-semibold">Challenge window open</p>
+              <p className="text-zinc-500 mt-0.5">
+                If fraud is proven later, every swap here rolls back together.
+              </p>
             </div>
           )}
         </div>
@@ -305,6 +362,35 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
           <p className="text-red-400">{fraudList.length} fraud record{fraudList.length === 1 ? "" : "s"}</p>
         </div>
       </div>
+
+      {/* Demo simplifications, visible before the detail — full list stays in the footer */}
+      <div className="flex flex-wrap items-center gap-1.5 text-[9px]">
+        <span className="font-semibold uppercase tracking-wide text-zinc-600">
+          Demo simplifications:
+        </span>
+        {[
+          [`${CHALLENGE_WINDOW_SECONDS}s window`, "Compressed from ~7 days on OP Mainnet so you can watch finality."],
+          [`${BATCH_WINDOW}-block batches`, "Fixed batch cadence; production sequencers vary."],
+          [`${PORTAL_BOND_ETH} ETH bonds`, "Equal fixed bonds for sequencer and challenger; production bond rules vary."],
+          ["tiny swap-VM proof", "Bisection to one instruction, scaled down from production fault-proof VMs."],
+          ["honest watcher", "Always flags mismatches; real systems rely on at least one honest monitor."],
+        ].map(([chip, why]) => (
+          <span
+            key={chip}
+            title={why}
+            className="cursor-help rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-0.5 text-zinc-400"
+          >
+            {chip}
+          </span>
+        ))}
+      </div>
+
+      <p className="rounded border border-zinc-800 bg-zinc-950/40 px-2 py-1.5 text-[10px] leading-relaxed text-zinc-500">
+        <span className="font-semibold text-zinc-400">Glossary:</span> in this lab,
+        &ldquo;output root&rdquo;, &ldquo;state root&rdquo;, and &ldquo;assertion&rdquo; all refer to
+        the sequencer&rsquo;s posted commitment to the L2 state after a batch. Production rollups may
+        wrap more data into an output root.
+      </p>
 
       {/* Batch timeline strip */}
       {batches.length > 0 && (
@@ -516,7 +602,10 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                       posted {bondLedger.challenger.posted.toFixed(2)} ETH
                     </p>
                     <p className="font-mono text-emerald-400">
-                      won {bondLedger.challenger.won.toFixed(2)} ETH
+                      won {bondLedger.challenger.won.toFixed(2)} · returned {bondLedger.challenger.returned.toFixed(2)}
+                    </p>
+                    <p className="font-mono text-red-400">
+                      lost/slashed {bondLedger.challenger.lost.toFixed(2)}
                     </p>
                   </div>
                 </div>

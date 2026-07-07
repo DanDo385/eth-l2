@@ -43,8 +43,8 @@ export const ZK_TOUR_STEPS: ZkTourStep[] = [
       "The verifier re-derives the honest post-state root from the witness and compares it to the sequencer's claim. Match → batch finalizes immediately and the canonical root advances. Mismatch → rejected at the gate, canonical root untouched. A lie and an honest-intent bug are rejected the same way. No challenge window, no bisection, no watchers required.",
     detail: (d) =>
       d.accepted
-        ? `Verified on L1 in ~${d.verifyGas.toLocaleString()} gas (real, measured). This batch is final, there is nothing for a challenger to dispute.`
-        : `Rejected on L1 in ~${d.verifyGas.toLocaleString()} gas. The canonical root did not move; the invalid state never finalized.`,
+        ? `Verified on L1 in ~${d.verifyGas.toLocaleString()} gas (real, measured). In this simplified model, L1 accepts the new root as soon as the verifier succeeds.`
+        : `Rejected on L1 in ~${d.verifyGas.toLocaleString()} gas. The canonical root did not move; the invalid state never settled.`,
     deepDive:
       "In a real ZK rollup, verification is a fixed, tiny computation no matter how many swaps were in the batch, and that asymmetry (expensive to prove, cheap to verify) is the whole point. This demo's stand-in instead RE-EXECUTES the batch to check it, so its verify gas grows with the number of swaps. That is exactly what a succinct proof removes. Either way, if the sequencer's claimed root does not match honest re-execution, it cannot settle: honest math is the only way to get accepted, whether the deviation was fraud or a bug.",
   },
@@ -93,11 +93,37 @@ export const ZK_PIPELINE_BEATS = [
 ] as const;
 
 export function zkVerdictLabel(accepted: boolean): string {
-  return accepted ? "Verified on L1" : "Rejected on L1";
+  return accepted ? "Verifier accepted" : "Verifier rejected";
 }
 
+export function zkBatchStatus(rollup: ZkInspectPayload) {
+  if (rollup.accepted) {
+    return {
+      short: "accepted",
+      border: "border-emerald-700",
+      bg: "bg-emerald-950/30",
+      explanation:
+        "L1 verifier accepted the claimed root in this model. Canonical root advances after verifier success.",
+    };
+  }
+  return {
+    short: "rejected",
+    border: "border-red-800",
+    bg: "bg-red-950/30",
+    explanation:
+      "L1 verifier rejected the claim. Recomputed honest root did not match the posted root.",
+  };
+}
+
+export const ZK_VALIDITY_CAVEAT =
+  "This is a validity-proof demo, not a privacy demo. The proof shows the state transition is valid. It does not model data availability, calldata/blobs, or private transaction designs.";
+
+export const ZK_DA_CAVEAT =
+  "What the proof does not solve here: users still need transaction data to reconstruct L2 state. This lab focuses on validity checking, not how batch data is published or stored.";
+
 export function zkOneLiner(data: ZkInspectPayload): string {
+  const swaps = data.txCount ? ` · ${data.txCount} swap${data.txCount === 1 ? "" : "s"}` : "";
   return data.accepted
-    ? `Batch #${data.batchId}: proof checked out, finalized with no waiting period.`
-    : `Batch #${data.batchId}: bad proof, L1 refused to finalize this state.`;
+    ? `Batch #${data.batchId}: verifier accepted${swaps} — root advances in this simplified model.`
+    : `Batch #${data.batchId}: verifier rejected${swaps} — canonical root unchanged.`;
 }
