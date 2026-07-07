@@ -624,12 +624,12 @@ Stage 5: Repair tests and visual verification.
 
 ## Final Verdict
 
-Current app status:
+Current app status (post Phase 7 education-audit fixes):
 
 - Conceptually sound: Yes, especially in backend contracts and OP proof mechanics.
-- Partially misleading: Yes. OP flagged state can appear rejected before a challenge resolves, and some copy implies challenge automation.
-- Visually confusing: Yes for ZK batching and L1 commitments. OP is dense but mostly legible.
-- Ready for users: Not yet for general users. It is acceptable for a guided technical demo where the presenter explains the gaps.
-- Not ready for users: For self-guided education, it needs the high-priority OP state fix and a stronger ZK batch/proof visualization first.
+- Partially misleading: Reduced. OP flagged state is now distinct from L1 rejection; challenge copy states manual verify/challenge. ZK batching and commitments are visible on `/zk`.
+- Visually confusing: Improved for ZK; OP remains dense but legible with Optimistic Tracker + simplification strip.
+- Ready for users: Acceptable for a guided technical demo; self-guided learners should still read simplification callouts.
+- Remaining gaps (low priority): L1 lane event markers, visible ZK "proving" pending phase, modal a11y hardening — see prioritized fix list above.
 
 The project is close to a strong technical teaching product. The main work is not adding more blockchain detail. It is making the existing state machine impossible to misread.

@@ -17,6 +17,7 @@ For current setup, protocol behaviour, and recording instructions see **[README.
 | 4 | Reproducibility tests + demo recordings | ✅ |
 | 5 | Cleanup, Makefile, docs | ✅ |
 | 6 | Work orders WO-1…WO-8 (ledger, ZK, fraud proof, bonds, pedagogy) | ✅ |
+| 7 | Education audit UX pass (OP state machine, ZK batch lane, docs) | ✅ |
 
 ---
 
@@ -32,6 +33,19 @@ For current setup, protocol behaviour, and recording instructions see **[README.
 | WO-6 | Challenge window | 120s sim window; `FinalizeUnchallenged` returns honest bonds; UI countdown in Block Inspector |
 | WO-7 | Pedagogy | Welcome banner, trace narration, Proof lab, bond/window copy in education data |
 | WO-8 | Docs | README + DEMO_GUIDE + this file kept in sync with behaviour |
+
+### Phase 7 — Education audit (complete)
+
+Delivered per [docs/rollup-education-audit.md](docs/rollup-education-audit.md):
+
+| Item | Delivered |
+|------|-----------|
+| OP flagged ≠ rejected | `OptimisticTracker` reroute phases; swap lifecycle `suspicious` / `in_dispute` |
+| Manual challenge copy | ControlPanel, DemoGallery, WelcomeBanner, scoreboard watcher vs resolved metrics |
+| ZK batch visualization | `ZkLane` + `ZkBatchGroup` on canvas; click opens `ZkInspect` |
+| ZK commitments | Backend `zk_inspect_ready` payload + public-input panel in `ZkInspect` |
+| ZK caveats | Validity / DA callouts on ZK canvas and in concept tour |
+| Tests & layout | E2E for `/`, `/op`, `/zk`; responsive `LabPage` grids |
 
 ---
 
@@ -49,7 +63,7 @@ Confirmed SSTORE divergence via `debug_traceTransaction` / `debug_traceCall`. Re
 Anvil orchestration, seeded PRNG, swap/transfer bots, OP + ZK sequencers, honest watcher, trace capture/diff, user-triggered verification/challenge driving `FraudProofGame`, REST + WebSocket (`batch_verified`, `dispute_stage`, `bond_settled`, `batch_challenged`, …).
 
 ### Phase 3 — Frontend ✅
-Home lab chooser, focused optimistic and ZK routes, lane canvas, Block Inspector, OpcodeRace fraud-proof overlay, ZkInspect, Scoreboard, Demo Gallery, Welcome Banner, Research Panel (Proof lab). Overlays never auto-popup.
+Home lab chooser, focused `/op` and `/zk` routes, OP/ZK grouped batch lanes on `BlockchainCanvas`, Block Inspector, OptimisticTracker, OpcodeRace fraud-proof overlay, ZkInspect (public inputs + caveats), Scoreboard, Demo Gallery, Welcome Banner, Research Panel (Proof lab), EventLogPanel. Overlays never auto-popup.
 
 ### Phases 4–5 ✅
 Session reproducibility test, Makefile (`make dev`), legacy scripts under `bin/legacy/`, documentation rewrite.

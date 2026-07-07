@@ -16,7 +16,7 @@ This should feel like a technical walkthrough that opens the black box.
 The viewer should leave understanding how optimistic trust turns back into verification.
 
 The emotional hook is: catch the lying sequencer.
-The technical hook is: bad batch → watcher flags → FraudProofGame → opcode/storage mismatch + source line → bond settlement.
+The technical hook is: bad batch → watcher flags (off-chain) → user verifies → challenge bond → FraudProofGame → opcode/storage mismatch + source line → bond settlement.
 
 ## Documentation
 
@@ -27,6 +27,7 @@ Keep these in sync when behaviour changes:
 | [README.md](README.md) | Setup, architecture, protocol constants, tests |
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Loom recording script (~2–3 min) |
 | [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
+| [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit (findings + fix checklist) |
 
 ## Engineering principles
 
@@ -37,9 +38,9 @@ Keep these in sync when behaviour changes:
 
 ## Frontend rules
 
-- Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `BlockInspector`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`.
-- Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
-- Overlays (opcode proof, ZK inspect) open from Proof lab or Block Inspector — never auto-popup.
+- Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `OpBatchGroup`, `ZkBatchGroup`, `BlockInspector`, `OptimisticTracker`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`, `EventLogPanel`.
+- Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `opTrackerEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
+- Overlays (opcode proof, ZK inspect) open from Proof lab, Block Inspector, or ZK batch cards — never auto-popup.
 - Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths.
 
 ## Contract / artifact rules

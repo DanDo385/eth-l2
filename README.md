@@ -9,6 +9,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 | **This file** | Setup, architecture, protocol constants, running tests |
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Recording a ~2–3 min portfolio walkthrough (Loom) |
 | [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
+| [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit findings and fix checklist |
 | [AGENTS.md](AGENTS.md) | Agent / contributor conventions |
 
 ## How it works
@@ -16,11 +17,11 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 1. **Three local chains** (L1 + OP-L2 + ZK-L2) are spawned by the Go backend using Anvil.
 2. **Bots** send swap transactions to L2 swap engines.
 3. The **OP sequencer** (seeded PRNG) batches txs, posts state roots to L1 with a **0.1 ETH bond**.
-4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged`.
-5. The user opens a suspicious batch, clicks **Verify locally**, then chooses whether to post the L1 challenge bond and open `FraudProofGame` (Merkle bisection + on-chain step re-execution).
+4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged` (off-chain detection only — L1 does not reject until someone challenges).
+5. The user opens a suspicious batch, clicks **Verify locally**, then chooses whether to post the L1 challenge bond and open `FraudProofGame` (Merkle bisection + on-chain step re-execution). The app never auto-challenges.
 6. **Honest batches** finalize after a **120s challenge window** if undisputed; failed challenges slash the challenger and successful challenges reject the bad root.
-7. The **ZK sequencer** submits batches with a witness to `ZkValidityVerifier` (re-execution stand-in for a succinct proof) — no challenge window.
-8. The **frontend** opens to a lab chooser, then streams WebSocket events into focused optimistic (`/op`, also available at `/optimistic`) and ZK (`/zk`) labs with lane canvas, Scoreboard, and Proof lab overlays. The optimistic lab also includes Block Inspector countdowns, bond notes, and opcode walkthroughs with source-map line citations.
+7. The **ZK sequencer** batches L2 swaps, posts a header + witness to `ZkRollupMock`, and `ZkValidityVerifier` re-executes the witness on L1 (stand-in for a succinct proof) — no challenge window.
+8. The **frontend** opens to a lab chooser, then streams WebSocket events into focused optimistic (`/op`, alias `/optimistic`) and ZK (`/zk`) labs. OP: grouped batch canvas, Block Inspector, Optimistic Tracker (swap lifecycle + bond ledger), opcode walkthroughs. ZK: grouped proof-batch canvas (click to open concept tour), public-input panel in `ZkInspect`, validity/DA caveats.
 
 ## Protocol summary
 
@@ -33,8 +34,10 @@ Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.s
 | Challenge window | 120 s | ~7 days on mainnet OP Stack |
 | Fraud slashing burn | 10% of loser's bond | Anti-griefing; winner takes the pot minus burn |
 | Batch window | 5 L2 blocks | One state root per batch |
-| OP fraud path | Watcher → `FraudProofGame` | Bisection + fault proof |
-| ZK validity path | `ZkValidityVerifier` witness | Validity proof at submission |
+| OP fraud injection rate | ~1 in 8 batches | Tuned high for short demo runs |
+| ZK invalid-claim rate | ~1 in 16 batches | Half the OP rate by design |
+| OP fraud path | Watcher flag → user verify → `FraudProofGame` | Detection ≠ resolution; challenges are manual |
+| ZK validity path | `ZkValidityVerifier` witness | Validity proof at submission; rejected claims never finalize |
 
 ### Key contracts
 
@@ -73,12 +76,15 @@ Open [http://localhost:3001](http://localhost:3001), then choose **Optimistic Ro
 ### First demo
 
 1. Open the **Optimistic Rollup Lab** from the home chooser.
-2. Read the **How this lab works** welcome banner.
+2. Read the **How this lab works** welcome banner (note: a watcher flag is not an L1 challenge).
 3. Click **Clean run** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
-4. Watch batch colours on the OP lane; open **Block Inspector** for window countdown and bond notes.
-5. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
+4. Watch batch colours on the OP lane; click a batch → **Verify locally** → **Challenge on L1** if a mismatch is found.
+5. Use **Optimistic Tracker** for swap lifecycle, reroute diagram, and bond ledger; **Block Inspector** for window countdown.
+6. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
 
-Default speed: **3×**. Default seed: **42**.
+For ZK: open `/zk`, start a demo, click a proof batch on the canvas or in Proof lab to tour public inputs and verifier results.
+
+Default speed: **3×**. Default seed: **42**. Optional **60s / 120s session timer** pauses the sim without resetting state.
 
 ## Prerequisites
 
@@ -124,9 +130,13 @@ backend/
     seed/           Deterministic PRNG
     server/         REST + WebSocket
 app/                Next.js 16
-  components/       Canvas, Inspector, OpcodeRace, WelcomeBanner, ResearchPanel, …
-  data/             batchEducation, traceNarrative, zkEducation, protocol
-  lib/              WS client, reducer, URL helpers
+  op/ zk/           Focused lab routes (+ home chooser at /)
+  components/       LabFrame, LabPage, BlockchainCanvas, OpBatchGroup, ZkBatchGroup,
+                    BlockInspector, OptimisticTracker, OpcodeRace, ZkInspect,
+                    WelcomeBanner, ResearchPanel, Scoreboard, EventLogPanel, …
+  data/             batchEducation, opTrackerEducation, traceNarrative, zkEducation, protocol
+  lib/              WS client, reducer, opLedger, URL helpers
+docs/               rollup-education-audit.md
 ```
 
 Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist).
@@ -146,7 +156,7 @@ Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS all
 make test              # 60 forge + all Go packages
 make test-contracts    # FraudProofGame, Portal bonds, SwapEngines, ZkValidityVerifier, …
 make test-go
-make test-e2e          # 28 Playwright layout tests (7 describe blocks)
+make test-e2e          # Playwright layout tests for /, /op, /zk (+ mobile/tablet viewports)
 ```
 
 ## Why this tech stack?
@@ -167,4 +177,4 @@ Client-side reducer over a WebSocket event stream; motion for block entry and pr
 `keccak256`-chain PRNG with fork-safe sub-streams — same seed ⇒ same fraud pattern for repeatable recordings.
 
 ### Playwright
-Layout and control regressions across idle, mobile, and tablet viewports; screenshots under `public/screenshots/`.
+Layout regressions for the home chooser, OP lab, and ZK lab across idle, mobile (375px), and tablet (768px) viewports; screenshots under `public/screenshots/`.
