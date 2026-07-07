@@ -7,7 +7,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 | Doc | Use when |
 |-----|----------|
 | **This file** | Setup, architecture, protocol constants, running tests |
-| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow for the OP and ZK labs |
+| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow; macOS screen recording tips |
 | [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit findings and fix checklist |
 | [AGENTS.md](AGENTS.md) | Agent / contributor conventions |

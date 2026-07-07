@@ -17,6 +17,25 @@ make dev
 
 Open [http://localhost:3001/op](http://localhost:3001/op). The home page at `/` is a chooser for the optimistic and ZK labs.
 
+Use a clean browser window (dark mode matches the UI). Hide unrelated desktop clutter before you record.
+
+## Capturing video (macOS)
+
+Record with the built-in **Screenshot** app — not a separate capture service.
+
+1. Press **⌘⇧5** (or open **Screenshot** from Spotlight).
+2. Choose **Record Selected Portion** or **Record Entire Screen**.
+3. Click **Options** → enable the microphone if you want narration; pick a save location (Desktop is fine).
+4. Click **Record**, run the demo sequence below, then stop from the menu bar icon.
+
+Tips for a clean take:
+
+- Resize the browser so the lab fills the frame; `/op` and `/zk` are separate routes — switch tabs or windows between OP and ZK beats.
+- Use the **60s session timer** in the control panel to pause without losing state between takes.
+- Proof overlays never auto-open — click when you are ready so the recording stays deliberate.
+
+Playwright still captures static PNGs under `public/screenshots/` via `make test-e2e`; that is for layout regression, not portfolio video.
+
 ## Suggested sequence
 
 ### 1 — Introduce the lab
