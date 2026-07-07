@@ -25,13 +25,13 @@ Keep these in sync when behaviour changes:
 | File | Role |
 |------|------|
 | [README.md](README.md) | Setup, architecture, protocol constants, tests |
-| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Loom recording script (~2–3 min) |
+| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow |
 | [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit (findings + fix checklist) |
 
 ## Engineering principles
 
-- Keep the app deterministic enough for repeatable Loom recordings.
+- Keep the app deterministic enough for repeatable demo sessions (same seed ⇒ same behaviour).
 - Prefer focused protocol mechanics over pretending this is a full production rollup.
 - Make state transitions, bonds, and disputes visually inspectable.
 - README and `DEMO_GUIDE.md` must match current behaviour.

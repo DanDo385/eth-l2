@@ -15,7 +15,7 @@ export const MAINNET_SIMPLIFICATIONS = [
     title: "Challenge window",
     sim: `${CHALLENGE_WINDOW_SECONDS}s`,
     mainnet: "~7 days on OP Mainnet",
-    note: "Compressed so you can watch finalization during a short recording.",
+    note: "Compressed so you can watch finalization during a short demo session.",
   },
   {
     title: "Batch granularity",

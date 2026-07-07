@@ -7,7 +7,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 | Doc | Use when |
 |-----|----------|
 | **This file** | Setup, architecture, protocol constants, running tests |
-| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Recording a ~2–3 min portfolio walkthrough (Loom) |
+| [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow for the OP and ZK labs |
 | [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit findings and fix checklist |
 | [AGENTS.md](AGENTS.md) | Agent / contributor conventions |
@@ -174,7 +174,7 @@ One binary coordinates Anvil, bots, sequencers, watcher, local verification, use
 Client-side reducer over a WebSocket event stream; motion for block entry and proof overlays.
 
 ### Seeded PRNG
-`keccak256`-chain PRNG with fork-safe sub-streams — same seed ⇒ same fraud pattern for repeatable recordings.
+`keccak256`-chain PRNG with fork-safe sub-streams — same seed ⇒ same fraud pattern for repeatable demo sessions.
 
 ### Playwright
 Layout regressions for the home chooser, OP lab, and ZK lab across idle, mobile (375px), and tablet (768px) viewports; screenshots under `public/screenshots/`.

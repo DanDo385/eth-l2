@@ -2,7 +2,7 @@
 
 Historical build plan for the backend + frontend rebuild. **All phases complete.**
 
-For current setup, protocol behaviour, and recording instructions see **[README.md](README.md)** and **[DEMO_GUIDE.md](DEMO_GUIDE.md)**.
+For current setup, protocol behaviour, and demo walkthrough see **[README.md](README.md)** and **[DEMO_GUIDE.md](DEMO_GUIDE.md)**.
 
 ---
 
@@ -14,7 +14,7 @@ For current setup, protocol behaviour, and recording instructions see **[README.
 | 1 | Swap engines + L1 mocks + forge tests | ✅ |
 | 2 | Go backend (bots, sequencer, watcher, challenge, REST/WS) | ✅ |
 | 3 | Next.js frontend rebuild | ✅ |
-| 4 | Reproducibility tests + demo recordings | ✅ |
+| 4 | Reproducibility tests + demo flows | ✅ |
 | 5 | Cleanup, Makefile, docs | ✅ |
 | 6 | Work orders WO-1…WO-8 (ledger, ZK, fraud proof, bonds, pedagogy) | ✅ |
 | 7 | Education audit UX pass (OP state machine, ZK batch lane, docs) | ✅ |

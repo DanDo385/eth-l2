@@ -428,7 +428,7 @@ Opcode overlay:
 | ZK proof generation time simulated | Yes | Yes | Low | "Constraints and prove time are simulated metrics to make prover cost visible." |
 | Data availability not modeled | Acceptable only if disclosed | No | High | "This demo focuses on validity. It does not model calldata/blob data availability or how users reconstruct state." |
 | ZK privacy not modeled | Acceptable only if disclosed | No | High | "ZK here means validity proof, not private transactions. This demo does not implement privacy-preserving rollup variants." |
-| Fault rates tuned for demo | Yes | Partly | Low | "Fault frequency is artificially high for recording. Production fraud/invalid proof rates should be rare." |
+| Fault rates tuned for demo | Yes | Partly | Low | "Fault frequency is artificially high for short demo sessions. Production fraud/invalid proof rates should be rare." |
 
 ## Prioritized Fix List
 
