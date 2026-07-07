@@ -138,7 +138,7 @@ export function ControlPanel() {
           className="w-full accent-emerald-400"
         />
         <p className="text-[10px] text-zinc-600 leading-relaxed">
-          Scales Anvil block times. At 4× you see fraud resolved in ~30 s. At 1× it runs at realistic mainnet pace.
+          Scales Anvil block times. At 4× the OP lab usually reaches 1-2 challenges in a 60s recording window.
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export function ControlPanel() {
             <span className="text-zinc-100">{remainingSeconds}s</span>
           </div>
           <p className="text-[10px] text-zinc-600 leading-relaxed mt-1">
-            On expiry the simulation pauses and preserves blocks, batches, balances, and logs. Use Resume to continue or Stop/Reseed to reset.
+            On expiry the simulation pauses and preserves blocks, batches, balances, and logs. 60s usually catches 1-2 OP disputes; 120s usually catches 3-4.
           </p>
         </div>
       </div>

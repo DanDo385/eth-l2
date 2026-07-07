@@ -4,16 +4,26 @@ import { useAppStore } from "../lib/store";
 import { DEMO_ACCOUNTS } from "../data/accounts";
 import { safeNum } from "../lib/numbers";
 import { computeBondLedger } from "../lib/opLedger";
+import type { LabMode } from "./LabFrame";
 
 function short(addr: string) {
   return addr.slice(0, 6) + "…" + addr.slice(-4);
 }
 
-export function AccountSidebar() {
+export function AccountSidebar({
+  mode = "optimistic",
+  showEventLog = true,
+}: {
+  mode?: LabMode;
+  showEventLog?: boolean;
+}) {
   const { state } = useAppStore();
   const batchList = Object.values(state.batches);
   const flagged = batchList.filter((b) => b.flagged).length;
   const resolved = batchList.filter((b) => b.resolved).length;
+  const zkRollups = Object.values(state.zkRollups);
+  const zkAccepted = zkRollups.filter((p) => p.accepted).length;
+  const zkRejected = zkRollups.length - zkAccepted;
   const ledger = computeBondLedger(batchList);
   const locked =
     ledger.sequencer.posted +
@@ -34,31 +44,50 @@ export function AccountSidebar() {
         ))}
       </ul>
 
-      <div className="border-t border-zinc-800 pt-3 space-y-1">
-        <p className="text-xs text-zinc-500 uppercase tracking-wide">Batches</p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <span className="text-zinc-400">Total</span>
-          <span className="text-zinc-100 font-mono">{batchList.length}</span>
-          <span className="text-yellow-400">Flagged</span>
-          <span className="text-yellow-300 font-mono">{flagged}</span>
-          <span className="text-red-400">Resolved</span>
-          <span className="text-red-300 font-mono">{resolved}</span>
-        </div>
-      </div>
+      {mode === "optimistic" ? (
+        <>
+          <div className="border-t border-zinc-800 pt-3 space-y-1">
+            <p className="text-xs text-zinc-500 uppercase tracking-wide">Batches</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <span className="text-zinc-400">Total</span>
+              <span className="text-zinc-100 font-mono">{batchList.length}</span>
+              <span className="text-yellow-400">Flagged</span>
+              <span className="text-yellow-300 font-mono">{flagged}</span>
+              <span className="text-red-400">Resolved</span>
+              <span className="text-red-300 font-mono">{resolved}</span>
+            </div>
+          </div>
 
-      <div className="border-t border-zinc-800 pt-3 space-y-1">
-        <p className="text-xs text-zinc-500 uppercase tracking-wide">Economics</p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <span className="text-zinc-400">Escrow locked</span>
-          <span className="text-zinc-100 font-mono">{Math.max(locked, 0).toFixed(2)} ETH</span>
-          <span className="text-zinc-400">Proposer posted</span>
-          <span className="text-zinc-100 font-mono">{ledger.sequencer.posted.toFixed(2)} ETH</span>
-          <span className="text-red-400">Proposer slashed</span>
-          <span className="text-red-300 font-mono">{ledger.sequencer.slashed.toFixed(2)} ETH</span>
-          <span className="text-emerald-400">Challenger rewards</span>
-          <span className="text-emerald-300 font-mono">{ledger.challenger.won.toFixed(2)} ETH</span>
+          <div className="border-t border-zinc-800 pt-3 space-y-1">
+            <p className="text-xs text-zinc-500 uppercase tracking-wide">Economics</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <span className="text-zinc-400">Escrow locked</span>
+              <span className="text-zinc-100 font-mono">{Math.max(locked, 0).toFixed(2)} ETH</span>
+              <span className="text-zinc-400">Proposer posted</span>
+              <span className="text-zinc-100 font-mono">{ledger.sequencer.posted.toFixed(2)} ETH</span>
+              <span className="text-red-400">Proposer slashed</span>
+              <span className="text-red-300 font-mono">{ledger.sequencer.slashed.toFixed(2)} ETH</span>
+              <span className="text-emerald-400">Challenger rewards</span>
+              <span className="text-emerald-300 font-mono">{ledger.challenger.won.toFixed(2)} ETH</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="border-t border-zinc-800 pt-3 space-y-1">
+          <p className="text-xs text-zinc-500 uppercase tracking-wide">Validity proofs</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <span className="text-zinc-400">Submitted</span>
+            <span className="text-zinc-100 font-mono">{zkRollups.length}</span>
+            <span className="text-emerald-400">Accepted</span>
+            <span className="text-emerald-300 font-mono">{zkAccepted}</span>
+            <span className="text-red-400">Rejected</span>
+            <span className="text-red-300 font-mono">{zkRejected}</span>
+          </div>
+          <p className="text-[10px] text-zinc-600 leading-relaxed">
+            ZK settlement is gated by verifier output, so failed claims stop before L1 accepts the state root.
+          </p>
         </div>
-      </div>
+      )}
 
       <div className="border-t border-zinc-800 pt-3 space-y-1">
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Latest blocks</p>
@@ -72,6 +101,7 @@ export function AccountSidebar() {
         </div>
       </div>
 
+      {showEventLog && (
       <div className="border-t border-zinc-800 pt-3 space-y-2">
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Event log</p>
         <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
@@ -92,6 +122,7 @@ export function AccountSidebar() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

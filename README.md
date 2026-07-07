@@ -20,7 +20,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 5. The user opens a suspicious batch, clicks **Verify locally**, then chooses whether to post the L1 challenge bond and open `FraudProofGame` (Merkle bisection + on-chain step re-execution).
 6. **Honest batches** finalize after a **120s challenge window** if undisputed; failed challenges slash the challenger and successful challenges reject the bad root.
 7. The **ZK sequencer** submits batches with a witness to `ZkValidityVerifier` (re-execution stand-in for a succinct proof) — no challenge window.
-8. The **frontend** streams WebSocket events into a three-lane canvas, Block Inspector (countdown + bond notes), Scoreboard, and Proof lab overlays (opcode walkthrough with source-map line citations).
+8. The **frontend** opens to a lab chooser, then streams WebSocket events into focused optimistic (`/op`, also available at `/optimistic`) and ZK (`/zk`) labs with lane canvas, Scoreboard, and Proof lab overlays. The optimistic lab also includes Block Inspector countdowns, bond notes, and opcode walkthroughs with source-map line citations.
 
 ## Protocol summary
 
@@ -60,7 +60,7 @@ make dev       # stops stale ports, then backend + frontend on :3001
 
 If `make dev` fails with **address already in use**, run `make stop` and retry.
 
-Open [http://localhost:3001](http://localhost:3001).
+Open [http://localhost:3001](http://localhost:3001), then choose **Optimistic Rollup Lab** or **ZK Rollup Lab**. Direct routes are [http://localhost:3001/op](http://localhost:3001/op), [http://localhost:3001/optimistic](http://localhost:3001/optimistic), and [http://localhost:3001/zk](http://localhost:3001/zk).
 
 ### Terminal options
 
@@ -72,10 +72,11 @@ Open [http://localhost:3001](http://localhost:3001).
 
 ### First demo
 
-1. Read the **How this lab works** welcome banner.
-2. Click **Clean run** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
-3. Watch batch colours on the OP lane; open **Block Inspector** for window countdown and bond notes.
-4. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
+1. Open the **Optimistic Rollup Lab** from the home chooser.
+2. Read the **How this lab works** welcome banner.
+3. Click **Clean run** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
+4. Watch batch colours on the OP lane; open **Block Inspector** for window countdown and bond notes.
+5. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
 
 Default speed: **3×**. Default seed: **42**.
 

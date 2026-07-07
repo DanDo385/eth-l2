@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { apiPost } from "../lib/ws";
 import { useAppStore } from "../lib/store";
 import { writeUrlSeed } from "../lib/url";
+import type { LabMode } from "./LabFrame";
 
-const DEMOS = [
+const OP_DEMOS = [
   {
     seed: 88,
     title: "Clean run",
@@ -36,7 +37,7 @@ const DEMOS = [
   {
     seed: 99,
     title: "Mixed",
-    caption: "Both fraud types appear over time, ~1-in-10 batches, realistic frequency.",
+    caption: "Both fraud types appear over time, tuned for 1-2 disputes per minute.",
     detail: "Shows why the 7-day challenge window exists: fraud is rare, but economic bonds make it unprofitable.",
     color: "border-violet-700 hover:border-violet-500",
     badge: "bg-violet-900/40 text-violet-300",
@@ -44,8 +45,45 @@ const DEMOS = [
   },
 ];
 
-export function DemoGallery() {
+const ZK_DEMOS = [
+  {
+    seed: 88,
+    title: "Clean validity",
+    caption: "Every proof verifies, so L1 accepts each state update at the validity gate.",
+    detail: "Best first ZK demo. Watch the prover, public inputs, verifier output, and bridge status stay green.",
+    color: "border-emerald-700 hover:border-emerald-500",
+    badge: "bg-emerald-900/40 text-emerald-300",
+  },
+  {
+    seed: 42,
+    title: "Rejected proof",
+    caption: "A bad state transition reaches L1 but fails verifier checks before settlement.",
+    detail: "Use Proof lab to inspect why invalid ZK claims are rejected directly instead of entering a fraud game.",
+    color: "border-yellow-700 hover:border-yellow-500",
+    badge: "bg-yellow-900/40 text-yellow-300",
+  },
+  {
+    seed: 17,
+    title: "Fast failure",
+    caption: "An invalid proof is caught at verification, blocking bridge finality for that update.",
+    detail: "Shows the difference between validity settlement and optimistic challenge windows.",
+    color: "border-orange-700 hover:border-orange-500",
+    badge: "bg-orange-900/40 text-orange-300",
+  },
+  {
+    seed: 99,
+    title: "Mixed proofs",
+    caption: "Accepted and rejected proof submissions appear over a longer run.",
+    detail: "Good for comparing proof cost, verification gas, and finality state across several batches.",
+    color: "border-violet-700 hover:border-violet-500",
+    badge: "bg-violet-900/40 text-violet-300",
+  },
+];
+
+export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
   const { dispatch, refreshState } = useAppStore();
+  const isZk = mode === "zk";
+  const demos = isZk ? ZK_DEMOS : OP_DEMOS;
 
   async function launch(seed: number) {
     writeUrlSeed(seed);
@@ -74,7 +112,7 @@ export function DemoGallery() {
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {DEMOS.map((demo) => (
+        {demos.map((demo) => (
           <motion.button
             key={demo.seed}
             whileHover={{ scale: 1.02 }}
@@ -98,7 +136,9 @@ export function DemoGallery() {
         ))}
       </div>
       <p className="text-[10px] text-zinc-700 leading-relaxed border-t border-zinc-800 pt-2">
-        Fraud is ~1-in-10 batches by design. Economic bonds make cheating unprofitable even when technically possible.
+        {isZk
+          ? "Invalid proof claims are rare by design here. L1 rejects them at the verifier before accepting the new state root."
+          : "Fraud is tuned for the recording window: usually 1-2 challenges in 60s and 3-4 in 120s. Economic bonds make cheating unprofitable even when technically possible."}
       </p>
     </div>
   );

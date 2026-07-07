@@ -150,6 +150,7 @@ function OpLane({ latestBlock, batches, onBatchClick, inspectedBatch }: Omit<Lan
 
 interface Props {
   onBatchClick: (batchId: number) => void;
+  mode?: "all" | "optimistic" | "zk";
 }
 
 function ColorLegend() {
@@ -169,8 +170,16 @@ function ColorLegend() {
   );
 }
 
-export function BlockchainCanvas({ onBatchClick }: Props) {
+export function BlockchainCanvas({ onBatchClick, mode = "all" }: Props) {
   const { state } = useAppStore();
+  const showOp = mode === "all" || mode === "optimistic";
+  const showZk = mode === "all" || mode === "zk";
+  const helper =
+    mode === "optimistic"
+      ? "OP batches group L2 blocks under one posted output root. Suspicious roots wait for local verification and a user challenge."
+      : mode === "zk"
+        ? "ZK L2 blocks feed a prover. L1 accepts state updates only after the validity proof verifies."
+        : "OP and ZK share L2 traffic here, but they settle state through different security gates.";
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-6">
@@ -183,7 +192,7 @@ export function BlockchainCanvas({ onBatchClick }: Props) {
         </div>
         <ColorLegend />
         <p className="text-[11px] text-zinc-600 leading-relaxed">
-          OP batches group {BATCH_WINDOW} L2 blocks under one posted state root. A valid batch stays blue; a fraud proof turns it red.
+          {helper}
         </p>
       </div>
 
@@ -195,26 +204,31 @@ export function BlockchainCanvas({ onBatchClick }: Props) {
         inspectedBatch={state.inspectedBatch}
       />
 
-      <OpLane
-        latestBlock={safeNum(state.blocks["op-l2"])}
-        batches={state.batches}
-        onBatchClick={onBatchClick}
-        inspectedBatch={state.inspectedBatch}
-      />
+      {showOp && (
+        <OpLane
+          latestBlock={safeNum(state.blocks["op-l2"])}
+          batches={state.batches}
+          onBatchClick={onBatchClick}
+          inspectedBatch={state.inspectedBatch}
+        />
+      )}
 
-      <StandardLane
-        chain="zk-l2"
-        latestBlock={safeNum(state.blocks["zk-l2"])}
-        batches={state.batches}
-        onBatchClick={onBatchClick}
-        inspectedBatch={state.inspectedBatch}
-      />
+      {showZk && (
+        <StandardLane
+          chain="zk-l2"
+          latestBlock={safeNum(state.blocks["zk-l2"])}
+          batches={state.batches}
+          onBatchClick={onBatchClick}
+          inspectedBatch={state.inspectedBatch}
+        />
+      )}
 
-      <p className="text-[10px] text-zinc-600 leading-relaxed border-l-2 border-emerald-900 pl-2">
-        ZK lane: same swap traffic, different trust model, every batch needs a validity proof.
-        Use the scoreboard&apos;s <span className="text-emerald-500">ZK in three beats</span> strip
-        or Proof lab to walk the concept tour.
-      </p>
+      {showZk && (
+        <p className="text-[10px] text-zinc-600 leading-relaxed border-l-2 border-emerald-900 pl-2">
+          ZK lane: same swap traffic, different trust model. Every accepted state update
+          needs a validity proof instead of a challenge window.
+        </p>
+      )}
     </div>
   );
 }

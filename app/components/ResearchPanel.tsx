@@ -13,11 +13,17 @@ function zkEntries(rollups: Record<number, ZkInspectPayload>): ZkInspectPayload[
   return Object.values(rollups).sort((a, b) => b.batchId - a.batchId);
 }
 
-export function ResearchPanel() {
+interface Props {
+  mode?: "all" | "optimistic" | "zk";
+}
+
+export function ResearchPanel({ mode = "all" }: Props) {
   const { state, dispatch } = useAppStore();
+  const showOp = mode === "all" || mode === "optimistic";
+  const showZk = mode === "all" || mode === "zk";
   const opProofs = opEntries(state.batches);
   const zkProofs = zkEntries(state.zkRollups);
-  const hasContent = opProofs.length > 0 || zkProofs.length > 0;
+  const hasContent = (showOp && opProofs.length > 0) || (showZk && zkProofs.length > 0);
 
   function openOpProof(batchId: number) {
     dispatch({ type: "INSPECT_BATCH", batchId });
@@ -35,19 +41,21 @@ export function ResearchPanel() {
       <div>
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Proof lab</p>
         <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
-          The simulation runs quietly in the background. Open a proof when you want to
-          study it, overlays never auto-popup.
+          {mode === "zk"
+            ? "Open a ZK proof when you want to inspect witness inputs, proof cost, and L1 verifier output."
+            : "Open a proof when you want to study it. Overlays never auto-popup."}
         </p>
       </div>
 
       {!hasContent && (
         <p className="text-xs text-zinc-600 italic py-2">
-          Start a demo and wait for batches to resolve. Opcode and ZK proofs will appear
-          here for you to explore on your schedule.
+          {mode === "zk"
+            ? "Start a demo and wait for a ZK batch submission. Validity proof tours appear here."
+            : "Start a demo and wait for batches to resolve. Proof artifacts appear here for you to explore on your schedule."}
         </p>
       )}
 
-      {opProofs.length > 0 && (
+      {showOp && opProofs.length > 0 && (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">
             Optimistic: opcode fraud proofs
@@ -88,7 +96,7 @@ export function ResearchPanel() {
         </section>
       )}
 
-      {zkProofs.length > 0 && (
+      {showZk && zkProofs.length > 0 && (
         <section className="space-y-2">
           <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">
             ZK: 3-step concept tour
@@ -136,6 +144,7 @@ export function ResearchPanel() {
         </section>
       )}
 
+      {showOp && (
       <section className="border-t border-zinc-800 pt-3 space-y-2">
         <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wide">
           What happens when an optimistic root is challenged?
@@ -152,6 +161,23 @@ export function ResearchPanel() {
           <li>Forced inclusion is separate from fraud proving. It addresses sequencer censorship, not wrong execution.</li>
         </ol>
       </section>
+      )}
+
+      {showZk && (
+      <section className="border-t border-zinc-800 pt-3 space-y-2">
+        <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wide">
+          What happens when a ZK proof reaches L1?
+        </p>
+        <ol className="space-y-1.5 text-[10px] text-zinc-500 leading-relaxed list-decimal list-inside">
+          <li>The prover builds a witness from the L2 execution trace and public inputs.</li>
+          <li>The operator pays proving cost off-chain and submits proof data to L1.</li>
+          <li>The verifier contract checks the proof against the claimed state transition.</li>
+          <li>If the proof verifies, L1 accepts the new state root and bridge finality advances.</li>
+          <li>If the proof fails, L1 rejects that update at the validity gate.</li>
+          <li>A failed ZK proof does not become an optimistic fraud-proof game.</li>
+        </ol>
+      </section>
+      )}
     </div>
   );
 }

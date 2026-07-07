@@ -15,13 +15,13 @@ make install
 make dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) — clean window, dark mode.
+Open [http://localhost:3001/op](http://localhost:3001/op) — clean window, dark mode. The home page at `/` is a chooser for the optimistic and ZK labs.
 
 ## Recommended sequence
 
 ### 0:00–0:20 — Introduce the lab
 
-Header, **How this lab works** banner, three-lane canvas (L1 / OP L2 / ZK L2), Demo Gallery.
+Header, **How this lab works** banner, L1 + OP L2 canvas, Demo Gallery.
 
 > "Rollup mechanics lab — three Anvil chains, real Solidity, and a user-driven optimistic challenge flow."
 
@@ -57,7 +57,7 @@ Point at countdown and bond-settlement copy in Block Inspector.
 
 ### 2:10–2:30 — ZK contrast
 
-Scoreboard + ZK lane. Open a ZK proof from Proof lab if one exists.
+Switch to [http://localhost:3001/zk](http://localhost:3001/zk). Show the ZK canvas, Scoreboard, and open a ZK proof from Proof lab if one exists.
 
 > "ZK lane: validity checked at submission — no challenge window, no watcher race."
 

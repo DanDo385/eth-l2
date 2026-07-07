@@ -49,7 +49,7 @@ Confirmed SSTORE divergence via `debug_traceTransaction` / `debug_traceCall`. Re
 Anvil orchestration, seeded PRNG, swap/transfer bots, OP + ZK sequencers, honest watcher, trace capture/diff, user-triggered verification/challenge driving `FraudProofGame`, REST + WebSocket (`batch_verified`, `dispute_stage`, `bond_settled`, `batch_challenged`, …).
 
 ### Phase 3 — Frontend ✅
-Three-lane canvas, Block Inspector, OpcodeRace fraud-proof overlay, ZkInspect, Scoreboard, Demo Gallery, Welcome Banner, Research Panel (Proof lab). Overlays never auto-popup.
+Home lab chooser, focused optimistic and ZK routes, lane canvas, Block Inspector, OpcodeRace fraud-proof overlay, ZkInspect, Scoreboard, Demo Gallery, Welcome Banner, Research Panel (Proof lab). Overlays never auto-popup.
 
 ### Phases 4–5 ✅
 Session reproducibility test, Makefile (`make dev`), legacy scripts under `bin/legacy/`, documentation rewrite.

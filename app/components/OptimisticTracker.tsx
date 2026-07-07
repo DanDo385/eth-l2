@@ -16,11 +16,74 @@ import {
   swapStatusLabel,
 } from "../data/opTrackerEducation";
 import { batchEconomicEvents, computeBondLedger, fraudBatches } from "../lib/opLedger";
-import type { BatchInfo } from "../types";
+import type { BatchInfo, SourceLoc } from "../types";
 import { BATCH_WINDOW, PORTAL_BOND_ETH } from "../data/protocol";
 
 function shortHash(h: string) {
   return h.length > 14 ? h.slice(0, 8) + "…" + h.slice(-4) : h;
+}
+
+function shortFile(file: string) {
+  return file.split("/").slice(-2).join("/");
+}
+
+function SourceLineCard({
+  source,
+  label,
+  tone,
+}: {
+  source: SourceLoc;
+  label: string;
+  tone: "honest" | "lying";
+}) {
+  const classes =
+    tone === "honest"
+      ? "border-emerald-900/50 bg-emerald-950/10 text-emerald-200"
+      : "border-red-800/60 bg-red-950/20 text-red-200";
+  const labelClass = tone === "honest" ? "text-emerald-400/90" : "text-red-400/90";
+
+  return (
+    <div className={`rounded-lg border p-2.5 ${classes}`}>
+      <p className={`mb-1 text-[10px] font-mono ${labelClass}`}>
+        {shortFile(source.file)}:{source.line} — {label}
+      </p>
+      <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed font-mono">
+        {source.lineText}
+      </pre>
+    </div>
+  );
+}
+
+function FraudSourceExhibit({ batch }: { batch: BatchInfo }) {
+  const divergence = batch.divergence;
+  if (!divergence?.lyingSource && !divergence?.honestSource) return null;
+
+  return (
+    <div className="rounded-lg border border-red-900/50 bg-red-950/10 p-3 space-y-2">
+      <div>
+        <p className="text-[10px] font-semibold text-red-400">
+          Solidity source line that caused the bad root
+        </p>
+        <p className="text-[10px] text-zinc-500 leading-relaxed mt-0.5">
+          FraudProofGame bisects the committed trace, re-executes one step on L1,
+          then the UI resolves that bytecode position back to the deployed source map.
+        </p>
+      </div>
+
+      {divergence.honestSource && (
+        <SourceLineCard source={divergence.honestSource} label="honest engine" tone="honest" />
+      )}
+      {divergence.lyingSource && (
+        <SourceLineCard source={divergence.lyingSource} label="this batch's engine" tone="lying" />
+      )}
+
+      {typeof divergence.onchainDivergenceStep === "number" && (
+        <p className="text-[9px] font-mono text-zinc-600">
+          on-chain one-step proof isolated VM step #{divergence.onchainDivergenceStep}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function BatchChip({
@@ -363,6 +426,8 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
 
             {/* Right column: L1, finality, ledger, fraud log */}
             <div className="space-y-4">
+              <FraudSourceExhibit batch={selected} />
+
               {finality && (
                 <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
                   <p className="text-[10px] font-semibold text-amber-400">Finality impact</p>

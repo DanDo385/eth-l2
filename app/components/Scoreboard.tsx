@@ -18,8 +18,14 @@ function scoreNums(sb: AppState["scoreboard"]) {
   };
 }
 
-export function Scoreboard() {
+interface Props {
+  mode?: "all" | "optimistic" | "zk";
+}
+
+export function Scoreboard({ mode = "all" }: Props) {
   const { state } = useAppStore();
+  const showOp = mode === "all" || mode === "optimistic";
+  const showZk = mode === "all" || mode === "zk";
   const { zkBatches, zkAccepted, zkRejected } = scoreNums(state.scoreboard);
 
   const batchList = Object.values(state.batches);
@@ -39,7 +45,8 @@ export function Scoreboard() {
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
       <p className="text-xs text-zinc-500 uppercase tracking-wide">Scoreboard</p>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={showOp && showZk ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
+        {showOp && (
         <div className="space-y-2">
           <div>
             <p className="text-xs font-semibold text-blue-400">OP: Optimistic</p>
@@ -81,7 +88,9 @@ export function Scoreboard() {
             Normal OP fault rate is about 1 in {Math.round(1 / OPTIMISTIC_SUSPICION_PROBABILITY)}. Suspicious roots wait for a user to verify and challenge during the {CHALLENGE_WINDOW_SECONDS}s window.
           </p>
         </div>
+        )}
 
+        {showZk && (
         <div className="space-y-2">
           <div>
             <p className="text-xs font-semibold text-emerald-400">ZK: Validity</p>
@@ -111,8 +120,10 @@ export function Scoreboard() {
             Invalid ZK claims occur about 1 in {Math.round(1 / ZK_SUSPICION_PROBABILITY)}, half the OP rate here. They fail at proof verification, not through a fraud-proof game.
           </p>
         </div>
+        )}
       </div>
 
+      {showOp && (
       <div className="border-t border-zinc-800 pt-2 space-y-1">
         <div className="flex gap-3 text-xs">
           <span className="text-zinc-500" title="Percentage of fraudulent batches that were caught and resolved">OP fraud detection</span>
@@ -122,8 +133,9 @@ export function Scoreboard() {
           This reaches 100% because the honest watcher catches every state root mismatch. In production, any full node running the OP software can play the watcher role.
         </p>
       </div>
+      )}
 
-      <ZkContrastStrip />
+      {showZk && <ZkContrastStrip />}
     </div>
   );
 }
