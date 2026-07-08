@@ -95,7 +95,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
           <p className="text-[11px] text-zinc-600 leading-relaxed border-t border-zinc-800 pt-3">
             {isZk
               ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
-              : "Fraud is frequent enough for a short run: usually 1-2 suspicious batches in 60s and 3-4 in 120s. A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
+              : "Fault injection is ~1 in 8 batches: usually 1–3 suspicious batches in 60s and 3–6 in 120s at 4×. A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
           </p>
         </motion.div>
       )}

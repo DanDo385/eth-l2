@@ -12,6 +12,7 @@ import { ResearchPanel } from "./ResearchPanel";
 import { Scoreboard } from "./Scoreboard";
 import { WelcomeBanner } from "./WelcomeBanner";
 import { useAppStore } from "../lib/store";
+import { SessionControlsProvider } from "../lib/sessionControls";
 
 function LabContent({ mode }: { mode: LabMode }) {
   const { state, dispatch } = useAppStore();
@@ -91,7 +92,9 @@ function LabContent({ mode }: { mode: LabMode }) {
 export function LabPage({ mode }: { mode: LabMode }) {
   return (
     <LabFrame mode={mode}>
-      <LabContent mode={mode} />
+      <SessionControlsProvider>
+        <LabContent mode={mode} />
+      </SessionControlsProvider>
     </LabFrame>
   );
 }

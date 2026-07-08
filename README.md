@@ -108,7 +108,7 @@ You should get JSON with `"running":false` and empty `batches`.
 
 1. Open the **Optimistic Rollup Lab** from the home chooser.
 2. Read the **How this lab works** welcome banner (note: a watcher flag is not an L1 challenge).
-3. Click **Clean run** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
+3. Click **Mostly honest** (seed 88) or **Obvious fraud** (seed 17) in the Demo Gallery, or set seed **42** and press **Start simulation**.
 4. Watch batch colours on the OP lane; click a batch → **Verify locally** → **Challenge on L1** if a mismatch is found.
 5. Use **Optimistic Tracker** for swap lifecycle, reroute diagram, and bond ledger; **Block Inspector** for window countdown.
 6. After fraud resolves (red), open **Walk opcode proof step-by-step** or **Proof lab**.
@@ -177,7 +177,7 @@ Backend env (optional): `GOAPI_ADDR`, `PORT`, `NEXT_PUBLIC_API_URL`, `ETH_L2_ALL
 
 | Seed | Demo card | Behaviour |
 |------|-----------|-----------|
-| 88 | Clean run | All batches honest; finalize after challenge window |
+| 88 | Mostly honest | Low dispute density; good first look at post → verify → finalize |
 | 42 | Subtle fraud | Fee-rounding SSTORE lie |
 | 17 | Obvious fraud | Wrong output amount; fast divergence |
 | 99 | Mixed | Both fraud types over a long run |

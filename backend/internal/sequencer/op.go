@@ -258,7 +258,7 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 }
 
 // chooseEngine picks honest/obvious/subtle deterministically from the seed.
-// Fault rate: approximately 1/30 total. A faulty batch then splits between the
+// Fault rate: approximately 1/8 total. A faulty batch then splits between the
 // obvious and subtle lying engines.
 func (s *OPSequencer) chooseEngine(batchID uint64) (common.Address, string) {
 	derived := s.prng.KeccakDerive(fmt.Sprintf("engine:%d", batchID))

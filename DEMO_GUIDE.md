@@ -72,7 +72,7 @@ Intro chapter → step through honest vs claimed storage → verdict with **Soli
 
 ### 5 — Challenge window & bonds
 
-Seed **88** (Clean run) or a blue batch still counting down. Show bond ledger in Optimistic Tracker / Account sidebar.
+Seed **88** (Mostly honest) or a blue batch still counting down. Show bond ledger in Optimistic Tracker / Account sidebar.
 
 > "Honest batches wait 120 seconds here — mainnet uses ~7 days. Suspicious roots are not auto-challenged. The user verifies locally, posts a challenge bond only if a mismatch is found, and then L1 settles the bonds."
 
@@ -96,7 +96,7 @@ In the tour, expand **Public inputs and L1 commitments** (header hash, roots, ba
 |------|------|-----|
 | 17 | Obvious fraud | Fastest fraud arc |
 | 42 | Subtle fraud | Fee-rounding story |
-| 88 | Clean run | Challenge window + bond return |
+| 88 | Mostly honest | Challenge window + bond return |
 | 99 | Mixed | Both fraud types over time |
 
 ## Tips

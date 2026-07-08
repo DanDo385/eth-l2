@@ -1,85 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAppStore } from "../lib/store";
-import { apiPost } from "../lib/ws";
+import { useSessionControlsContext } from "../lib/sessionControls";
 import { BACKEND_PORT } from "../data/ports";
-import { parseUrlHash, writeUrlSeed } from "../lib/url";
+import { OP_SUSPICIOUS_60S, OP_SUSPICIOUS_120S } from "../data/demoGallery";
 
 export function ControlPanel() {
-  const { state, dispatch, refreshState } = useAppStore();
-  const [seed, setSeed] = useState(42);
-  const [speed, setSpeed] = useState(3);
-  const [sessionSeconds, setSessionSeconds] = useState<60 | 120>(60);
-  const [remainingSeconds, setRemainingSeconds] = useState(60);
-  const [expired, setExpired] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [awaitingBackend, setAwaitingBackend] = useState(true);
-  const connected = state.connected;
-
-  useEffect(() => {
-    if (connected) {
-      setAwaitingBackend(false);
-      return;
-    }
-    const timer = setTimeout(() => setAwaitingBackend(false), 4000);
-    return () => clearTimeout(timer);
-  }, [connected]);
-
-  useEffect(() => {
-    const p = parseUrlHash();
-    setSeed(p.seed);
-    setSpeed(p.speed);
-  }, []);
-
-  async function call(path: string, body?: unknown) {
-    setBusy(true);
-    try {
-      await apiPost(path, body);
-      await refreshState();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Request failed";
-      dispatch({
-        type: "WS_EVENT",
-        event: {
-          type: "error_occurred",
-          payload: { chain: "api", message },
-        },
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleStart() {
-    setRemainingSeconds(sessionSeconds);
-    setExpired(false);
-    await call("/api/start", { seed, speed });
-  }
-
-  async function handleReseed() {
-    writeUrlSeed(seed);
-    await call("/api/reseed", { seed });
-  }
-
-  const active = state.running;
-  const paused = state.paused;
-
-  useEffect(() => {
-    if (!active || paused || expired) return;
-    const timer = setInterval(() => {
-      setRemainingSeconds((left) => {
-        if (left <= 1) {
-          clearInterval(timer);
-          setExpired(true);
-          void call("/api/pause");
-          return 0;
-        }
-        return left - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [active, paused, expired]);
+  const {
+    seed,
+    setSeed,
+    speed,
+    setSpeed,
+    sessionSeconds,
+    setSessionSeconds,
+    remainingSeconds,
+    setRemainingSeconds,
+    expired,
+    busy,
+    awaitingBackend,
+    connected,
+    active,
+    paused,
+    call,
+    handleStart,
+    handleReseed,
+  } = useSessionControlsContext();
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
@@ -159,7 +103,7 @@ export function ControlPanel() {
           className="w-full accent-emerald-400"
         />
         <p className="text-[10px] text-zinc-600 leading-relaxed">
-          Scales Anvil block times. At 4×, a 60s run usually surfaces 1-2 suspicious OP batches for you to verify and challenge.
+          Scales Anvil block times. At 4×, a 60s run usually surfaces {OP_SUSPICIOUS_60S} suspicious OP batches for you to verify and challenge.
         </p>
       </div>
 
@@ -188,7 +132,7 @@ export function ControlPanel() {
             <span className="text-zinc-100">{remainingSeconds}s</span>
           </div>
           <p className="text-[10px] text-zinc-600 leading-relaxed mt-1">
-            On expiry the simulation pauses and preserves blocks, batches, balances, and logs. 60s usually surfaces 1-2 suspicious OP batches; 120s usually surfaces 3-4. The app never auto-challenges — you decide.
+            On expiry the simulation pauses and preserves blocks, batches, balances, and logs. 60s usually surfaces {OP_SUSPICIOUS_60S} suspicious OP batches; 120s usually surfaces {OP_SUSPICIOUS_120S}. The app never auto-challenges — you decide.
           </p>
         </div>
       </div>

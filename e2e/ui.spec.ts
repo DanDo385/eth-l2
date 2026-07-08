@@ -51,7 +51,7 @@ test.describe("Optimistic lab", () => {
 
   test("renders DemoGallery with four seed cards", async ({ page }) => {
     await expect(page.getByText("Demo gallery", { exact: true })).toBeVisible();
-    await expect(page.getByText("Clean run", { exact: true })).toBeVisible();
+    await expect(page.getByText("Mostly honest", { exact: true })).toBeVisible();
     await expect(page.getByText("Subtle fraud", { exact: true })).toBeVisible();
     await expect(page.getByText("Obvious fraud", { exact: true })).toBeVisible();
     await expect(page.getByText("Mixed", { exact: true })).toBeVisible();
