@@ -4,15 +4,8 @@ set -euo pipefail
 export PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export SEED="${SEED:-42}"
 
-# Chain RPCs
-export L1_RPC="http://127.0.0.1:8545"
-export OP_L2_RPC="http://127.0.0.1:9545"
-export ZK_L2_RPC="http://127.0.0.1:10545"
-
-# Chain IDs
-export L1_CHAIN_ID=31337
-export OP_L2_CHAIN_ID=31338
-export ZK_L2_CHAIN_ID=31339
+# Chain RPCs + dev ports (config/ports.json)
+eval "$(node "$PROJECT_ROOT/scripts/ports-shell-exports.mjs")"
 
 # Anvil default mnemonic: test test test test test test test test test test test junk
 # Account 0: deployer / sequencer

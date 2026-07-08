@@ -1,10 +1,8 @@
 import type { WsEvent } from "../types";
+import { API_BASE, WS_URL } from "../data/ports";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-
-export const WS_URL = API_BASE.replace(/^http/, "ws") + "/stream";
 export const REST_BASE = API_BASE;
+export { WS_URL };
 
 export class ApiError extends Error {
   constructor(

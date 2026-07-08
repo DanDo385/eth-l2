@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { API_BASE, FRONTEND_URL } from "./data/ports";
 
 export default function Home() {
   return (
@@ -76,9 +77,9 @@ export default function Home() {
           <p>
             Start the shared Go backend and Next.js frontend with{" "}
             <span className="font-mono text-zinc-300">make dev</span>. Frontend:
-            <span className="font-mono text-zinc-300"> http://localhost:3001</span>.
+            <span className="font-mono text-zinc-300"> {FRONTEND_URL}</span>.
             Backend API and WebSocket:
-            <span className="font-mono text-zinc-300"> http://localhost:8080</span>.
+            <span className="font-mono text-zinc-300"> {API_BASE}</span>.
           </p>
         </div>
       </section>

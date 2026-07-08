@@ -15,6 +15,8 @@ make install
 make dev
 ```
 
+`make dev` starts **both** the Go backend (`:8080`) and Next.js (`:3001`). Running only `pnpm dev` leaves the UI disconnected.
+
 Open [http://localhost:3001/op](http://localhost:3001/op). The home page at `/` is a chooser for the optimistic and ZK labs.
 
 Use a clean browser window (dark mode matches the UI). Hide unrelated desktop clutter before you record.

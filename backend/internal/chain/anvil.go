@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/dando385/eth-l2/backend/internal/config"
 )
 
 type ChainConfig struct {
@@ -15,11 +17,21 @@ type ChainConfig struct {
 	BlockTime int // seconds
 }
 
-// Chains are the three default local chains.
-var Chains = []ChainConfig{
-	{Name: "l1", Port: 8545, ChainID: 31337, BlockTime: 12},
-	{Name: "op-l2", Port: 9545, ChainID: 31338, BlockTime: 2},
-	{Name: "zk-l2", Port: 10545, ChainID: 31339, BlockTime: 2},
+// Chains are the three local Anvil instances. Populated by InitChainsFromConfig.
+var Chains []ChainConfig
+
+// InitChainsFromConfig loads ports from config/ports.json under repoRoot.
+func InitChainsFromConfig(repoRoot string) error {
+	p, err := config.Load(repoRoot)
+	if err != nil {
+		return err
+	}
+	Chains = []ChainConfig{
+		{Name: "l1", Port: p.Anvil.L1.Port, ChainID: p.Anvil.L1.ChainID, BlockTime: 12},
+		{Name: "op-l2", Port: p.Anvil.OpL2.Port, ChainID: p.Anvil.OpL2.ChainID, BlockTime: 2},
+		{Name: "zk-l2", Port: p.Anvil.ZkL2.Port, ChainID: p.Anvil.ZkL2.ChainID, BlockTime: 2},
+	}
+	return nil
 }
 
 // ScaledChains returns configs with block times divided by speed (minimum 1 s).

@@ -8,6 +8,7 @@ optimizer = true
 optimizer_runs = 200
 fs_permissions = [{ access = "read-write", path = "./out" }]
 
+# RPC URLs must match config/ports.json (anvil.l1 / opL2 / zkL2).
 [rpc_endpoints]
 l1 = "http://127.0.0.1:8545"
 op_l2 = "http://127.0.0.1:9545"

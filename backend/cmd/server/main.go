@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dando385/eth-l2/backend/internal/chain"
+	"github.com/dando385/eth-l2/backend/internal/config"
 	"github.com/dando385/eth-l2/backend/internal/engine"
 	"github.com/dando385/eth-l2/backend/internal/events"
 	"github.com/dando385/eth-l2/backend/internal/server"
@@ -18,6 +20,10 @@ import (
 func main() {
 	repoRoot := findRepoRoot()
 	log.Printf("repo root: %s", repoRoot)
+
+	if err := chain.InitChainsFromConfig(repoRoot); err != nil {
+		log.Fatalf("ports config: %v", err)
+	}
 
 	sess := engine.NewSession(repoRoot)
 	hub := server.NewHub()
@@ -52,7 +58,7 @@ func main() {
 	}()
 
 	srv := &http.Server{
-		Addr:    resolveAddr(),
+		Addr:    resolveAddr(repoRoot),
 		Handler: server.Handler(sess, hub),
 	}
 
@@ -72,15 +78,16 @@ func main() {
 }
 
 // resolveAddr returns the HTTP bind address.
-// Priority: GOAPI_ADDR (full host:port) > PORT (":"+port) > ":8080".
-// The dev default binds all interfaces so LAN/phone testing keeps working; in
-// production set GOAPI_ADDR=127.0.0.1:8101 so only nginx can reach the backend.
-func resolveAddr() string {
+// Priority: GOAPI_ADDR (full host:port) > PORT (":"+port) > config/ports.json backend.port.
+func resolveAddr(repoRoot string) string {
 	if addr := os.Getenv("GOAPI_ADDR"); addr != "" {
 		return addr
 	}
 	if port := os.Getenv("PORT"); port != "" {
 		return ":" + port
+	}
+	if p, err := config.Load(repoRoot); err == nil {
+		return p.BackendListenAddr()
 	}
 	return ":8080"
 }

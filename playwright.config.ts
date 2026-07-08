@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { FRONTEND_PORT, FRONTEND_URL } from "./app/data/ports";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -8,7 +9,7 @@ export default defineConfig({
   reporter: "list",
   timeout: 30_000,
   use: {
-    baseURL: "http://localhost:3001",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? FRONTEND_URL,
     trace: "on-first-retry",
     screenshot: "on",
   },
@@ -19,8 +20,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev --port 3001",
-    url: "http://localhost:3001",
+    command: `pnpm dev --port ${process.env.ETH_L2_FRONTEND_PORT ?? FRONTEND_PORT}`,
+    url: process.env.PLAYWRIGHT_BASE_URL ?? FRONTEND_URL,
     reuseExistingServer: true,
     timeout: 60_000,
   },

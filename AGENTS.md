@@ -28,6 +28,7 @@ Keep these in sync when behaviour changes:
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow + macOS screen recording |
 | [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit (findings + fix checklist) |
+| [config/README.md](config/README.md) | Canonical dev ports |
 
 ## Engineering principles
 

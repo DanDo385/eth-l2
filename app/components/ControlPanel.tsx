@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAppStore } from "../lib/store";
 import { apiPost } from "../lib/ws";
+import { BACKEND_PORT } from "../data/ports";
 import { parseUrlHash, writeUrlSeed } from "../lib/url";
 
 export function ControlPanel() {
@@ -13,6 +14,17 @@ export function ControlPanel() {
   const [remainingSeconds, setRemainingSeconds] = useState(60);
   const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [awaitingBackend, setAwaitingBackend] = useState(true);
+  const connected = state.connected;
+
+  useEffect(() => {
+    if (connected) {
+      setAwaitingBackend(false);
+      return;
+    }
+    const timer = setTimeout(() => setAwaitingBackend(false), 4000);
+    return () => clearTimeout(timer);
+  }, [connected]);
 
   useEffect(() => {
     const p = parseUrlHash();
@@ -52,7 +64,6 @@ export function ControlPanel() {
 
   const active = state.running;
   const paused = state.paused;
-  const connected = state.connected;
 
   useEffect(() => {
     if (!active || paused || expired) return;
@@ -84,9 +95,19 @@ export function ControlPanel() {
                 ? "simulation paused"
                 : "simulation running"
               : "connected, ready to start"
-            : "connecting to backend…"}
+            : awaitingBackend
+              ? "connecting to backend…"
+              : "backend unreachable — run make dev"}
         </span>
       </div>
+
+      {!connected && !awaitingBackend && (
+        <p className="text-[10px] text-amber-400/90 leading-relaxed border border-amber-900/50 bg-amber-950/20 rounded-lg px-2.5 py-2">
+          The Go API on <span className="font-mono text-amber-200">localhost:{BACKEND_PORT}</span> is not
+          responding. Start it with <span className="font-mono text-amber-200">make dev</span> or{" "}
+          <span className="font-mono text-amber-200">make backend</span> in another terminal.
+        </p>
+      )}
 
       {/* Seed */}
       <div className="space-y-1.5">

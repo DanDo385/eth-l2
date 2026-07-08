@@ -10,7 +10,7 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow; macOS screen recording tips |
 | [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit findings and fix checklist |
-| [AGENTS.md](AGENTS.md) | Agent / contributor conventions |
+| [config/README.md](config/README.md) | Canonical dev ports (`config/ports.json`) |
 
 ## How it works
 
@@ -58,12 +58,43 @@ Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.s
 
 ```bash
 make install   # Foundry + pnpm + Playwright chromium
-make dev       # stops stale ports, then backend + frontend on :3001
+make dev       # stops stale ports from config/ports.json, then backend + frontend
 ```
 
 If `make dev` fails with **address already in use**, run `make stop` and retry.
 
-Open [http://localhost:3001](http://localhost:3001), then choose **Optimistic Rollup Lab** or **ZK Rollup Lab**. Direct routes are [http://localhost:3001/op](http://localhost:3001/op), [http://localhost:3001/optimistic](http://localhost:3001/optimistic), and [http://localhost:3001/zk](http://localhost:3001/zk).
+### Dev ports
+
+All local ports live in **[config/ports.json](config/ports.json)** (see [config/README.md](config/README.md)):
+
+| Service | Port |
+|---------|------|
+| Next.js frontend | **3001** |
+| Go API + WebSocket | **8080** |
+| Anvil L1 / OP L2 / ZK L2 | **8545** / **9545** / **10545** |
+
+`make dev`, `make stop`, the Go backend, `app/data/ports.ts`, and `bin/.env.sh` read this file so nothing drifts to generic `3000`/`8000` ports. Change ports there when running multiple projects on one machine.
+
+Open the frontend URL from that file (default [http://127.0.0.1:3001](http://127.0.0.1:3001)), then choose **Optimistic Rollup Lab** or **ZK Rollup Lab**. Direct routes: `/op`, `/optimistic`, `/zk`.
+
+The frontend needs the Go backend on the **backend.port** from the same file (REST + WebSocket). If the control panel stays on “connecting to backend…” or shows a red **disconnected** dot, the API is not running — use `make dev` (both processes) or `make backend` alongside `make frontend`.
+
+### Troubleshooting connection
+
+| Symptom | Likely cause | Fix |
+|---------|----------------|-----|
+| “connecting to backend…” then **backend unreachable** | Only Next.js is running (`pnpm dev`) | `make dev` or `make backend` in a second terminal |
+| Red **disconnected** in header | Same — nothing listening on `:8080` | `lsof -nP -iTCP:8080 -sTCP:LISTEN` should show the Go `server` process |
+| Stale port after a crash | Old node/go process still bound | `make stop` then `make dev` |
+| Hosted frontend, local API (future) | Browser cannot reach `localhost:8080` from another origin | Set `NEXT_PUBLIC_API_URL` to your tunnel/public API URL at build time |
+
+Smoke-check the API:
+
+```bash
+curl -s http://127.0.0.1:8080/api/state
+```
+
+You should get JSON with `"running":false` and empty `batches`.
 
 ### Terminal options
 
@@ -97,9 +128,9 @@ Default speed: **3×**. Default seed: **42**. Optional **60s / 120s session time
 | Target | Description |
 |--------|-------------|
 | `make dev` | Go backend + Next.js frontend (recommended) |
-| `make stop` | Kill stale processes on ports 3001, 8080, and Anvil RPC ports |
+| `make stop` | Kill stale processes on all ports from `config/ports.json` |
 | `make backend` | Go backend only |
-| `make frontend` | Next.js on port 3001 |
+| `make frontend` | Next.js on `config/ports.json` → `frontend.port` |
 | `make build` | Contracts + Go + Next.js |
 | `make test` | `forge test` + `go test ./...` |
 | `make test-contracts` | Forge verbose |
@@ -116,8 +147,9 @@ contracts/
   l2/               Swap engines, SwapRouter, SwapEngineStorage
   shared/           Merkle, Hashing, DataTypes
 backend/
-  cmd/server/       HTTP :8080 (or GOAPI_ADDR) + WebSocket /stream
+  cmd/server/       HTTP (config/ports.json backend.port) + WebSocket /stream
   internal/
+    config/         Loads config/ports.json
     chain/          Anvil lifecycle, deploy, demo economics
     bots/           L1 transfers + L2 swaps
     sequencer/      OP (fraud injection) + ZK (honest ledger + witness)
@@ -134,12 +166,12 @@ app/                Next.js 16
   components/       LabFrame, LabPage, BlockchainCanvas, OpBatchGroup, ZkBatchGroup,
                     BlockInspector, OptimisticTracker, OpcodeRace, ZkInspect,
                     WelcomeBanner, ResearchPanel, Scoreboard, EventLogPanel, …
-  data/             batchEducation, opTrackerEducation, traceNarrative, zkEducation, protocol
+  data/             batchEducation, opTrackerEducation, traceNarrative, zkEducation, protocol, ports
   lib/              WS client, reducer, opLedger, URL helpers
-docs/               rollup-education-audit.md
+config/             ports.json — canonical dev ports
 ```
 
-Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist).
+Backend env (optional): `GOAPI_ADDR`, `PORT`, `NEXT_PUBLIC_API_URL`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist).
 
 ## Seeds
 
