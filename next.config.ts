@@ -25,6 +25,22 @@ const nextConfig: NextConfig = {
       { source: "/healthz", destination: `${origin}/healthz` },
     ];
   },
+
+  // Allow magro.dev portfolio iframes (matches eth-tx-lifecycle CSP).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "frame-ancestors 'self' https://magro.dev https://www.magro.dev",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
