@@ -41,6 +41,8 @@ export interface SwapSummary {
   amountIn: number;
   honestOut: number;
   claimedOut: number;
+  /** L2 receipt gasUsed when available from the sequencer. */
+  gasUsed?: number;
   isDivergent: boolean;
 }
 
@@ -243,6 +245,10 @@ export interface EventLogEntry {
   seq: number;
   event: string;
   layer: "L1" | "L2" | "local";
+  /** Which lab lane produced this event; shared = session/L1/errors. */
+  lane: "op" | "zk" | "shared";
+  /** Present for block_mined (l1 | op-l2 | zk-l2). */
+  chain?: string;
   batchId?: number;
   summary: string;
   status?: string;
@@ -266,6 +272,7 @@ export type AppAction =
   | { type: "WS_DISCONNECTED" }
   | { type: "WS_EVENT"; event: WsEvent }
   | { type: "HYDRATE_STATE"; snapshot: ApiStateSnapshot }
+  | { type: "SET_PAUSED"; paused: boolean }
   | { type: "INSPECT_BATCH"; batchId: number | null }
   | { type: "INSPECT_ZK_BATCH"; batchId: number | null }
   | { type: "SHOW_OPCODE_RACE"; batchId: number }

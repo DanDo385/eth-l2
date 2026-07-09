@@ -37,10 +37,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+    <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-4">
       <div>
-        <p className="text-xs text-zinc-500 uppercase tracking-wide">Proof lab</p>
-        <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
+        <p className="text-xs uppercase tracking-wide text-zinc-500">Proof lab</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-zinc-600">
           {mode === "zk"
             ? "Open a ZK proof when you want to inspect witness inputs, proof cost, and L1 verifier output."
             : "Open a proof when you want to study it. Overlays never auto-popup."}

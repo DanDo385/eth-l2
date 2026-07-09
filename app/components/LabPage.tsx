@@ -36,25 +36,25 @@ function LabContent({ mode }: { mode: LabMode }) {
   }
 
   return (
-    <div className="mx-auto grid min-h-[calc(100vh-49px)] w-full max-w-[1800px] grid-cols-1 gap-4 p-4 2xl:grid-cols-[390px_minmax(0,1fr)]">
-      <aside className="flex min-w-0 flex-col gap-4 overflow-y-auto 2xl:min-w-[390px]">
-        <ControlPanel />
+    <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-start gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
+      <aside className="flex min-w-0 flex-col gap-3 overflow-y-auto lg:sticky lg:top-4 lg:max-h-[calc(100vh-49px-2rem)]">
         <DemoGallery mode={mode} />
+        <ControlPanel />
         <AccountSidebar mode={mode} showEventLog={false} />
       </aside>
 
-      <section className="flex min-w-0 flex-col gap-4 overflow-y-auto">
+      <section className="flex min-w-0 flex-col gap-4">
         {!state.running && <WelcomeBanner mode={mode} />}
 
         {isOptimistic ? (
           <div
             className={
               selectedBatch
-                ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)]"
+                ? "grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
                 : "grid gap-4"
             }
           >
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <BlockchainCanvas mode={mode} onBatchClick={handleBatchClick} />
               <Scoreboard mode={mode} />
             </div>
@@ -80,10 +80,8 @@ function LabContent({ mode }: { mode: LabMode }) {
           />
         )}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <ResearchPanel mode={mode} />
-          <EventLogPanel />
-        </div>
+        <EventLogPanel mode={mode} />
+        <ResearchPanel mode={mode} />
       </section>
     </div>
   );

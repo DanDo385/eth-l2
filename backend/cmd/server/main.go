@@ -78,18 +78,20 @@ func main() {
 }
 
 // resolveAddr returns the HTTP bind address.
-// Priority: GOAPI_ADDR (full host:port) > PORT (":"+port) > config/ports.json backend.port.
+// Priority: GOAPI_ADDR (full host:port) > PORT (loopback:port) > config/ports.json.
+// Default is 127.0.0.1 so the API is not exposed on LAN; Cloudflare Tunnel
+// reaches it via localhost on the MacBook.
 func resolveAddr(repoRoot string) string {
 	if addr := os.Getenv("GOAPI_ADDR"); addr != "" {
 		return addr
 	}
 	if port := os.Getenv("PORT"); port != "" {
-		return ":" + port
+		return "127.0.0.1:" + port
 	}
 	if p, err := config.Load(repoRoot); err == nil {
 		return p.BackendListenAddr()
 	}
-	return ":8080"
+	return "127.0.0.1:8080"
 }
 
 // findRepoRoot walks up from cwd until it finds foundry.toml.

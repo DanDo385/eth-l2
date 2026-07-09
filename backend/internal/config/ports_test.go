@@ -29,4 +29,7 @@ func TestLoadPorts(t *testing.T) {
 	if p.Anvil.L1.Port != 8545 || p.Anvil.OpL2.Port != 9545 || p.Anvil.ZkL2.Port != 10545 {
 		t.Fatalf("unexpected anvil ports: %+v", p.Anvil)
 	}
+	if got := p.BackendListenAddr(); got != "127.0.0.1:8080" {
+		t.Fatalf("BackendListenAddr = %q, want 127.0.0.1:8080", got)
+	}
 }

@@ -15,6 +15,7 @@ import {
   TWO_COLUMNS_NOTE,
   type EngineType,
 } from "../data/traceNarrative";
+import { EngineSourceCompare } from "./EngineSourceCompare";
 
 function stepsMatch(a: FilteredStep, b: FilteredStep): boolean {
   if (a.op !== b.op) return false;
@@ -91,12 +92,6 @@ function OpcodeCard({ step, side, match, isClash, engineType }: CardProps) {
       )}
     </div>
   );
-}
-
-// basename of a contract path, e.g. contracts/l2/LyingSwapEngineObvious.sol -> LyingSwapEngineObvious.sol
-function shortFile(path: string): string {
-  const parts = path.split("/");
-  return parts[parts.length - 1] || path;
 }
 
 interface Props {
@@ -477,38 +472,15 @@ export function OpcodeRace({ data, onClose }: Props) {
                     {divergence.rootCause}
                   </p>
 
-                  {/* WO-4: the exact Solidity line, resolved from the deployed
-                      bytecode source map, honest engine vs the engine that lied. */}
-                  {(lyingSource || honestSource) && (
-                    <div className="border-t border-red-900/50 pt-3 space-y-2">
-                      <p className="text-[10px] uppercase tracking-widest text-zinc-500">
-                        The offending line, resolved from the deployed source map
-                        {typeof onchainDivergenceStep === "number" && (
-                          <span className="text-zinc-600">
-                            {" "}· on-chain fraud proof isolated VM step #{onchainDivergenceStep}
-                          </span>
-                        )}
-                      </p>
-                      {honestSource && (
-                        <div className="rounded-lg bg-black/40 border border-emerald-900/50 p-2">
-                          <p className="text-[10px] text-emerald-400/80 font-mono mb-1">
-                            {shortFile(honestSource.file)}:{honestSource.line} — honest engine
-                          </p>
-                          <pre className="text-[11px] text-emerald-200 font-mono whitespace-pre-wrap break-all">
-                            {honestSource.lineText}
-                          </pre>
-                        </div>
-                      )}
-                      {lyingSource && (
-                        <div className="rounded-lg bg-black/40 border border-red-800/60 p-2">
-                          <p className="text-[10px] text-red-400/80 font-mono mb-1">
-                            {shortFile(lyingSource.file)}:{lyingSource.line} — this batch&apos;s engine
-                          </p>
-                          <pre className="text-[11px] text-red-200 font-mono whitespace-pre-wrap break-all">
-                            {lyingSource.lineText}
-                          </pre>
-                        </div>
-                      )}
+                  {/* Multi-line Solidity: honest engine vs the engine that lied. */}
+                  {(lyingSource || honestSource || engineType) && (
+                    <div className="border-t border-red-900/50 pt-3">
+                      <EngineSourceCompare
+                        engineType={engineType}
+                        honestSource={honestSource}
+                        lyingSource={lyingSource}
+                        onchainDivergenceStep={onchainDivergenceStep}
+                      />
                     </div>
                   )}
 

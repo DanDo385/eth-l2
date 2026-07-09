@@ -6,9 +6,12 @@ cache/
 out/
 *.pid
 .env
+.env.local
+.env.*.local
 .DS_Store
 test-results/
 tsconfig.tsbuildinfo
 
 # Foundry broadcast — ephemeral deploy logs from `forge script` / local Anvil runs
 broadcast/
+.vercel

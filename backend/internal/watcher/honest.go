@@ -223,7 +223,7 @@ func (w *HonestWatcher) CheckBatch(batch *sequencer.BatchResult) {
 	if batch.TxCount == 0 {
 		return
 	}
-	expectedRoot, ok := w.simRootByL2Block[batch.L2EndBlock]
+	expectedRoot, ok := w.simRootByL2Block[batch.AbsoluteL2EndBlock]
 	if !ok {
 		return // haven't processed that block yet — shouldn't happen in normal flow
 	}

@@ -63,10 +63,27 @@ export function useSessionControls() {
   const call = useCallback(
     async (path: string, body?: unknown) => {
       setBusy(true);
+      // Optimistic UI: pause/resume should flip immediately, then reconcile via
+      // websocket /api/state. Gallery badges and control labels key off `paused`.
+      if (path === "/api/pause") {
+        dispatch({ type: "SET_PAUSED", paused: true });
+      } else if (path === "/api/resume") {
+        dispatch({ type: "SET_PAUSED", paused: false });
+        setExpired(false);
+      } else if (path === "/api/stop") {
+        setActiveSeed(null);
+        setExpired(false);
+      }
       try {
         await apiPost(path, body);
         await refreshState();
       } catch (err) {
+        // Roll back optimistic pause if the request failed.
+        if (path === "/api/pause") {
+          dispatch({ type: "SET_PAUSED", paused: false });
+        } else if (path === "/api/resume") {
+          dispatch({ type: "SET_PAUSED", paused: true });
+        }
         const message = err instanceof Error ? err.message : "Request failed";
         reportError(message);
         throw err;
@@ -74,7 +91,7 @@ export function useSessionControls() {
         setBusy(false);
       }
     },
-    [refreshState, reportError],
+    [dispatch, refreshState, reportError],
   );
 
   const startSession = useCallback(
@@ -121,18 +138,18 @@ export function useSessionControls() {
   useEffect(() => {
     if (!active || paused || expired) return;
     const timer = setInterval(() => {
-      setRemainingSeconds((left) => {
-        if (left <= 1) {
-          clearInterval(timer);
-          setExpired(true);
-          void call("/api/pause");
-          return 0;
-        }
-        return left - 1;
-      });
+      setRemainingSeconds((left) => (left <= 1 ? 0 : left - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [active, paused, expired, call]);
+  }, [active, paused, expired]);
+
+  // Pause when the session timer hits zero — must not dispatch from inside a
+  // setState updater (that updates AppStoreProvider during this provider's render).
+  useEffect(() => {
+    if (!active || paused || expired || remainingSeconds > 0) return;
+    setExpired(true);
+    void call("/api/pause");
+  }, [remainingSeconds, active, paused, expired, call]);
 
   return {
     seed,

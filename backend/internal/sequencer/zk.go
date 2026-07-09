@@ -101,9 +101,23 @@ type ZKSequencer struct {
 	swapABI  abi.ABI
 	ledger   *zkLedger
 
-	nextBatchID   uint64
-	windowStart   uint64
-	pendingTxHash []common.Hash
+	nextBatchID    uint64
+	origin         uint64 // Anvil tip when L1 armed the lane; relative = abs - origin - 1
+	inWindow       bool
+	windowStartAbs uint64
+	pendingTxHash  []common.Hash
+}
+
+// Arm records the L2 tip at the moment L1 first settles after session start.
+func (s *ZKSequencer) Arm(origin uint64) {
+	s.origin = origin
+}
+
+func (s *ZKSequencer) rel(abs uint64) uint64 {
+	if abs <= s.origin {
+		return 0
+	}
+	return abs - s.origin - 1
 }
 
 func NewZKSequencer(
@@ -138,8 +152,9 @@ func NewZKSequencer(
 
 // OnBlock is called for each new ZK-L2 block.
 func (s *ZKSequencer) OnBlock(ctx context.Context, blockNum uint64) {
-	if s.windowStart == 0 {
-		s.windowStart = blockNum
+	if !s.inWindow {
+		s.inWindow = true
+		s.windowStartAbs = blockNum
 	}
 
 	block, err := s.l2Client.EC.BlockByNumber(ctx, big.NewInt(int64(blockNum)))
@@ -151,7 +166,7 @@ func (s *ZKSequencer) OnBlock(ctx context.Context, blockNum uint64) {
 		}
 	}
 
-	if int(blockNum-s.windowStart)+1 >= s.batchEvery {
+	if int(blockNum-s.windowStartAbs)+1 >= s.batchEvery {
 		if err := s.postBatch(ctx, blockNum); err != nil {
 			log.Printf("zkSeq postBatch: %v", err)
 		}
@@ -160,11 +175,13 @@ func (s *ZKSequencer) OnBlock(ctx context.Context, blockNum uint64) {
 
 func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 	batchID := s.nextBatchID
-	windowStart := s.windowStart
+	relStart := s.rel(s.windowStartAbs)
+	relEnd := s.rel(l2EndBlock)
 
 	// Reset window state up front so a mid-function error can't wedge the lane.
 	s.nextBatchID++
-	s.windowStart = 0
+	s.inWindow = false
+	s.windowStartAbs = 0
 	txHashes := s.pendingTxHash
 	s.pendingTxHash = nil
 
@@ -193,8 +210,8 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 		PrevStateRoot: prevRoot,
 		PostStateRoot: claimedPost,
 		BatchDataHash: batchDataHash(txHashes),
-		L2StartBlock:  windowStart,
-		L2EndBlock:    l2EndBlock,
+		L2StartBlock:  relStart,
+		L2EndBlock:    relEnd,
 		TxCount:       uint32(len(swaps)),
 		Timestamp:     uint64(time.Now().Unix()),
 	}
@@ -225,8 +242,8 @@ func (s *ZKSequencer) postBatch(ctx context.Context, l2EndBlock uint64) error {
 	headerHash := hashBatchHeader(header)
 	s.bus.Publish(events.New(events.ZkInspectReady, events.ZkInspectReadyPayload{
 		BatchID:         batchID,
-		L2StartBlock:    windowStart,
-		L2EndBlock:      l2EndBlock,
+		L2StartBlock:    relStart,
+		L2EndBlock:      relEnd,
 		HeaderHash:      fmt.Sprintf("0x%x", headerHash),
 		PrevStateRoot:   fmt.Sprintf("0x%x", prevRoot),
 		ClaimedPostRoot: fmt.Sprintf("0x%x", claimedPost),

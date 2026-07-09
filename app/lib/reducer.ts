@@ -35,6 +35,36 @@ function layerForEvent(type: WsEvent["type"]): EventLogEntry["layer"] {
   return "L1";
 }
 
+function laneForEvent(event: WsEvent): EventLogEntry["lane"] {
+  switch (event.type) {
+    case "block_mined": {
+      const chain = event.payload.chain;
+      if (chain === "zk-l2") return "zk";
+      if (chain === "op-l2") return "op";
+      return "shared";
+    }
+    case "zk_inspect_ready":
+      return "zk";
+    case "batch_posted":
+    case "batch_flagged":
+    case "batch_verified":
+    case "batch_challenged":
+    case "dispute_stage":
+    case "dispute_resolved":
+    case "bond_settled":
+      return "op";
+    case "session_state_changed":
+    case "error_occurred":
+      return "shared";
+  }
+}
+
+function chainForEvent(event: WsEvent): string | undefined {
+  if (event.type === "block_mined") return event.payload.chain;
+  if (event.type === "error_occurred") return event.payload.chain;
+  return undefined;
+}
+
 function eventSummary(event: WsEvent): string {
   switch (event.type) {
     case "block_mined":
@@ -71,19 +101,38 @@ function eventBatchId(event: WsEvent): number | undefined {
   return typeof payload.batchId === "number" ? payload.batchId : undefined;
 }
 
-function appendEventLog(state: AppState, event: WsEvent): EventLogEntry[] {
-  if (event.type === "block_mined" && state.blockLog.length % 5 !== 0) {
-    return state.eventLog;
+/** Repair logs polluted by the old length-based seq (duplicates after ring-buffer wrap). */
+function ensureUniqueEventSeqs(log: EventLogEntry[]): EventLogEntry[] {
+  const seen = new Set<number>();
+  for (const e of log) {
+    if (seen.has(e.seq)) {
+      return log.map((entry, i) => ({ ...entry, seq: i + 1 }));
+    }
+    seen.add(e.seq);
   }
+  return log;
+}
+
+function appendEventLog(state: AppState, event: WsEvent): EventLogEntry[] {
+  // Heal any in-memory duplicates from the old length-based seq before appending.
+  const log = ensureUniqueEventSeqs(state.eventLog);
+  if (event.type === "block_mined" && state.blockLog.length % 5 !== 0) {
+    return log;
+  }
+  // Monotonic across truncation: length-based seq collides once the ring buffer is full
+  // (every new entry would get MAX_EVENT_LOG + 1 → duplicate React keys).
+  const lastSeq = log[log.length - 1]?.seq ?? 0;
   const next: EventLogEntry = {
-    seq: state.eventLog.length + 1,
+    seq: lastSeq + 1,
     event: event.type,
     layer: layerForEvent(event.type),
+    lane: laneForEvent(event),
+    chain: chainForEvent(event),
     batchId: eventBatchId(event),
     summary: eventSummary(event),
     status: "recorded",
   };
-  return [...state.eventLog.slice(-(MAX_EVENT_LOG - 1)), next];
+  return [...log.slice(-(MAX_EVENT_LOG - 1)), next];
 }
 
 export const initialState: AppState = {
@@ -142,6 +191,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }),
       };
     }
+
+    case "SET_PAUSED":
+      return {
+        ...state,
+        paused: action.paused,
+        // Pausing only makes sense while a session is active.
+        running: action.paused ? true : state.running,
+      };
 
     case "WS_EVENT": {
       const { event } = action;
@@ -390,7 +447,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 zkAccepted: 0,
                 zkRejected: 0,
               },
-              eventLog: appendEventLog(state, event),
+              // Drop the ring buffer so a long prior run cannot leave duplicate seqs.
+              eventLog: appendEventLog({ ...state, eventLog: [] }, event),
             };
           }
           return {

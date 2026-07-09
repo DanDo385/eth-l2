@@ -77,19 +77,20 @@ func (s *Session) driveChains(ctx context.Context, lastBlocks map[string]uint64)
 }
 
 func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64) {
-	s.bus.Publish(events.New(events.BlockMined, events.BlockMinedPayload{
-		Chain: chainName, BlockNum: blockNum,
-	}))
-	s.batchStore.SetBlock(chainName, blockNum)
-
 	switch chainName {
 	case "l1":
+		s.publishBlock(chainName, blockNum)
 		if err := s.transferBot.OnBlock(ctx, blockNum); err != nil {
 			s.reportBotError("l1", "transferBot", blockNum, err)
 		}
 		s.finalizeHonestBatches(ctx)
+		s.armL2IfNeeded(ctx)
 
 	case "op-l2":
+		if !s.l2Armed || blockNum <= s.opL2Origin {
+			return
+		}
+		s.publishBlock(chainName, relBlock(blockNum, s.opL2Origin))
 		if err := s.opSwapBot.OnBlock(ctx, blockNum); err != nil {
 			s.reportBotError("op-l2", "opSwapBot", blockNum, err)
 		}
@@ -128,6 +129,10 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 		}
 
 	case "zk-l2":
+		if !s.l2Armed || blockNum <= s.zkL2Origin {
+			return
+		}
+		s.publishBlock(chainName, relBlock(blockNum, s.zkL2Origin))
 		// Re-fund ZK accounts every 20 blocks so long-running demos don't run dry.
 		// (EnsureDemoBalances is also called at session start, but Anvil's internal
 		// state can diverge from what was set when the chain processes many txs.)
@@ -146,6 +151,44 @@ func (s *Session) onBlock(ctx context.Context, chainName string, blockNum uint64
 		}
 		s.zkSeq.OnBlock(ctx, blockNum)
 	}
+}
+
+func (s *Session) publishBlock(chainName string, blockNum uint64) {
+	s.bus.Publish(events.New(events.BlockMined, events.BlockMinedPayload{
+		Chain: chainName, BlockNum: blockNum,
+	}))
+	s.batchStore.SetBlock(chainName, blockNum)
+}
+
+func relBlock(abs, origin uint64) uint64 {
+	if abs <= origin {
+		return 0
+	}
+	return abs - origin - 1
+}
+
+// armL2IfNeeded opens L2 swap/batch collection after the first post-start L1
+// block. Deploy/seed blocks mined before that are excluded from demo numbering
+// so batch 0 starts at relative L2 block 0.
+func (s *Session) armL2IfNeeded(ctx context.Context) {
+	if s.l2Armed {
+		return
+	}
+	opTip, err := s.clients["op-l2"].EC.BlockNumber(ctx)
+	if err != nil {
+		s.reportBotError("op-l2", "armL2", 0, err)
+		return
+	}
+	zkTip, err := s.clients["zk-l2"].EC.BlockNumber(ctx)
+	if err != nil {
+		s.reportBotError("zk-l2", "armL2", 0, err)
+		return
+	}
+	s.opL2Origin = opTip
+	s.zkL2Origin = zkTip
+	s.opSeq.Arm(opTip)
+	s.zkSeq.Arm(zkTip)
+	s.l2Armed = true
 }
 
 func (s *Session) reportBotError(chainName, component string, blockNum uint64, err error) {

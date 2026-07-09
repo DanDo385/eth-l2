@@ -49,6 +49,12 @@ type Session struct {
 	opWatcher   *watcher.HonestWatcher
 	batchStore  *store.Store
 	challenger  *challenge.Challenger
+
+	// l2Armed becomes true after the first post-start L1 block settles, which
+	// is the signal for L2 bots/sequencers to begin collecting demo batches.
+	l2Armed   bool
+	opL2Origin uint64
+	zkL2Origin uint64
 }
 
 func NewSession(repoRoot string) *Session {

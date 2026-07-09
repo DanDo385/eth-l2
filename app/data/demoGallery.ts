@@ -20,8 +20,9 @@ export const OP_DEMOS: DemoCard[] = [
   {
     seed: 88,
     title: "Mostly honest",
-    caption: "Low dispute density in a short run — good first look at post → verify → finalize.",
-    detail: "Best entry point. Fault injection is ~1 in 8 batches, so a 60s window may still stay quiet.",
+    caption: "Quiet first run — post, verify, finalize.",
+    detail:
+      "Best entry point. Low dispute density in a short run. Fault injection is ~1 in 8 batches, so a 60s window may still stay quiet. Good first look at post → verify → finalize.",
     color: "border-emerald-700 hover:border-emerald-500",
     badge: "bg-emerald-900/40 text-emerald-300",
     icon: "✓",
@@ -30,8 +31,9 @@ export const OP_DEMOS: DemoCard[] = [
   {
     seed: 42,
     title: "Subtle fraud",
-    caption: "Fee-rounding lie — divergence hides in an SSTORE deep in the trace.",
-    detail: "Hard to spot without local replay. Useful for showing why verification matters before challenging.",
+    caption: "Fee-rounding lie buried in an SSTORE.",
+    detail:
+      "Hard to spot without local replay. Divergence hides deep in the trace — useful for showing why verification matters before challenging.",
     color: "border-yellow-700 hover:border-yellow-500",
     badge: "bg-yellow-900/40 text-yellow-300",
     icon: "≈",
@@ -39,8 +41,9 @@ export const OP_DEMOS: DemoCard[] = [
   {
     seed: 17,
     title: "Obvious fraud",
-    caption: "Blatant output doubling — watcher flags quickly, good for a full challenge arc.",
-    detail: "Diverges at the first SSTORE. Fastest path through verify → challenge → opcode proof.",
+    caption: "Output doubled — full challenge arc.",
+    detail:
+      "Blatant output doubling. Watcher flags quickly; diverges at the first SSTORE. Fastest path through verify → challenge → opcode proof.",
     color: "border-orange-700 hover:border-orange-500",
     badge: "bg-orange-900/40 text-orange-300",
     icon: "✗",
@@ -48,8 +51,9 @@ export const OP_DEMOS: DemoCard[] = [
   {
     seed: 99,
     title: "Mixed",
-    caption: `Both fraud types over time — usually ${OP_SUSPICIOUS_60S} suspicious batches in 60s at 4×.`,
-    detail: "Shows why challenge windows exist: fraud is stochastic, but bonds make cheating unprofitable.",
+    caption: `Both fraud types — usually ${OP_SUSPICIOUS_60S} in 60s.`,
+    detail:
+      "Both fraud types over time. Shows why challenge windows exist: fraud is stochastic, but bonds make cheating unprofitable.",
     color: "border-violet-700 hover:border-violet-500",
     badge: "bg-violet-900/40 text-violet-300",
     icon: "~",
@@ -60,8 +64,9 @@ export const ZK_DEMOS: DemoCard[] = [
   {
     seed: 88,
     title: "Mostly valid",
-    caption: "Accepted proofs dominate — watch the Claim → Prove → Verify pipeline stay green.",
-    detail: "Best first ZK demo. Invalid claims are ~1 in 16 batches; short runs may show none.",
+    caption: "Accepted proofs — Claim → Prove → Verify.",
+    detail:
+      "Best first ZK demo. Invalid claims are ~1 in 16 batches; short runs may show none. Watch the pipeline stay green.",
     color: "border-emerald-700 hover:border-emerald-500",
     badge: "bg-emerald-900/40 text-emerald-300",
     recommended: true,
@@ -69,24 +74,27 @@ export const ZK_DEMOS: DemoCard[] = [
   {
     seed: 42,
     title: "Rejected claim",
-    caption: "A bad post root reaches L1 but fails the verifier before canonical settlement.",
-    detail: "Open a batch card to inspect public inputs and why the recomputed root did not match.",
+    caption: "Bad root fails the L1 verifier.",
+    detail:
+      "A bad post root reaches L1 but fails before canonical settlement. Open a batch card to inspect public inputs.",
     color: "border-yellow-700 hover:border-yellow-500",
     badge: "bg-yellow-900/40 text-yellow-300",
   },
   {
     seed: 17,
     title: "Fast rejection",
-    caption: "Invalid claim caught at the validity gate — no fraud-proof game follows.",
-    detail: "Contrast with optimistic rollups: rejection happens at submit time, not after a window.",
+    caption: "Caught at the validity gate.",
+    detail:
+      "Invalid claim rejected at submit time — no fraud-proof game. Contrast with optimistic rollups' challenge window.",
     color: "border-orange-700 hover:border-orange-500",
     badge: "bg-orange-900/40 text-orange-300",
   },
   {
     seed: 99,
     title: "Mixed proofs",
-    caption: "Accepted and rejected batches over a longer run — compare verifier gas and outcomes.",
-    detail: "Useful for comparing simulated prove time vs measured verify gas across several batches.",
+    caption: "Accepted and rejected over a longer run.",
+    detail:
+      "Compare simulated prove time vs measured verify gas across several batches with mixed outcomes.",
     color: "border-violet-700 hover:border-violet-500",
     badge: "bg-violet-900/40 text-violet-300",
   },

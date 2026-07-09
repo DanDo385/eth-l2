@@ -22,9 +22,18 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 
 | Env var | Effect |
 |---------|--------|
-| `NEXT_PUBLIC_API_URL` | Frontend → backend URL (tunnel / production) |
-| `GOAPI_ADDR` | Backend listen `host:port` |
-| `PORT` | Backend listen `:port` only |
+| `NEXT_PUBLIC_API_URL` | Browser REST base. Unset = local `ports.json`. `same-origin` / empty = Vercel rewrite proxy. Absolute URL = call that host. Ignored during local `next dev` unless `ETH_L2_ENABLE_API_PROXY=1`. |
+| `NEXT_PUBLIC_WS_URL` | Browser WebSocket URL (use `wss://api-staging-eth-l2.magro.dev/stream` on Vercel). Ignored during local `next dev` unless `ETH_L2_ENABLE_API_PROXY=1`. |
+| `ETH_L2_BACKEND_ORIGIN` | Server-only rewrite target on Vercel (default public tunnel hostname) |
+| `ETH_L2_ENABLE_API_PROXY` | Set `1` to force Vercel-style same-origin rewrites + remote API URLs during local Next |
+| `GOAPI_ADDR` | Backend listen `host:port` (prefer `127.0.0.1:8080` on the MacBook) |
+| `PORT` | Backend listen `127.0.0.1:port` |
 | `ETH_L2_FRONTEND_PORT` | `make frontend` / Playwright when set |
+
+## Hosted split (Vercel UI + MacBook API)
+
+Public API hostname only: `https://api-staging-eth-l2.magro.dev` (Cloudflare Tunnel → `http://127.0.0.1:8080`).
+
+See [README.md](../README.md#hosted-split-vercel--macbook) and [.env.example](../.env.example). Never document LAN IPs or tunnel credentials in the repo.
 
 When adding another project on the same machine, give it its own `config/ports.json` with a non-overlapping block (e.g. frontend `3002`, backend `8081`, Anvil `8645`…).

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAppStore } from "../lib/store";
 import { DEMO_ACCOUNTS } from "../data/accounts";
 import { safeNum } from "../lib/numbers";
@@ -18,6 +19,14 @@ export function AccountSidebar({
   showEventLog?: boolean;
 }) {
   const { state } = useAppStore();
+  const filteredLog = useMemo(
+    () =>
+      state.eventLog.filter((e) => {
+        if (e.lane === "shared") return true;
+        return mode === "optimistic" ? e.lane === "op" : e.lane === "zk";
+      }),
+    [state.eventLog, mode],
+  );
   const batchList = Object.values(state.batches);
   const flagged = batchList.filter((b) => b.flagged).length;
   const resolved = batchList.filter((b) => b.resolved).length;
@@ -33,8 +42,8 @@ export function AccountSidebar({
     ledger.challenger.won;
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
-      <p className="text-xs text-zinc-500 uppercase tracking-wide">Accounts</p>
+    <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-4">
+      <p className="text-xs uppercase tracking-wide text-zinc-500">Accounts</p>
       <ul className="space-y-2">
         {DEMO_ACCOUNTS.map(({ role, addr }) => (
           <li key={addr} className="flex flex-col">
@@ -105,10 +114,10 @@ export function AccountSidebar({
       <div className="border-t border-zinc-800 pt-3 space-y-2">
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Event log</p>
         <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
-          {state.eventLog.length === 0 ? (
+          {filteredLog.length === 0 ? (
             <p className="text-[10px] text-zinc-600">No events yet.</p>
           ) : (
-            state.eventLog.slice(-30).reverse().map((entry, index) => (
+            filteredLog.slice(-30).reverse().map((entry, index) => (
               <div key={`${entry.seq}-${index}-${entry.event}`} className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
                 <div className="flex justify-between gap-2 text-[9px] font-mono">
                   <span className="text-zinc-500">#{entry.seq}</span>

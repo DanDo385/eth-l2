@@ -191,6 +191,9 @@ func (s *Session) teardown() {
 	s.batchStore = nil
 	s.challenger = nil
 	s.bus = nil
+	s.l2Armed = false
+	s.opL2Origin = 0
+	s.zkL2Origin = 0
 }
 
 // publishSessionState keeps store snapshots and websocket clients in sync with lifecycle state.

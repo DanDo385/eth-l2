@@ -24,11 +24,12 @@ Keep these in sync when behaviour changes:
 
 | File | Role |
 |------|------|
-| [README.md](README.md) | Setup, architecture, protocol constants, tests |
+| [README.md](README.md) | Setup, architecture, protocol constants, tests, Vercel + MacBook tunnel split |
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow + macOS screen recording |
 | [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit (findings + fix checklist) |
 | [config/README.md](config/README.md) | Canonical dev ports |
+| [.env.example](.env.example) | Public tunnel hostname env for Vercel (no secrets / LAN) |
 
 ## Engineering principles
 
@@ -39,7 +40,9 @@ Keep these in sync when behaviour changes:
 
 ## Frontend rules
 
-- Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `OpBatchGroup`, `ZkBatchGroup`, `BlockInspector`, `OptimisticTracker`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`, `EventLogPanel`.
+- Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `OpBatchGroup`, `ZkBatchGroup`, `BlockInspector`, `OptimisticTracker`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`, `EventLogPanel`, `BackendStatus`.
+- Dense protocol copy belongs in `InfoTip` (hover/click expand) — keep default controls scannable.
+- Fraud verdict Solidity: prefer multi-line exhibits in `engineSourceExhibits.ts` / `EngineSourceCompare` (honest vs lying engines), not a single source-map line alone.
 - Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `opTrackerEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
 - Overlays (opcode proof, ZK inspect) open from Proof lab, Block Inspector, or ZK batch cards — never auto-popup.
 - Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths.

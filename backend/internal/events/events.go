@@ -57,6 +57,7 @@ type SwapSummary struct {
 	AmountIn    uint64 `json:"amountIn"`
 	HonestOut   uint64 `json:"honestOut"`
 	ClaimedOut  uint64 `json:"claimedOut"`
+	GasUsed     uint64 `json:"gasUsed,omitempty"`
 	IsDivergent bool   `json:"isDivergent"`
 }
 

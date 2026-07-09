@@ -8,68 +8,118 @@ import {
 } from "../data/demoGallery";
 import { useSessionControlsContext } from "../lib/sessionControls";
 import type { LabMode } from "./LabFrame";
+import { InfoTip } from "./InfoTip";
+
+function StatusBadge({
+  kind,
+}: {
+  kind: "start" | "running" | "paused";
+}) {
+  const styles =
+    kind === "paused"
+      ? "border-amber-700/70 bg-amber-950/70 text-amber-300"
+      : kind === "running"
+        ? "border-emerald-700/70 bg-emerald-950/70 text-emerald-300"
+        : "border-emerald-800/60 bg-emerald-950/50 text-emerald-400/90";
+
+  const label =
+    kind === "paused" ? "Paused" : kind === "running" ? "Running" : "Start here";
+
+  return (
+    <span
+      className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${styles}`}
+    >
+      {label}
+    </span>
+  );
+}
 
 export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
-  const { launchDemo, busy, connected, active, activeSeed } = useSessionControlsContext();
+  const { launchDemo, busy, connected, active, paused, activeSeed } =
+    useSessionControlsContext();
   const isZk = mode === "zk";
   const demos = demosForMode(mode);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
-      <div>
-        <p className="text-xs text-zinc-500 uppercase tracking-wide">Demo gallery</p>
-        <p className="text-[10px] text-zinc-600 mt-0.5 leading-relaxed">
-          Click any card to start at the speed set above. Seed 88 is the suggested entry point.
+    <div className="space-y-2.5 rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Demo gallery
+          </p>
+          <InfoTip label="How demo seeds work" placement="panel">
+            {isZk
+              ? "Invalid claims are ~1 in 16 batches. L1 rejects them at the verifier before accepting the new state root. Cards start at the speed set in controls."
+              : `Fault injection is ~1 in 8 batches. In a 60s run at 4× expect ${OP_SUSPICIOUS_60S} suspicious batches; in 120s expect ${OP_SUSPICIOUS_120S}. Bonds make cheating unprofitable. Cards start at the speed set in controls.`}
+          </InfoTip>
+        </div>
+        <p className="mt-0.5 text-[10px] leading-snug text-zinc-600">
+          Pick a scenario. Seed 88 is the suggested entry point.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+
+      {/* Single column: sidebar is too narrow for a 2×2 grid without crushing copy */}
+      <div className="flex flex-col gap-1.5">
         {demos.map((demo) => {
           const isActive = active && activeSeed === demo.seed;
           const disabled = busy || !connected;
+          const status: "start" | "running" | "paused" | null = isActive
+            ? paused
+              ? "paused"
+              : "running"
+            : demo.recommended
+              ? "start"
+              : null;
 
           return (
-            <motion.button
+            <motion.div
               key={demo.seed}
-              whileHover={disabled ? undefined : { scale: 1.02 }}
-              whileTap={disabled ? undefined : { scale: 0.97 }}
-              onClick={() => launchDemo(demo.seed)}
-              disabled={disabled}
-              className={`text-left p-3 rounded-lg border bg-zinc-950 transition-colors min-w-0 relative ${
+              whileHover={disabled ? undefined : { scale: 1.005 }}
+              className={`min-w-0 overflow-hidden rounded-lg border bg-zinc-950 transition-colors ${
                 isActive
-                  ? "border-emerald-500 ring-1 ring-emerald-500/40"
+                  ? paused
+                    ? "border-amber-500/80 ring-1 ring-amber-500/30"
+                    : "border-emerald-500 ring-1 ring-emerald-500/40"
                   : demo.color
-              } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              title={demo.detail}
+              } ${disabled ? "opacity-50" : ""}`}
             >
-              {isActive ? (
-                <span className="absolute top-1.5 right-1.5 text-[9px] uppercase tracking-wide text-emerald-300 font-semibold">
-                  running
-                </span>
-              ) : demo.recommended ? (
-                <span className="absolute top-1.5 right-1.5 text-[9px] uppercase tracking-wide text-emerald-400/90">
-                  start here
-                </span>
-              ) : null}
-              <div className="flex items-start gap-2 mb-1 min-w-0">
-                <span
-                  className={`shrink-0 text-xs px-1.5 py-0.5 rounded font-mono ${demo.badge}`}
-                >
-                  #{demo.seed}
-                </span>
-                <span className="text-xs font-semibold text-zinc-200 leading-snug pr-12">
-                  {demo.title}
+              <button
+                type="button"
+                onClick={() => launchDemo(demo.seed)}
+                disabled={disabled}
+                className={`flex w-full min-w-0 flex-col gap-1 px-2.5 py-2 text-left ${
+                  disabled ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] ${demo.badge}`}
+                  >
+                    #{demo.seed}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-200">
+                    {demo.title}
+                  </span>
+                  {status && <StatusBadge kind={status} />}
+                </div>
+                <p className="text-[10px] leading-snug text-zinc-500">
+                  {demo.caption}
+                </p>
+              </button>
+
+              <div className="flex items-center gap-1.5 border-t border-zinc-800/80 px-2.5 py-1">
+                <InfoTip label={`Details for seed ${demo.seed}`} placement="inline">
+                  <span className="font-medium text-zinc-300">Why this seed: </span>
+                  {demo.detail}
+                </InfoTip>
+                <span className="truncate text-[9px] text-zinc-700">
+                  more detail
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-500 leading-snug break-words">{demo.caption}</p>
-            </motion.button>
+            </motion.div>
           );
         })}
       </div>
-      <p className="text-[10px] text-zinc-700 leading-relaxed border-t border-zinc-800 pt-2">
-        {isZk
-          ? "Invalid claims are ~1 in 16 batches. L1 rejects them at the verifier before accepting the new state root."
-          : `Fault injection is ~1 in 8 batches. In a 60s run at 4× expect ${OP_SUSPICIOUS_60S} suspicious batches to verify and challenge; in 120s expect ${OP_SUSPICIOUS_120S}. Economic bonds make cheating unprofitable even when technically possible.`}
-      </p>
     </div>
   );
 }

@@ -21,20 +21,20 @@ function LabHeader({ mode }: HeaderProps) {
   const isOptimistic = mode === "optimistic";
 
   return (
-    <header className="border-b border-zinc-800 px-4 sm:px-6 py-3">
-      <div className="flex flex-wrap items-center gap-4">
-        <div>
-          <h1 className="text-lg font-bold leading-tight tracking-tight">
+    <header className="border-b border-zinc-800 px-3 py-3 sm:px-6">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h1 className="text-base font-bold leading-tight tracking-tight sm:text-lg">
             {isOptimistic ? "Optimistic Rollup Lab" : "ZK Rollup Lab"}
           </h1>
-          <p className="mt-0.5 text-[10px] leading-none text-zinc-600">
+          <p className="mt-0.5 hidden text-[10px] leading-none text-zinc-600 sm:block">
             {isOptimistic
               ? "Output roots · local verification · user challenges · bond settlement"
               : "Witnesses · proof generation · L1 verifier · validity settlement"}
           </p>
         </div>
 
-        <nav className="flex items-center gap-2 text-xs">
+        <nav className="flex items-center gap-1.5 text-xs sm:gap-2">
           <Link href="/" className="btn-zinc px-2 py-1 text-xs">
             Home
           </Link>
@@ -52,14 +52,14 @@ function LabHeader({ mode }: HeaderProps) {
           </Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-3 text-xs text-zinc-500">
-          <span className="hidden text-[10px] text-zinc-600 sm:block">
+        <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500 sm:gap-3">
+          <span className="hidden text-[10px] text-zinc-600 md:block">
             {state.running
               ? state.paused
                 ? "simulation paused"
                 : "simulation running"
               : state.connected
-                ? "ready, pick a seed and start"
+                ? "ready — pick a demo to start"
                 : ""}
           </span>
           <span
@@ -75,7 +75,7 @@ function LabHeader({ mode }: HeaderProps) {
                   ? "paused"
                   : "running"
                 : "idle"
-              : "disconnected"}
+              : "backend offline"}
           </span>
         </div>
       </div>

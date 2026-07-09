@@ -18,6 +18,15 @@ func Handler(sess *engine.Session, hub *Hub) http.Handler {
 		w.Write([]byte("ok\n"))
 	})
 
+	// /health is the portfolio / tunnel probe target (JSON).
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, map[string]any{
+			"ok":      true,
+			"service": "eth-l2",
+			"status":  "up",
+		})
+	})
+
 	mux.HandleFunc("/stream", hub.ServeWS)
 
 	mux.HandleFunc("/api/start", requirePost(handleStart(sess)))

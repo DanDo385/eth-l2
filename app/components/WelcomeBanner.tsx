@@ -37,68 +37,76 @@ const ZK_STEPS = [
 ];
 
 export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const isZk = mode === "zk";
   const steps = isZk ? ZK_STEPS : HOW_IT_WORKS_STEPS;
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25 }}
-          className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 space-y-4"
+    <div className="overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800/40"
+      >
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-zinc-100">How this lab works</h2>
+          <p className="mt-0.5 text-[11px] leading-snug text-zinc-500">
+            {isZk
+              ? "Pick a demo, then inspect how verifier checks gate finality."
+              : "Pick a demo, then catch a lying sequencer in real time."}
+          </p>
+        </div>
+        <span
+          aria-hidden="true"
+          className={`shrink-0 text-xs text-zinc-500 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-bold text-zinc-100">
-                How this lab works
-              </h2>
-              <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">
+          ▾
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-3 border-t border-zinc-800 px-4 pb-4 pt-3">
+              <ol className="space-y-2">
+                {steps.map((s) => (
+                  <li
+                    key={s.n}
+                    className={`flex gap-3 rounded-lg border bg-zinc-950/50 p-3 ${s.border}`}
+                  >
+                    <span
+                      className={`w-5 shrink-0 font-mono text-xs font-bold ${s.color}`}
+                    >
+                      {s.n}
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-semibold ${s.color}`}>{s.title}</p>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
+                        {s.body}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <p className="border-t border-zinc-800 pt-3 text-[11px] leading-relaxed text-zinc-600">
                 {isZk
-                  ? "A live simulation of ZK rollup settlement. Pick a demo below, then inspect how verifier checks gate finality."
-                  : "A live simulation of an Ethereum L2 rollup. Pick a demo below, then watch fraud get caught in real time."}
+                  ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
+                  : "A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
               </p>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label="Dismiss welcome banner"
-              className="text-zinc-600 hover:text-zinc-400 text-lg leading-none shrink-0 mt-0.5"
-            >
-              ×
-            </button>
-          </div>
-
-          <ol className="space-y-2">
-            {steps.map((s) => (
-              <li
-                key={s.n}
-                className={`rounded-lg border p-3 flex gap-3 ${s.border} bg-zinc-950/50`}
-              >
-                <span
-                  className={`text-xs font-mono font-bold w-5 shrink-0 ${s.color}`}
-                >
-                  {s.n}
-                </span>
-                <div className="min-w-0">
-                  <p className={`text-xs font-semibold ${s.color}`}>{s.title}</p>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                    {s.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-
-          <p className="text-[11px] text-zinc-600 leading-relaxed border-t border-zinc-800 pt-3">
-            {isZk
-              ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
-              : "Fault injection is ~1 in 8 batches: usually 1–3 suspicious batches in 60s and 3–6 in 120s at 4×. A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
-          </p>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

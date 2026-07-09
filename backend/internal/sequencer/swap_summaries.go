@@ -75,6 +75,11 @@ func buildSwapSummaries(
 		honest := honestAmountOut(amt)
 		claimed := claimedAmountOut(amt, engineType)
 
+		var gasUsed uint64
+		if receipt, err := l2Client.EC.TransactionReceipt(ctx, ps.Hash); err == nil && receipt != nil {
+			gasUsed = receipt.GasUsed
+		}
+
 		out = append(out, store.SwapSummary{
 			L2Block:     ps.Block,
 			TxHash:      ps.Hash.Hex(),
@@ -82,6 +87,7 @@ func buildSwapSummaries(
 			AmountIn:    amt,
 			HonestOut:   honest,
 			ClaimedOut:  claimed,
+			GasUsed:     gasUsed,
 			IsDivergent: i == 0 && engineType != "honest",
 		})
 	}

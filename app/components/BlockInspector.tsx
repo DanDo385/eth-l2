@@ -11,8 +11,10 @@ import {
   challengeWindowNote,
   engineExplanation,
 } from "../data/batchEducation";
+import { batchSwaps } from "../data/opTrackerEducation";
 import { PORTAL_BOND_ETH } from "../data/protocol";
 import { decodeWord, opHeadline, slotMeaning } from "../data/traceNarrative";
+import { SwapDetailList } from "./SwapDetailList";
 
 function hex(s: string) {
   return s.length > 18 ? s.slice(0, 10) + "…" + s.slice(-6) : s;
@@ -193,6 +195,12 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                 The state root is a single 32-byte hash of all account balances after the batch ran. The sequencer posts this to L1, if it&apos;s wrong, a challenger can prove it on-chain.
               </p>
             </div>
+
+            {batch.txCount > 0 && (
+              <div className="border-t border-zinc-800 pt-2">
+                <SwapDetailList swaps={batchSwaps(batch)} layout="cards" />
+              </div>
+            )}
           </div>
 
           {batch.flagged && batch.postedRoot && batch.expectedRoot && (

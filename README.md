@@ -11,6 +11,8 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 | [PLAN.md](PLAN.md) | Historical implementation plan + completed work orders |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit findings and fix checklist |
 | [config/README.md](config/README.md) | Canonical dev ports (`config/ports.json`) |
+| [.env.example](.env.example) | Public tunnel env for Vercel (no secrets / LAN) |
+| [docs/cloudflare-tunnel.example.yml](docs/cloudflare-tunnel.example.yml) | Example `cloudflared` ingress (credentials stay off-repo) |
 
 ## How it works
 
@@ -34,6 +36,7 @@ Constants mirror `app/data/protocol.ts` and `contracts/l1/OptimisticPortalMock.s
 | Challenge window | 120 s | ~7 days on mainnet OP Stack |
 | Fraud slashing burn | 10% of loser's bond | Anti-griefing; winner takes the pot minus burn |
 | Batch window | 5 L2 blocks | One state root per batch |
+| Demo L2 origin | After first post-start L1 block | Deploy/seed blocks are excluded; batch 0 starts at L2 #0 |
 | OP fraud injection rate | ~1 in 8 batches | Tuned high for short demo runs |
 | ZK invalid-claim rate | ~1 in 16 batches | Half the OP rate by design |
 | OP fraud path | Watcher flag → user verify → `FraudProofGame` | Detection ≠ resolution; challenges are manual |
@@ -84,17 +87,19 @@ The frontend needs the Go backend on the **backend.port** from the same file (RE
 | Symptom | Likely cause | Fix |
 |---------|----------------|-----|
 | “connecting to backend…” then **backend unreachable** | Only Next.js is running (`pnpm dev`) | `make dev` or `make backend` in a second terminal |
+| **backend offline** after `vercel env pull` | `.env.local` has `NEXT_PUBLIC_API_URL=same-origin` / tunnel WS, but local Next does not proxy `/api` | Clear those vars from `.env.local` (local `next dev` now ignores them unless `ETH_L2_ENABLE_API_PROXY=1`) and hard-refresh |
 | Red **disconnected** in header | Same — nothing listening on `:8080` | `lsof -nP -iTCP:8080 -sTCP:LISTEN` should show the Go `server` process |
 | Stale port after a crash | Old node/go process still bound | `make stop` then `make dev` |
-| Hosted frontend, local API (future) | Browser cannot reach `localhost:8080` from another origin | Set `NEXT_PUBLIC_API_URL` to your tunnel/public API URL at build time |
+| Hosted frontend, MacBook API offline | Tunnel / Go not running | UI still loads as an explainer; status shows **backend offline**; Start stays disabled until `https://api-staging-eth-l2.magro.dev/health` is up |
 
 Smoke-check the API:
 
 ```bash
+curl -s http://127.0.0.1:8080/health
 curl -s http://127.0.0.1:8080/api/state
 ```
 
-You should get JSON with `"running":false` and empty `batches`.
+`/health` should return JSON `{"ok":true,"service":"eth-l2","status":"up"}`. `/api/state` should report `"running":false` and empty `batches`.
 
 ### Terminal options
 
@@ -103,6 +108,54 @@ You should get JSON with `"running":false` and empty `batches`.
 **2 terminals (debugging):** `make backend` + `make frontend`
 
 **E2E tests:** backend + frontend running, then `make test-e2e` (or `pnpm test:e2e` — Playwright starts the frontend automatically if configured in `playwright.config.ts`).
+
+## Hosted split (Vercel + MacBook)
+
+Long-running work (Go API, Anvil L1/OP/ZK, WebSocket `/stream`, fraud/ZK compute) stays on the MacBook. The interactive UI deploys to Vercel and reaches the API only through the public Cloudflare Tunnel hostname — never a LAN IP.
+
+```
+Visitor browser
+  → Vercel (Next.js UI)
+  → same-origin /api/* + /health  (Next rewrites)
+  → https://api-staging-eth-l2.magro.dev
+  → http://127.0.0.1:8080 on MacBook
+```
+
+WebSockets use `wss://api-staging-eth-l2.magro.dev/stream` directly (Vercel rewrites do not proxy WS upgrades).
+
+### MacBook backend
+
+```bash
+make backend-mbp
+# or: ./scripts/start-mbp-backend.sh
+```
+
+Requires Foundry (`anvil`) on `PATH`. Binds `127.0.0.1:8080` by default. Health: `curl -s http://127.0.0.1:8080/health`.
+
+### Cloudflare Tunnel
+
+Point the public hostname at localhost (credentials stay outside the repo):
+
+```bash
+# after tunnel create + DNS route for api-staging-eth-l2.magro.dev
+cloudflared tunnel run --url http://127.0.0.1:8080 <TUNNEL_NAME>
+```
+
+See [docs/cloudflare-tunnel.example.yml](docs/cloudflare-tunnel.example.yml). Acceptance: `curl -s https://api-staging-eth-l2.magro.dev/health` matches localhost.
+
+### Vercel frontend
+
+Set project env from [.env.example](.env.example) (public values only):
+
+| Variable | Value |
+|----------|--------|
+| `ETH_L2_BACKEND_ORIGIN` | `https://api-staging-eth-l2.magro.dev` |
+| `NEXT_PUBLIC_API_URL` | `same-origin` |
+| `NEXT_PUBLIC_WS_URL` | `wss://api-staging-eth-l2.magro.dev/stream` |
+
+Optional on the MacBook: `ETH_L2_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app` to lock CORS.
+
+If the tunnel is down, the Vercel UI still loads; home/lab show an explicit **backend offline** state and interactive Start/demo controls stay disabled.
 
 ### First demo
 
@@ -130,6 +183,7 @@ Default speed: **3×**. Default seed: **42**. Optional **60s / 120s session time
 | `make dev` | Go backend + Next.js frontend (recommended) |
 | `make stop` | Kill stale processes on all ports from `config/ports.json` |
 | `make backend` | Go backend only |
+| `make backend-mbp` | Go on `127.0.0.1` for Cloudflare Tunnel staging |
 | `make frontend` | Next.js on `config/ports.json` → `frontend.port` |
 | `make build` | Contracts + Go + Next.js |
 | `make test` | `forge test` + `go test ./...` |
@@ -171,7 +225,7 @@ app/                Next.js 16
 config/             ports.json — canonical dev ports
 ```
 
-Backend env (optional): `GOAPI_ADDR`, `PORT`, `NEXT_PUBLIC_API_URL`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist).
+Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist). Frontend / Vercel: see [.env.example](.env.example).
 
 ## Seeds
 

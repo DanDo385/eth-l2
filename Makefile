@@ -32,6 +32,11 @@ frontend:
 backend:
 	cd backend && REPO_ROOT=$(REPO_ROOT) go run ./cmd/server
 
+# MacBook staging: bind loopback only (for Cloudflare Tunnel → api-staging-eth-l2.magro.dev).
+backend-mbp:
+	@chmod +x scripts/start-mbp-backend.sh
+	./scripts/start-mbp-backend.sh
+
 # ── Build & Test ─────────────────────────────────────────────────────────────
 
 build:
@@ -66,4 +71,4 @@ install:
 clean:
 	rm -rf out/ forge-out/ .next/ public/screenshots/
 
-.PHONY: dev stop frontend backend build test test-contracts test-go test-e2e install clean
+.PHONY: dev stop frontend backend backend-mbp build test test-contracts test-go test-e2e install clean

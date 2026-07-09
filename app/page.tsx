@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { API_BASE, FRONTEND_URL } from "./data/ports";
+import { BackendStatus } from "./components/BackendStatus";
+import { FRONTEND_URL, IS_REMOTE_BACKEND } from "./data/ports";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
             window. ZK rollups require a validity proof before the state update
             is accepted.
           </p>
+          <BackendStatus />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -73,13 +75,27 @@ export default function Home() {
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs leading-6 text-zinc-500">
-          <p className="font-semibold text-zinc-300">Run locally</p>
+          <p className="font-semibold text-zinc-300">
+            {IS_REMOTE_BACKEND ? "Hosted lab" : "Run locally"}
+          </p>
           <p>
-            Start the shared Go backend and Next.js frontend with{" "}
-            <span className="font-mono text-zinc-300">make dev</span>. Frontend:
-            <span className="font-mono text-zinc-300"> {FRONTEND_URL}</span>.
-            Backend API and WebSocket:
-            <span className="font-mono text-zinc-300"> {API_BASE}</span>.
+            {IS_REMOTE_BACKEND ? (
+              <>
+                UI is on Vercel; live simulation needs the MacBook backend via{" "}
+                <span className="font-mono text-zinc-300">
+                  https://api-staging-eth-l2.magro.dev
+                </span>
+                . If the status above is offline, you can still read the labs —
+                Start / demos stay disabled until the tunnel is up.
+              </>
+            ) : (
+              <>
+                Start the shared Go backend and Next.js frontend with{" "}
+                <span className="font-mono text-zinc-300">make dev</span>.
+                Frontend:
+                <span className="font-mono text-zinc-300"> {FRONTEND_URL}</span>.
+              </>
+            )}
           </p>
         </div>
       </section>

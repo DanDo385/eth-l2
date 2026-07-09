@@ -291,10 +291,10 @@ export function explainDivergence(
         feeLine = ` The ${diff.toLocaleString("en-US")}-token gap is the 0.30% fee the honest engine charges (≈${expectedFee.toLocaleString("en-US")} on this swap) and the lying engine pocketed.`;
       }
     }
-    rootCause = `This batch ran the "subtle" lying engine. It computes amountOut = gross instead of gross − 0.30% fee, so it credits the trader too much token-B.${feeLine} Same ABI, same storage layout, only the arithmetic differs, which is why nothing looks wrong until you replay storage writes.`;
+    rootCause = `This batch ran LyingSwapEngineSubtle. It computes amountOut = gross instead of gross − 0.30% fee, so it credits the trader too much token-B.${feeLine} Same ABI, same storage layout, only the arithmetic differs — which is why nothing looks wrong until you replay storage writes.`;
   } else if (engineType === "obvious") {
     rootCause =
-      'This batch ran the "obvious" lying engine, which writes a flatly wrong output amount. The value it stored cannot be reproduced by honest swap math, so the very first storage write diverges.';
+      'This batch ran LyingSwapEngineObvious: it computes the honest amountOut, then sets amountOut = honest * 2 before writing _balanceB. That value cannot be reproduced by HonestSwapEngine, so the first storage write that depends on amountOut diverges.';
   } else {
     rootCause =
       "The sequencer's engine produced a value the verified engine cannot reproduce from the same inputs. That is the definition of an invalid state transition.";

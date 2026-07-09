@@ -16,6 +16,7 @@ type SwapSummary struct {
 	AmountIn    uint64 `json:"amountIn"`
 	HonestOut   uint64 `json:"honestOut"`
 	ClaimedOut  uint64 `json:"claimedOut"`
+	GasUsed     uint64 `json:"gasUsed,omitempty"`
 	// IsDivergent marks the swap the fraud proof isolates (first swap in batch).
 	IsDivergent bool `json:"isDivergent"`
 }

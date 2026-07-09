@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Ports is the canonical dev port map (config/ports.json).
@@ -54,7 +55,13 @@ func Load(repoRoot string) (*Ports, error) {
 	return &p, nil
 }
 
-// BackendListenAddr returns the default HTTP bind address from ports.json (:port).
+// BackendListenAddr returns the default HTTP bind address from ports.json.
+// Prefer loopback so the API is only reachable via localhost / Cloudflare Tunnel,
+// never by binding all interfaces by accident.
 func (p *Ports) BackendListenAddr() string {
-	return fmt.Sprintf(":%d", p.Backend.Port)
+	host := strings.TrimSpace(p.Backend.Host)
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("%s:%d", host, p.Backend.Port)
 }

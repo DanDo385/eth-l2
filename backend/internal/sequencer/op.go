@@ -63,15 +63,18 @@ type pendingSwap struct {
 }
 
 // BatchResult is returned by OnBlock when a batch was just posted.
+// L2StartBlock / L2EndBlock are demo-relative (0-based after L1 arming).
+// AbsoluteL2EndBlock is the Anvil tip used by the honest watcher.
 type BatchResult struct {
-	BatchID       uint64
-	PostStateRoot [32]byte
-	L2StartBlock  uint64
-	L2EndBlock    uint64
-	TxCount       int
-	EngineType    string
-	TxHashes      []common.Hash // copy of tx hashes included in the batch
-	Swaps         []store.SwapSummary
+	BatchID            uint64
+	PostStateRoot      [32]byte
+	L2StartBlock       uint64
+	L2EndBlock         uint64
+	AbsoluteL2EndBlock uint64
+	TxCount            int
+	EngineType         string
+	TxHashes           []common.Hash // copy of tx hashes included in the batch
+	Swaps              []store.SwapSummary
 }
 
 // swapSelector is keccak256("swap(address,uint256,uint256)")[:4]
@@ -91,11 +94,19 @@ type OPSequencer struct {
 	router *bind.BoundContract
 
 	nextBatchID    uint64
-	windowStart    uint64
+	origin         uint64 // Anvil tip when L1 armed the lane; relative = abs - origin - 1
+	inWindow       bool
+	windowStartAbs uint64
 	prevStateRoot  [32]byte
 	pendingSwaps   []pendingSwap
 	nextEngine     common.Address // claimed engine for next batch; actual OP L2 execution stays honest
 	nextEngineType string
+}
+
+// Arm records the L2 tip at the moment L1 first settles after session start.
+// Subsequent batch windows number L2 blocks from 0 relative to that tip.
+func (s *OPSequencer) Arm(origin uint64) {
+	s.origin = origin
 }
 
 func NewOPSequencer(
@@ -133,10 +144,19 @@ func NewOPSequencer(
 	return s
 }
 
+// rel maps an absolute Anvil block to the demo-relative index (first post-arm block = 0).
+func (s *OPSequencer) rel(abs uint64) uint64 {
+	if abs <= s.origin {
+		return 0
+	}
+	return abs - s.origin - 1
+}
+
 // OnBlock is called for each new L2 block. Returns a non-nil BatchResult when a batch was posted.
 func (s *OPSequencer) OnBlock(ctx context.Context, blockNum uint64) (*BatchResult, error) {
-	if s.windowStart == 0 {
-		s.windowStart = blockNum
+	if !s.inWindow {
+		s.inWindow = true
+		s.windowStartAbs = blockNum
 		// Keep canonical L2 execution honest. Faults are injected into the L1
 		// output root claim, not by poisoning live L2 state.
 		if err := s.setImpl(ctx, common.HexToAddress(s.l2Addrs.HonestSwapEngine)); err != nil {
@@ -144,7 +164,7 @@ func (s *OPSequencer) OnBlock(ctx context.Context, blockNum uint64) (*BatchResul
 		}
 	}
 
-	// Collect swap tx hashes from this block.
+	// Collect swap tx hashes from this block (store relative block for the UI).
 	block, err := s.l2Client.EC.BlockByNumber(ctx, big.NewInt(int64(blockNum)))
 	if err != nil {
 		return nil, err
@@ -153,13 +173,13 @@ func (s *OPSequencer) OnBlock(ctx context.Context, blockNum uint64) (*BatchResul
 		if isSwapTx(tx.To(), tx.Data(), common.HexToAddress(s.l2Addrs.SwapRouter)) {
 			s.pendingSwaps = append(s.pendingSwaps, pendingSwap{
 				Hash:  tx.Hash(),
-				Block: blockNum,
+				Block: s.rel(blockNum),
 			})
 		}
 	}
 
 	// Post batch when the window is full.
-	if int(blockNum-s.windowStart)+1 >= s.batchEvery {
+	if int(blockNum-s.windowStartAbs)+1 >= s.batchEvery {
 		return s.postBatch(ctx, blockNum)
 	}
 	return nil, nil
@@ -188,13 +208,15 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 	copy(batchDataHash[:], crypto.Keccak256(rawData))
 
 	batchID := s.nextBatchID
+	relStart := s.rel(s.windowStartAbs)
+	relEnd := s.rel(l2EndBlock)
 	header := BatchHeader{
 		BatchId:       batchID,
 		PrevStateRoot: s.prevStateRoot,
 		PostStateRoot: postStateRoot,
 		BatchDataHash: batchDataHash,
-		L2StartBlock:  s.windowStart,
-		L2EndBlock:    l2EndBlock,
+		L2StartBlock:  relStart,
+		L2EndBlock:    relEnd,
 		TxCount:       uint32(len(s.pendingSwaps)),
 		Timestamp:     uint64(time.Now().Unix()),
 	}
@@ -211,14 +233,15 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 	}
 
 	result := &BatchResult{
-		BatchID:       batchID,
-		PostStateRoot: postStateRoot,
-		L2StartBlock:  s.windowStart,
-		L2EndBlock:    l2EndBlock,
-		TxCount:       len(s.pendingSwaps),
-		EngineType:    effectiveEngineType,
-		TxHashes:      append([]common.Hash(nil), txHashes...),
-		Swaps:         swaps,
+		BatchID:            batchID,
+		PostStateRoot:      postStateRoot,
+		L2StartBlock:       relStart,
+		L2EndBlock:         relEnd,
+		AbsoluteL2EndBlock: l2EndBlock,
+		TxCount:            len(s.pendingSwaps),
+		EngineType:         effectiveEngineType,
+		TxHashes:           append([]common.Hash(nil), txHashes...),
+		Swaps:              swaps,
 	}
 
 	// Publish event so the frontend and watcher can react.
@@ -231,14 +254,15 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 			AmountIn:    sw.AmountIn,
 			HonestOut:   sw.HonestOut,
 			ClaimedOut:  sw.ClaimedOut,
+			GasUsed:     sw.GasUsed,
 			IsDivergent: sw.IsDivergent,
 		}
 	}
 	s.bus.Publish(events.New(events.BatchPosted, events.BatchPostedPayload{
 		BatchID:       batchID,
 		PostStateRoot: fmt.Sprintf("0x%x", postStateRoot),
-		L2StartBlock:  s.windowStart,
-		L2EndBlock:    l2EndBlock,
+		L2StartBlock:  relStart,
+		L2EndBlock:    relEnd,
 		TxCount:       len(s.pendingSwaps),
 		EngineType:    effectiveEngineType,
 		Swaps:         swapPayload,
@@ -247,7 +271,8 @@ func (s *OPSequencer) postBatch(ctx context.Context, l2EndBlock uint64) (*BatchR
 	// Advance to next window.
 	s.nextBatchID++
 	s.prevStateRoot = honestPostStateRoot
-	s.windowStart = 0
+	s.inWindow = false
+	s.windowStartAbs = 0
 	s.pendingSwaps = nil
 
 	// Choose and set the engine for the NEXT batch window so the implementation is

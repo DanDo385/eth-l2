@@ -33,6 +33,28 @@ func TestHealthz_returns200(t *testing.T) {
 	}
 }
 
+// ── /health (JSON probe for portfolio / Cloudflare Tunnel) ───────────────────
+
+func TestHealth_returnsJSON(t *testing.T) {
+	h := newHandler(t)
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", w.Code)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if ok, _ := body["ok"].(bool); !ok {
+		t.Fatalf("want ok=true, got %#v", body["ok"])
+	}
+	if status, _ := body["status"].(string); status != "up" {
+		t.Fatalf("want status=up, got %#v", body["status"])
+	}
+}
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
 func TestCORS_headersPresent(t *testing.T) {

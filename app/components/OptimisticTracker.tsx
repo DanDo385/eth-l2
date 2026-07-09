@@ -16,72 +16,35 @@ import {
   swapStatusLabel,
 } from "../data/opTrackerEducation";
 import { batchEconomicEvents, computeBondLedger, fraudBatches } from "../lib/opLedger";
-import type { BatchInfo, SourceLoc } from "../types";
+import type { BatchInfo } from "../types";
 import { BATCH_WINDOW, CHALLENGE_WINDOW_SECONDS, PORTAL_BOND_ETH } from "../data/protocol";
-
-function shortHash(h: string) {
-  return h.length > 14 ? h.slice(0, 8) + "…" + h.slice(-4) : h;
-}
-
-function shortFile(file: string) {
-  return file.split("/").slice(-2).join("/");
-}
-
-function SourceLineCard({
-  source,
-  label,
-  tone,
-}: {
-  source: SourceLoc;
-  label: string;
-  tone: "honest" | "lying";
-}) {
-  const classes =
-    tone === "honest"
-      ? "border-emerald-900/50 bg-emerald-950/10 text-emerald-200"
-      : "border-red-800/60 bg-red-950/20 text-red-200";
-  const labelClass = tone === "honest" ? "text-emerald-400/90" : "text-red-400/90";
-
-  return (
-    <div className={`rounded-lg border p-2.5 ${classes}`}>
-      <p className={`mb-1 text-[10px] font-mono ${labelClass}`}>
-        {shortFile(source.file)}:{source.line} — {label}
-      </p>
-      <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed font-mono">
-        {source.lineText}
-      </pre>
-    </div>
-  );
-}
+import { EngineSourceCompare } from "./EngineSourceCompare";
+import { InfoTip } from "./InfoTip";
+import { SwapDetailList } from "./SwapDetailList";
 
 function FraudSourceExhibit({ batch }: { batch: BatchInfo }) {
   const divergence = batch.divergence;
-  if (!divergence?.lyingSource && !divergence?.honestSource) return null;
+  const hasResolved = Boolean(divergence?.lyingSource || divergence?.honestSource);
+  const hasKnownEngine =
+    batch.engineType === "obvious" || batch.engineType === "subtle";
+  if (!hasResolved && !hasKnownEngine) return null;
 
   return (
     <div className="rounded-lg border border-red-900/50 bg-red-950/10 p-3 space-y-2">
-      <div>
-        <p className="text-[10px] font-semibold text-red-400">
-          Solidity source line that caused the bad root
-        </p>
-        <p className="text-[10px] text-zinc-500 leading-relaxed mt-0.5">
-          FraudProofGame bisects the committed trace, re-executes one step on L1,
-          then the UI resolves that bytecode position back to the deployed source map.
-        </p>
-      </div>
-
-      {divergence.honestSource && (
-        <SourceLineCard source={divergence.honestSource} label="honest engine" tone="honest" />
-      )}
-      {divergence.lyingSource && (
-        <SourceLineCard source={divergence.lyingSource} label="this batch's engine" tone="lying" />
-      )}
-
-      {typeof divergence.onchainDivergenceStep === "number" && (
-        <p className="text-[9px] font-mono text-zinc-600">
-          on-chain one-step proof isolated VM step #{divergence.onchainDivergenceStep}
-        </p>
-      )}
+      <p className="text-[10px] font-semibold text-red-400">
+        Solidity that caused the bad root
+      </p>
+      <p className="text-[10px] text-zinc-500 leading-relaxed">
+        FraudProofGame bisects the committed trace, re-executes one step on L1,
+        then the UI shows the honest engine beside the engine this batch ran.
+      </p>
+      <EngineSourceCompare
+        engineType={batch.engineType}
+        honestSource={divergence?.honestSource}
+        lyingSource={divergence?.lyingSource}
+        onchainDivergenceStep={divergence?.onchainDivergenceStep}
+        compact
+      />
     </div>
   );
 }
@@ -100,21 +63,22 @@ function BatchChip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-left transition-all hover:brightness-110 ${status.border} ${status.bg} ${
+      title={`${status.short} · L2 ${batch.l2StartBlock}–${batch.l2EndBlock} · ${batch.txCount} swaps`}
+      className={`shrink-0 rounded-md border px-2 py-1 text-left transition-all hover:brightness-110 ${status.border} ${status.bg} ${
         selected ? "ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-950" : ""
       }`}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <span className="text-[10px] font-semibold text-zinc-200">#{batch.batchId}</span>
         <span className="text-[9px] text-zinc-400">{status.short}</span>
         {batch.engineType !== "honest" && (
-          <span className="text-[8px] px-1 rounded bg-red-900/40 text-red-300 border border-red-800">
+          <span className="rounded border border-red-800 bg-red-900/40 px-1 text-[8px] text-red-300">
             {batch.engineType}
           </span>
         )}
       </div>
-      <p className="text-[8px] text-zinc-500 mt-0.5 font-mono">
-        L2 {batch.l2StartBlock}–{batch.l2EndBlock} · {batch.txCount} swap{batch.txCount === 1 ? "" : "s"}
+      <p className="mt-0.5 font-mono text-[8px] text-zinc-500">
+        {batch.l2StartBlock}–{batch.l2EndBlock} · {batch.txCount}tx
       </p>
     </button>
   );
@@ -346,57 +310,53 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-wide">
+    <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
             Optimistic rollup lifecycle
           </p>
-          <p className="text-[10px] text-zinc-600 mt-0.5 max-w-prose">
-            Full session history — batches never disappear when they leave the canvas window.
-            Suspicious roots wait here until the user verifies locally and chooses whether to challenge.
-          </p>
+          <InfoTip label="About the lifecycle tracker" placement="panel">
+            Full session history — batches never disappear when they leave the canvas.
+            Suspicious roots wait until you verify locally and choose whether to challenge.
+            In this lab, &ldquo;output root&rdquo;, &ldquo;state root&rdquo;, and
+            &ldquo;assertion&rdquo; all mean the sequencer&rsquo;s posted L2 commitment.
+          </InfoTip>
         </div>
-        <div className="text-[10px] font-mono text-zinc-500 space-y-0.5 text-right">
-          <p>{batches.length} batch{batches.length === 1 ? "" : "es"} tracked</p>
-          <p className="text-red-400">{fraudList.length} fraud record{fraudList.length === 1 ? "" : "s"}</p>
+        <div className="flex items-center gap-3 font-mono text-[10px] text-zinc-500">
+          <span>
+            {batches.length} batch{batches.length === 1 ? "" : "es"}
+          </span>
+          <span className="text-red-400">
+            {fraudList.length} fraud
+          </span>
         </div>
       </div>
 
-      {/* Demo simplifications, visible before the detail — full list stays in the footer */}
-      <div className="flex flex-wrap items-center gap-1.5 text-[9px]">
-        <span className="font-semibold uppercase tracking-wide text-zinc-600">
-          Demo simplifications:
-        </span>
+      <div className="flex flex-wrap items-center gap-1 text-[9px]">
         {[
-          [`${CHALLENGE_WINDOW_SECONDS}s window`, "Compressed from ~7 days on OP Mainnet so you can watch finality."],
+          [`${CHALLENGE_WINDOW_SECONDS}s window`, "Compressed from ~7 days on OP Mainnet."],
           [`${BATCH_WINDOW}-block batches`, "Fixed batch cadence; production sequencers vary."],
-          [`${PORTAL_BOND_ETH} ETH bonds`, "Equal fixed bonds for sequencer and challenger; production bond rules vary."],
-          ["tiny swap-VM proof", "Bisection to one instruction, scaled down from production fault-proof VMs."],
-          ["honest watcher", "Always flags mismatches; real systems rely on at least one honest monitor."],
+          [`${PORTAL_BOND_ETH} ETH bonds`, "Equal fixed bonds for sequencer and challenger."],
+          ["tiny swap-VM", "Bisection to one instruction, scaled down from production VMs."],
+          ["honest watcher", "Always flags mismatches; real systems need ≥1 honest monitor."],
         ].map(([chip, why]) => (
           <span
             key={chip}
             title={why}
-            className="cursor-help rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-0.5 text-zinc-400"
+            className="cursor-help rounded border border-zinc-800 bg-zinc-950/60 px-1.5 py-0.5 text-zinc-500"
           >
             {chip}
           </span>
         ))}
       </div>
 
-      <p className="rounded border border-zinc-800 bg-zinc-950/40 px-2 py-1.5 text-[10px] leading-relaxed text-zinc-500">
-        <span className="font-semibold text-zinc-400">Glossary:</span> in this lab,
-        &ldquo;output root&rdquo;, &ldquo;state root&rdquo;, and &ldquo;assertion&rdquo; all refer to
-        the sequencer&rsquo;s posted commitment to the L2 state after a batch. Production rollups may
-        wrap more data into an output root.
-      </p>
-
-      {/* Batch timeline strip */}
       {batches.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] text-zinc-500 font-semibold">All batches (newest first)</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="space-y-1">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-zinc-600">
+            All batches · newest first
+          </p>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
             {batches.map((b) => (
               <BatchChip
                 key={b.batchId}
@@ -419,82 +379,37 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4 border-t border-zinc-800 pt-4"
+            className="grid grid-cols-1 items-start gap-3 border-t border-zinc-800 pt-4 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3"
           >
-            {/* Left column: pipeline + swaps + reroute */}
-            <div className="space-y-4">
+            {/* Pack to content height — avoid equal-height column stretch / blank patches */}
+            <div className="space-y-3">
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
-                <p className="text-[10px] font-semibold text-blue-400 mb-2">
+                <p className="mb-2 text-[10px] font-semibold text-blue-400">
                   Batch #{selected.batchId} pipeline
                 </p>
                 <PipelineBar batch={selected} />
               </div>
 
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
-                <p className="text-[10px] font-semibold text-zinc-300">
-                  Swaps in this batch ({swaps.length})
-                </p>
-                <p className="text-[9px] text-zinc-600 leading-relaxed">
-                  One state root covers every swap below. If any transition is wrong, the entire batch
-                  is invalid — {swaps.filter((s) => !s.isDivergent).length} good swap
-                  {swaps.filter((s) => !s.isDivergent).length === 1 ? "" : "s"} still roll back with it.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[9px]">
-                    <thead>
-                      <tr className="text-zinc-600 border-b border-zinc-800">
-                        <th className="text-left py-1 pr-2">L2 blk</th>
-                        <th className="text-left py-1 pr-2">Trader</th>
-                        <th className="text-right py-1 pr-2">In</th>
-                        <th className="text-right py-1 pr-2">Out (claimed)</th>
-                        <th className="text-right py-1 pr-2">Honest</th>
-                        <th className="text-left py-1">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {swaps.map((s, i) => {
-                        const st = swapLifecycleStatus(selected, s);
-                        return (
-                          <tr key={i} className="border-b border-zinc-800/60">
-                            <td className="py-1.5 pr-2 font-mono text-zinc-400">{s.l2Block}</td>
-                            <td className="py-1.5 pr-2 text-zinc-300">
-                              T{s.traderIndex}
-                              {s.isDivergent && (
-                                <span className="ml-1 text-red-400" title="Fraud proof isolates this swap">
-                                  ⚡
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-1.5 pr-2 text-right font-mono text-zinc-400">
-                              {s.amountIn}
-                            </td>
-                            <td
-                              className={`py-1.5 pr-2 text-right font-mono ${
-                                s.claimedOut !== s.honestOut ? "text-red-300" : "text-zinc-400"
-                              }`}
-                            >
-                              {s.claimedOut}
-                            </td>
-                            <td className="py-1.5 pr-2 text-right font-mono text-emerald-400/80">
-                              {s.honestOut}
-                            </td>
-                            <td className="py-1.5">
-                              <span
-                                className={`inline-block px-1 py-0.5 rounded border text-[8px] ${swapStatusColor(st)}`}
-                              >
-                                {swapStatusLabel(st)}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[8px] font-mono text-zinc-700 truncate" title={swaps[0]?.txHash}>
-                  tx: {swaps[0] ? shortHash(swaps[0].txHash) : "—"}
-                  {swaps.length > 1 ? ` (+${swaps.length - 1} more)` : ""}
-                </p>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+                <SwapDetailList
+                  swaps={swaps}
+                  layout="table"
+                  note={`One state root covers every swap below. If any transition is wrong, the entire batch is invalid — ${
+                    swaps.filter((s) => !s.isDivergent).length
+                  } good swap${
+                    swaps.filter((s) => !s.isDivergent).length === 1 ? "" : "s"
+                  } still roll back with it. Token A → Token B via SwapRouter.`}
+                  renderStatus={(s) => {
+                    const st = swapLifecycleStatus(selected, s);
+                    return (
+                      <span
+                        className={`inline-block rounded border px-1 py-0.5 text-[8px] ${swapStatusColor(st)}`}
+                      >
+                        {swapStatusLabel(st)}
+                      </span>
+                    );
+                  }}
+                />
               </div>
 
               <RerouteDiagram batch={selected} swaps={swaps} />
@@ -503,57 +418,87 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                 <button
                   type="button"
                   onClick={() => onShowOpcodeRace(selected.batchId)}
-                  className="w-full btn-green text-xs"
+                  className="btn-green w-full text-xs"
                 >
                   Walk opcode proof for batch #{selected.batchId} ↗
                 </button>
               )}
+
+              {/* Fill leftover left-column space with session fraud chips when present */}
+              {fraudList.length > 0 && (
+                <div className="space-y-2 rounded-lg border border-red-900/50 bg-red-950/10 p-3 lg:hidden">
+                  <p className="text-[10px] font-semibold text-red-400">Fraud record (session)</p>
+                  <ul className="max-h-36 space-y-2 overflow-y-auto">
+                    {fraudList.map((b) => {
+                      const st = batchStatus(b);
+                      return (
+                        <li key={b.batchId}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onBatchClick(b.batchId);
+                              dispatch({ type: "INSPECT_BATCH", batchId: b.batchId });
+                            }}
+                            className="w-full rounded border border-red-900/40 bg-red-950/20 px-2 py-1.5 text-left hover:bg-red-950/40"
+                          >
+                            <span className="text-[10px] font-semibold text-red-300">
+                              Batch #{b.batchId} · {b.engineType}
+                            </span>
+                            <p className="mt-0.5 text-[9px] text-zinc-500">{st.explanation}</p>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
 
-            {/* Right column: L1, finality, ledger, fraud log */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <FraudSourceExhibit batch={selected} />
 
               {finality && (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
+                <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
                   <p className="text-[10px] font-semibold text-amber-400">Finality impact</p>
                   <p className="text-sm font-semibold text-zinc-200">{finality.label}</p>
                   {finality.blocksDelayed > 0 && (
-                    <p className="text-[10px] text-orange-400 font-mono">
-                      ~{finality.blocksDelayed} L2 block{finality.blocksDelayed === 1 ? "" : "s"} delayed
+                    <p className="font-mono text-[10px] text-orange-400">
+                      ~{finality.blocksDelayed} L2 block
+                      {finality.blocksDelayed === 1 ? "" : "s"} delayed
                     </p>
                   )}
-                  <p className="text-[10px] text-zinc-500 leading-relaxed">{finality.explanation}</p>
+                  <p className="text-[10px] leading-relaxed text-zinc-500">
+                    {finality.explanation}
+                  </p>
                 </div>
               )}
 
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
+              <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
                 <p className="text-[10px] font-semibold text-violet-400">L1 portal activity</p>
                 <ul className="space-y-1.5">
                   {l1Lines.map((line, i) => (
-                    <li
-                      key={i}
-                      className="text-[10px] text-zinc-400 leading-snug flex gap-2"
-                    >
-                      <span className="text-violet-600 shrink-0">{i + 1}.</span>
+                    <li key={i} className="flex gap-2 text-[10px] leading-snug text-zinc-400">
+                      <span className="shrink-0 text-violet-600">{i + 1}.</span>
                       <span>{line}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-2">
-                <p className="text-[10px] font-semibold text-emerald-400">Balance, collateral &amp; bond ledger</p>
-                <div className="overflow-x-auto max-h-56 overflow-y-auto">
+              <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+                <p className="text-[10px] font-semibold text-emerald-400">
+                  Balance, collateral &amp; bond ledger
+                </p>
+                <div className="max-h-48 overflow-x-auto overflow-y-auto">
                   <table className="w-full text-[9px]">
                     <thead className="sticky top-0 bg-zinc-950">
-                      <tr className="text-zinc-600 border-b border-zinc-800">
-                        <th className="text-left py-1 pr-2">#</th>
-                        <th className="text-left py-1 pr-2">Event</th>
-                        <th className="text-left py-1 pr-2">Layer</th>
-                        <th className="text-left py-1 pr-2">Payer → receiver</th>
-                        <th className="text-right py-1 pr-2">Amount</th>
-                        <th className="text-left py-1">Status</th>
+                      <tr className="border-b border-zinc-800 text-zinc-600">
+                        <th className="py-1 pr-2 text-left">#</th>
+                        <th className="py-1 pr-2 text-left">Event</th>
+                        <th className="py-1 pr-2 text-left">Layer</th>
+                        <th className="py-1 pr-2 text-left">Payer → receiver</th>
+                        <th className="py-1 pr-2 text-right">Amount</th>
+                        <th className="py-1 text-left">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -562,20 +507,30 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                           <td className="py-1.5 pr-2 font-mono text-zinc-500">{line.sequence}</td>
                           <td className="py-1.5 pr-2">
                             <span className="text-zinc-300">{line.eventName}</span>
-                            <p className="text-[8px] text-zinc-600 leading-tight">{line.explanation}</p>
+                            <p className="text-[8px] leading-tight text-zinc-600">
+                              {line.explanation}
+                            </p>
                           </td>
                           <td className="py-1.5 pr-2 font-mono text-zinc-400">{line.layer}</td>
                           <td className="py-1.5 pr-2 text-zinc-400">
                             {line.payer} → {line.receiver}
                           </td>
-                          <td className={`py-1.5 pr-2 text-right font-mono ${line.amount.startsWith("+") ? "text-emerald-400" : line.amount.startsWith("-") ? "text-red-300" : "text-zinc-400"}`}>
+                          <td
+                            className={`py-1.5 pr-2 text-right font-mono ${
+                              line.amount.startsWith("+")
+                                ? "text-emerald-400"
+                                : line.amount.startsWith("-")
+                                  ? "text-red-300"
+                                  : "text-zinc-400"
+                            }`}
+                          >
                             {line.amount} {line.asset}
                           </td>
                           <td className="py-1.5">
                             <span className="rounded border border-zinc-700 bg-zinc-900 px-1 py-0.5 text-zinc-300">
                               {line.before} → {line.after}
                             </span>
-                            <p className="text-[8px] text-zinc-600 mt-0.5">{line.fundStatus}</p>
+                            <p className="mt-0.5 text-[8px] text-zinc-600">{line.fundStatus}</p>
                           </td>
                         </tr>
                       ))}
@@ -583,7 +538,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                   </table>
                 </div>
 
-                <div className="border-t border-zinc-800 pt-2 grid grid-cols-2 gap-2 text-[9px]">
+                <div className="grid grid-cols-2 gap-2 border-t border-zinc-800 pt-2 text-[9px]">
                   <div>
                     <p className="text-zinc-500">Sequencer bonds</p>
                     <p className="font-mono text-zinc-300">
@@ -602,7 +557,8 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                       posted {bondLedger.challenger.posted.toFixed(2)} ETH
                     </p>
                     <p className="font-mono text-emerald-400">
-                      won {bondLedger.challenger.won.toFixed(2)} · returned {bondLedger.challenger.returned.toFixed(2)}
+                      won {bondLedger.challenger.won.toFixed(2)} · returned{" "}
+                      {bondLedger.challenger.returned.toFixed(2)}
                     </p>
                     <p className="font-mono text-red-400">
                       lost/slashed {bondLedger.challenger.lost.toFixed(2)}
@@ -612,11 +568,11 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
               </div>
 
               {fraudList.length > 0 && (
-                <div className="rounded-lg border border-red-900/50 bg-red-950/10 p-3 space-y-2">
+                <div className="hidden space-y-2 rounded-lg border border-red-900/50 bg-red-950/10 p-3 lg:block">
                   <p className="text-[10px] font-semibold text-red-400">
                     Fraud record (session)
                   </p>
-                  <ul className="space-y-2 max-h-36 overflow-y-auto">
+                  <ul className="max-h-36 space-y-2 overflow-y-auto">
                     {fraudList.map((b) => {
                       const st = batchStatus(b);
                       return (
@@ -627,12 +583,12 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                               onBatchClick(b.batchId);
                               dispatch({ type: "INSPECT_BATCH", batchId: b.batchId });
                             }}
-                            className="w-full text-left rounded border border-red-900/40 bg-red-950/20 px-2 py-1.5 hover:bg-red-950/40"
+                            className="w-full rounded border border-red-900/40 bg-red-950/20 px-2 py-1.5 text-left hover:bg-red-950/40"
                           >
                             <span className="text-[10px] font-semibold text-red-300">
                               Batch #{b.batchId} · {b.engineType}
                             </span>
-                            <p className="text-[9px] text-zinc-500 mt-0.5">{st.explanation}</p>
+                            <p className="mt-0.5 text-[9px] text-zinc-500">{st.explanation}</p>
                           </button>
                         </li>
                       );
