@@ -198,10 +198,10 @@ export function ControlPanel() {
           tipLabel="About the session timer"
           tip={
             <>
-              On expiry the simulation pauses and keeps blocks, batches,
-              balances, and logs. 60s usually surfaces {OP_SUSPICIOUS_60S}{" "}
-              suspicious OP batches; 120s usually surfaces {OP_SUSPICIOUS_120S}.
-              The app never auto-challenges — you decide.
+              On expiry the simulation stops and tears down Anvil (same as
+              Stop). 60s usually surfaces {OP_SUSPICIOUS_60S} suspicious OP
+              batches; 120s usually surfaces {OP_SUSPICIOUS_120S}. The app never
+              auto-challenges — you decide.
             </>
           }
           trailing={
@@ -233,7 +233,7 @@ export function ControlPanel() {
         </div>
         {expired && (
           <p className="text-[10px] text-amber-300/90">
-            Session expired — simulation paused. Resume or reseed to continue.
+            Session expired — simulation stopped. Start or pick a demo to run again.
           </p>
         )}
       </div>

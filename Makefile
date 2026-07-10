@@ -34,8 +34,17 @@ backend:
 
 # MacBook staging: bind loopback only (for Cloudflare Tunnel → api-staging-eth-l2.magro.dev).
 backend-mbp:
-	@chmod +x scripts/start-mbp-backend.sh
-	./scripts/start-mbp-backend.sh
+	@chmod +x scripts/start-staging-backend.sh scripts/start-mbp-backend.sh
+	./scripts/start-staging-backend.sh
+
+# Durable staging backend via launchd (KeepAlive + RunAtLoad).
+install-launch-agent:
+	@chmod +x scripts/install-backend-launch-agent.sh
+	./scripts/install-backend-launch-agent.sh
+
+uninstall-launch-agent:
+	@chmod +x scripts/uninstall-backend-launch-agent.sh
+	./scripts/uninstall-backend-launch-agent.sh
 
 # ── Build & Test ─────────────────────────────────────────────────────────────
 
@@ -71,4 +80,4 @@ install:
 clean:
 	rm -rf out/ forge-out/ .next/ public/screenshots/
 
-.PHONY: dev stop frontend backend backend-mbp build test test-contracts test-go test-e2e install clean
+.PHONY: dev stop frontend backend backend-mbp install-launch-agent uninstall-launch-agent build test test-contracts test-go test-e2e install clean

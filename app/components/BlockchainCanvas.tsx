@@ -104,9 +104,10 @@ interface LaneProps {
 }
 
 function StandardLane({ chain, latestBlock }: LaneProps) {
-  const start = Math.max(1, latestBlock - LANE_WINDOW + 1);
+  // Demo L2 (and Anvil) are 0-based; do not clamp to 1 or block 0 never appears.
+  const start = Math.max(0, latestBlock - LANE_WINDOW + 1);
   const blocks = Array.from(
-    { length: latestBlock - start + 1 },
+    { length: Math.max(0, latestBlock - start + 1) },
     (_, i) => start + i,
   );
   const colorCls = CHAIN_COLORS[chain] ?? "text-zinc-400 border-zinc-700";
@@ -141,7 +142,7 @@ interface OpLaneProps {
 }
 
 function OpLane({ latestBlock, batches, onBatchClick, inspectedBatch }: OpLaneProps) {
-  const start = Math.max(1, latestBlock - LANE_WINDOW + 1);
+  const start = Math.max(0, latestBlock - LANE_WINDOW + 1);
   const segments = buildOpSegments(start, latestBlock, batches);
   const colorCls = CHAIN_COLORS["op-l2"];
 
@@ -185,7 +186,7 @@ interface ZkLaneProps {
 }
 
 function ZkLane({ latestBlock, rollups, onBatchClick, inspectedBatch }: ZkLaneProps) {
-  const start = Math.max(1, latestBlock - LANE_WINDOW + 1);
+  const start = Math.max(0, latestBlock - LANE_WINDOW + 1);
   const segments = buildZkSegments(start, latestBlock, rollups);
   const colorCls = CHAIN_COLORS["zk-l2"];
 

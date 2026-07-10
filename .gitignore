@@ -12,6 +12,9 @@ out/
 test-results/
 tsconfig.tsbuildinfo
 
+# Built staging binary (launchd / start-staging-backend.sh)
+backend/bin/
+
 # Foundry broadcast — ephemeral deploy logs from `forge script` / local Anvil runs
 broadcast/
 .vercel

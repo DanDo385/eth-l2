@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -27,6 +28,7 @@ func main() {
 
 	sess := engine.NewSession(repoRoot)
 	hub := server.NewHub()
+	server.WatchIdleStop(hub, sess, idleStopGrace())
 
 	// Fan events from the active session bus to all WebSocket clients.
 	go func() {
@@ -92,6 +94,25 @@ func resolveAddr(repoRoot string) string {
 		return p.BackendListenAddr()
 	}
 	return "127.0.0.1:8080"
+}
+
+// idleStopGrace is how long to wait after the last WebSocket client disconnects
+// before tearing down an active session. Default 45s tolerates tab refresh and
+// brief tunnel blips. Set ETH_L2_IDLE_STOP_SECONDS=0 to disable.
+func idleStopGrace() time.Duration {
+	raw := os.Getenv("ETH_L2_IDLE_STOP_SECONDS")
+	if raw == "" {
+		return 45 * time.Second
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		log.Printf("invalid ETH_L2_IDLE_STOP_SECONDS=%q; using 45s", raw)
+		return 45 * time.Second
+	}
+	if n <= 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
 }
 
 // findRepoRoot walks up from cwd until it finds foundry.toml.

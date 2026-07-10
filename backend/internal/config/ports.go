@@ -20,6 +20,7 @@ type Ports struct {
 		Host   string `json:"host"`
 		Port   int    `json:"port"`
 		URL    string `json:"url"`
+		Bind   string `json:"bind"`
 		WSPath string `json:"wsPath"`
 	} `json:"backend"`
 	Anvil struct {
@@ -39,6 +40,11 @@ type Ports struct {
 			RPC     string `json:"rpc"`
 		} `json:"zkL2"`
 	} `json:"anvil"`
+	Staging struct {
+		PublicAPIOrigin string `json:"publicApiOrigin"`
+		VercelOrigin    string `json:"vercelOrigin"`
+		TunnelService   string `json:"tunnelService"`
+	} `json:"staging"`
 }
 
 // Load reads config/ports.json under repoRoot.
@@ -59,6 +65,9 @@ func Load(repoRoot string) (*Ports, error) {
 // Prefer loopback so the API is only reachable via localhost / Cloudflare Tunnel,
 // never by binding all interfaces by accident.
 func (p *Ports) BackendListenAddr() string {
+	if bind := strings.TrimSpace(p.Backend.Bind); bind != "" {
+		return bind
+	}
 	host := strings.TrimSpace(p.Backend.Host)
 	if host == "" || host == "0.0.0.0" || host == "::" {
 		host = "127.0.0.1"

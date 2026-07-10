@@ -18,6 +18,69 @@ The viewer should leave understanding how optimistic trust turns back into verif
 The emotional hook is: catch the lying sequencer.
 The technical hook is: bad batch → watcher flags (off-chain) → user verifies → challenge bond → FraudProofGame → opcode/storage mismatch + source line → bond settlement.
 
+## Agent Mode (product surface)
+
+This repo ships **Agent Mode** for AI systems — structured, low-noise context alongside the human UI. Keep it updated in the same change as site/content updates.
+
+| Surface | Path | Source |
+|---------|------|--------|
+| Human overview | `/agent/` | `app/agent/page.tsx` |
+| JSON manifest | `/agent.json` | `site/agent.ts` via `app/agent.json/route.ts` |
+| LLM router | `/llms.txt` | `site/agent.ts` (`getLlmsTxt`) via `app/llms.txt/route.ts` |
+
+`getLlmsTxt()` always calls `getAgentManifest()` so the two surfaces cannot drift.
+
+### Auto-updates from content loaders
+
+- Demo scenarios (OP/ZK seeds, titles, captions) from `app/data/demoGallery.ts`
+- Protocol constants from `app/data/protocol.ts`
+- Public tunnel origin for demo health notes from `app/data/ports.ts` (`PUBLIC_TUNNEL_ORIGIN` only — never LAN)
+
+### Hand-maintain in `site/agent.ts` / `site/constants.ts`
+
+When these change, edit the generator (not only the UI):
+
+1. **`navigation`** — must match real nav (Home / Optimistic / ZK / Agent Mode)
+2. **`about` / `contact` / `canonicalTopics` / `PRINCIPLES`**
+3. **`agentMode.preferredEntryPoints`**
+4. **`SITE`** in `site/constants.ts` (name, description, public URL, owner)
+5. **`app/agent/page.tsx`** copy if endpoints or principles explanation change
+
+### Checklist after content / nav / about changes
+
+- [ ] `/agent.json` and `/llms.txt` still look correct (`curl` locally or open in browser)
+- [ ] Manifest `navigation` matches `LabFrame` + home links
+- [ ] No secrets, LAN IPs, or private staging hosts in agent output
+- [ ] Theme storage key in the layout boot script still matches `THEME_STORAGE_KEY` in `site/theme.ts`
+
+Related files: `site/agent.ts`, `site/constants.ts`, `site/theme.ts`, `app/components/ThemeToggle.tsx`, `app/components/SiteChrome.tsx`, `app/agent/page.tsx`, route handlers under `app/agent.json/` and `app/llms.txt/`.
+
+> Note: generators live under `site/` (not root `lib/`) because Foundry’s `/lib/` is gitignored and excluded from TypeScript.
+
+## Display (light / dark)
+
+- CSS tokens on `:root` (dark default) and `html[data-theme='light']` in `app/globals.css`
+- FOUC-free boot: blocking inline script in `app/layout.tsx` (key `eth-l2-theme`)
+- Toggle: `app/components/ThemeToggle.tsx` via Display control in `SiteChrome`
+- No `next-themes` / ThemeProvider
+
+## Durable staging backend (MacBook + tunnel)
+
+Mirror of the eth-tx-lifecycle pattern:
+
+| Piece | Path / command |
+|-------|----------------|
+| Ports + staging origins | `config/ports.json` (`staging.publicApiOrigin`, `vercelOrigin`) |
+| Shell exports | `scripts/lib/ports.sh` |
+| Foreground staging | `./scripts/start-staging-backend.sh` (or `make backend-mbp`) |
+| Durable launchd | `./scripts/install-backend-launch-agent.sh` (`KeepAlive` + `RunAtLoad`) |
+| Uninstall | `./scripts/uninstall-backend-launch-agent.sh` |
+| Logs | `~/Library/Logs/eth-l2/` |
+| Ready probe | `GET /health/ready` → plaintext `READY` |
+| Idle stop | After last lab WebSocket disconnects, wait `ETH_L2_IDLE_STOP_SECONDS` (default 45) then `Session.Stop()` |
+
+Do not put LAN IPs or tunnel credentials in Agent Mode / docs beyond the public hostname.
+
 ## Documentation
 
 Keep these in sync when behaviour changes:
@@ -45,7 +108,7 @@ Keep these in sync when behaviour changes:
 - Fraud verdict Solidity: prefer multi-line exhibits in `engineSourceExhibits.ts` / `EngineSourceCompare` (honest vs lying engines), not a single source-map line alone.
 - Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `opTrackerEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
 - Overlays (opcode proof, ZK inspect) open from Proof lab, Block Inspector, or ZK batch cards — never auto-popup.
-- Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths.
+- Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths. Prefer `site/` for theme/agent generators and keep runtime store code where it already lives.
 
 ## Contract / artifact rules
 

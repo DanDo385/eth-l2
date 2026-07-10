@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { BackendStatus } from "./components/BackendStatus";
+import { SiteChrome } from "./components/SiteChrome";
 import { FRONTEND_URL, IS_REMOTE_BACKEND } from "./data/ports";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-8 px-6 py-12">
+      <div className="flex items-center justify-end border-b border-zinc-800 px-4 py-3 sm:px-6">
+        <SiteChrome />
+      </div>
+      <section className="mx-auto flex min-h-[calc(100vh-57px)] w-full max-w-6xl flex-col justify-center gap-8 px-6 py-12">
         <div className="max-w-3xl space-y-4">
           <p className="text-xs uppercase tracking-[0.35em] text-emerald-400">
             Rollup Mechanics Lab

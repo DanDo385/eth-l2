@@ -1,6 +1,6 @@
 {
   "project": "eth-l2",
-  "description": "Canonical dev ports for this repo. Go, Next.js, Makefile, Foundry RPC endpoints, and shell scripts should match these values.",
+  "description": "Canonical ports for this repo. Scripts, Makefile, Cloudflare Tunnel ingress, and local Next rewrites should match these values. Backend uses 8080 so eth-tx-lifecycle can keep 8081.",
   "frontend": {
     "host": "127.0.0.1",
     "port": 3001,
@@ -10,6 +10,7 @@
     "host": "127.0.0.1",
     "port": 8080,
     "url": "http://127.0.0.1:8080",
+    "bind": "127.0.0.1:8080",
     "wsPath": "/stream"
   },
   "anvil": {
@@ -28,5 +29,10 @@
       "chainId": 31339,
       "rpc": "http://127.0.0.1:10545"
     }
+  },
+  "staging": {
+    "publicApiOrigin": "https://api-staging-eth-l2.magro.dev",
+    "vercelOrigin": "https://eth-l2.vercel.app",
+    "tunnelService": "http://127.0.0.1:8080"
   }
 }

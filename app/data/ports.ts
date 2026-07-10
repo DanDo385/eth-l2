@@ -60,7 +60,12 @@ export const WS_URL = useLocalBackend()
 export const BACKEND_PORT = PORTS.backend.port;
 export const FRONTEND_PORT = PORTS.frontend.port;
 
-/** Absolute or same-origin health probe path. */
+/** Absolute or same-origin readiness probe (plaintext READY / NOT_READY). */
 export function healthUrl(): string {
+  return `${API_BASE}/health/ready`;
+}
+
+/** JSON status probe (legacy / detailed). */
+export function healthJsonUrl(): string {
   return `${API_BASE}/health`;
 }

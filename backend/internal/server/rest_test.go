@@ -55,6 +55,38 @@ func TestHealth_returnsJSON(t *testing.T) {
 	}
 }
 
+// ── /health/live + /health/ready ─────────────────────────────────────────────
+
+func TestHealthLive_returnsOK(t *testing.T) {
+	h := newHandler(t)
+	r := httptest.NewRequest(http.MethodGet, "/health/live", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", w.Code)
+	}
+	if w.Body.String() != "OK" {
+		t.Fatalf("want body OK, got %q", w.Body.String())
+	}
+}
+
+func TestHealthReady_returnsREADYOrNOT_READY(t *testing.T) {
+	h := newHandler(t)
+	r := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	body := w.Body.String()
+	if body != "READY" && body != "NOT_READY" {
+		t.Fatalf("want READY or NOT_READY, got %q (status %d)", body, w.Code)
+	}
+	if body == "READY" && w.Code != http.StatusOK {
+		t.Fatalf("READY must be 200, got %d", w.Code)
+	}
+	if body == "NOT_READY" && w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("NOT_READY must be 503, got %d", w.Code)
+	}
+}
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
 func TestCORS_headersPresent(t *testing.T) {

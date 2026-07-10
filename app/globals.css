@@ -1,5 +1,155 @@
 @import "tailwindcss";
 
+/* ── Semantic tokens (dark defaults) ── */
+:root {
+  color-scheme: dark;
+
+  --bg-deep: #09090b;
+  --bg-primary: #09090b;
+  --bg-secondary: #18181b;
+  --bg-card: #18181b;
+  --bg-elevated: #27272a;
+  --border: #27272a;
+  --border-subtle: #3f3f46;
+  --border-active: #52525b;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --accent: #34d399;
+  --accent-light: #6ee7b7;
+  --accent-dim: rgba(52, 211, 153, 0.12);
+  --surface-muted: rgba(39, 39, 42, 0.55);
+  --surface-soft: rgba(24, 24, 27, 0.72);
+  --surface-panel-end: rgba(9, 9, 11, 0.95);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
+    0 18px 40px -28px rgba(0, 0, 0, 0.55);
+  --radius: 12px;
+
+  /* Zinc scale — components use Tailwind zinc-* utilities */
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
+
+  /* Accent dark surfaces used as card/panel backgrounds */
+  --blue-950: #172554;
+  --blue-900: #1e3a8a;
+  --emerald-950: #022c22;
+  --emerald-900: #064e3b;
+  --red-950: #450a0a;
+  --red-900: #7f1d1d;
+  --amber-950: #451a03;
+  --amber-900: #78350f;
+  --yellow-950: #422006;
+  --yellow-900: #713f12;
+  --orange-950: #431407;
+  --orange-900: #7c2d12;
+  --violet-950: #2e1065;
+  --violet-900: #4c1d95;
+}
+
+html {
+  color-scheme: dark;
+  /* Slightly larger base so rem-based Tailwind text is easier to read */
+  font-size: 106.25%; /* 17px when browser default is 16px */
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-deep: #f4f4f5;
+  --bg-primary: #fafafa;
+  --bg-secondary: #f4f4f5;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: #e4e4e7;
+  --border-subtle: #d4d4d8;
+  --border-active: #a1a1aa;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --accent: #059669;
+  --accent-light: #047857;
+  --accent-dim: rgba(5, 150, 105, 0.1);
+  --surface-muted: rgba(24, 24, 27, 0.06);
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --surface-panel-end: #f4f4f5;
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 18px 40px -28px rgba(24, 24, 27, 0.12);
+
+  /* Invert zinc so existing bg-zinc-950 / text-zinc-100 flip correctly */
+  --zinc-50: #09090b;
+  --zinc-100: #18181b;
+  --zinc-200: #27272a;
+  --zinc-300: #3f3f46;
+  --zinc-400: #52525b;
+  --zinc-500: #71717a;
+  --zinc-600: #a1a1aa;
+  --zinc-700: #d4d4d8;
+  --zinc-800: #e4e4e7;
+  --zinc-900: #f4f4f5;
+  --zinc-950: #fafafa;
+
+  /* Lighten dark accent panel fills */
+  --blue-950: #eff6ff;
+  --blue-900: #dbeafe;
+  --emerald-950: #ecfdf5;
+  --emerald-900: #d1fae5;
+  --red-950: #fef2f2;
+  --red-900: #fee2e2;
+  --amber-950: #fffbeb;
+  --amber-900: #fef3c7;
+  --yellow-950: #fefce8;
+  --yellow-900: #fef9c3;
+  --orange-950: #fff7ed;
+  --orange-900: #ffedd5;
+  --violet-950: #f5f3ff;
+  --violet-900: #ede9fe;
+}
+
+/* Bind Tailwind color utilities to theme tokens */
+@theme inline {
+  --color-zinc-50: var(--zinc-50);
+  --color-zinc-100: var(--zinc-100);
+  --color-zinc-200: var(--zinc-200);
+  --color-zinc-300: var(--zinc-300);
+  --color-zinc-400: var(--zinc-400);
+  --color-zinc-500: var(--zinc-500);
+  --color-zinc-600: var(--zinc-600);
+  --color-zinc-700: var(--zinc-700);
+  --color-zinc-800: var(--zinc-800);
+  --color-zinc-900: var(--zinc-900);
+  --color-zinc-950: var(--zinc-950);
+
+  --color-blue-950: var(--blue-950);
+  --color-blue-900: var(--blue-900);
+  --color-emerald-950: var(--emerald-950);
+  --color-emerald-900: var(--emerald-900);
+  --color-red-950: var(--red-950);
+  --color-red-900: var(--red-900);
+  --color-amber-950: var(--amber-950);
+  --color-amber-900: var(--amber-900);
+  --color-yellow-950: var(--yellow-950);
+  --color-yellow-900: var(--yellow-900);
+  --color-orange-950: var(--orange-950);
+  --color-orange-900: var(--orange-900);
+  --color-violet-950: var(--violet-950);
+  --color-violet-900: var(--violet-900);
+}
+
+html,
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 @layer components {
   .btn-green {
     @apply px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium
@@ -15,5 +165,316 @@
     @apply px-3 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium
            border border-zinc-700 hover:bg-zinc-700 disabled:opacity-40
            transition-colors cursor-pointer disabled:cursor-not-allowed;
+  }
+}
+
+/* ── Site chrome: Display + Agent Mode ── */
+.site-chrome {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-control-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.theme-toggle,
+.nav-agent-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease,
+    box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover,
+.nav-agent-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--border-active);
+  background: var(--bg-elevated);
+}
+
+.theme-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.nav-agent-emoji {
+  font-size: 14px;
+  line-height: 1;
+  transform: translateY(0.5px);
+  transition: transform 0.25s ease;
+}
+
+.nav-agent-toggle:hover .nav-agent-emoji {
+  transform: translateY(0.5px) scale(1.08) rotate(-6deg);
+}
+
+.nav-agent-toggle.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 1px var(--accent-dim);
+}
+
+.nav-agent-toggle.active:hover {
+  color: var(--accent-light);
+  border-color: var(--accent);
+}
+
+/* Light-mode contrast tweaks where remapped fills leave mid-tone text weak */
+html[data-theme="light"] .text-blue-300,
+html[data-theme="light"] .text-blue-200 {
+  color: #1d4ed8;
+}
+html[data-theme="light"] .text-emerald-400,
+html[data-theme="light"] .text-emerald-300 {
+  color: #047857;
+}
+html[data-theme="light"] .text-red-400,
+html[data-theme="light"] .text-red-300,
+html[data-theme="light"] .text-red-200 {
+  color: #b91c1c;
+}
+html[data-theme="light"] .text-yellow-300 {
+  color: #a16207;
+}
+html[data-theme="light"] .text-orange-300 {
+  color: #c2410c;
+}
+html[data-theme="light"] .text-violet-400,
+html[data-theme="light"] .text-violet-300 {
+  color: #6d28d9;
+}
+html[data-theme="light"] .text-amber-300,
+html[data-theme="light"] .text-amber-200 {
+  color: #b45309;
+}
+
+/* ── Agent Mode page ── */
+.agent-page {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.agent-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.agent-brand {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.agent-brand:hover {
+  color: var(--accent);
+}
+
+.agent-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+.agent-hero {
+  max-width: 760px;
+  margin-bottom: 40px;
+}
+
+.agent-kicker {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.agent-hero h1 {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+
+.agent-hero p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.agent-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.agent-action:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.agent-action.muted {
+  border-color: var(--border-subtle);
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 48px;
+}
+
+.agent-card,
+.agent-context,
+.agent-code {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, var(--bg-card) 0%, var(--surface-panel-end) 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.agent-card {
+  padding: 20px;
+}
+
+.agent-card-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.agent-card h2,
+.agent-context h2,
+.agent-principles h3 {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.agent-card h2 {
+  font-size: 18px;
+  margin: 8px 0 10px;
+}
+
+.agent-card p,
+.agent-context p,
+.agent-context li {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.agent-section {
+  margin-bottom: 40px;
+}
+
+.section-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.agent-context {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  padding: 24px;
+}
+
+.agent-context h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.agent-principles h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.agent-context ul {
+  margin: 14px 0 0 1.1rem;
+}
+
+.agent-context li {
+  margin-bottom: 6px;
+}
+
+.agent-code {
+  max-height: 560px;
+  overflow: auto;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 860px) {
+  .agent-grid {
+    grid-template-columns: 1fr;
+  }
+  .agent-context {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .nav-control-label {
+    display: none;
   }
 }

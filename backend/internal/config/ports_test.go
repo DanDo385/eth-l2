@@ -32,4 +32,7 @@ func TestLoadPorts(t *testing.T) {
 	if got := p.BackendListenAddr(); got != "127.0.0.1:8080" {
 		t.Fatalf("BackendListenAddr = %q, want 127.0.0.1:8080", got)
 	}
+	if p.Staging.PublicAPIOrigin == "" {
+		t.Fatal("expected staging.publicApiOrigin")
+	}
 }

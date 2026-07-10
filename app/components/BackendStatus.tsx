@@ -7,7 +7,7 @@ type Status = "checking" | "online" | "offline";
 
 /**
  * Lightweight health chip. Fail-closed: never throws; offline is an explicit state.
- * Uses same-origin `/health` on Vercel (rewritten to the Cloudflare Tunnel).
+ * Uses same-origin `/health/ready` on Vercel (rewritten to the Cloudflare Tunnel).
  */
 export function BackendStatus({ className = "" }: { className?: string }) {
   const [status, setStatus] = useState<Status>("checking");
@@ -22,7 +22,9 @@ export function BackendStatus({ className = "" }: { className?: string }) {
           cache: "no-store",
           signal: AbortSignal.timeout(8_000),
         });
-        if (!cancelled) setStatus(res.ok ? "online" : "offline");
+        const body = (await res.text()).trim();
+        const ready = res.ok && body === "READY";
+        if (!cancelled) setStatus(ready ? "online" : "offline");
       } catch {
         if (!cancelled) setStatus("offline");
       }

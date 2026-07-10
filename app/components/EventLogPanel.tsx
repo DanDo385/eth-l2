@@ -297,7 +297,7 @@ export function EventLogPanel({ mode }: { mode: LabMode }) {
           <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-5">
             {recent.map((entry, i) => (
               <div
-                key={`recent-${entry.seq}-${entry.chain ?? entry.lane}-${i}`}
+                key={`recent-${entry.seq}-${entry.event}-${entry.chain ?? entry.lane}-${i}`}
                 className="flex min-w-0 items-center gap-2 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-2 py-1.5"
               >
                 <span
@@ -336,7 +336,7 @@ export function EventLogPanel({ mode }: { mode: LabMode }) {
           <div className="grid max-h-80 gap-1.5 overflow-y-auto pr-0.5 xl:grid-cols-2">
             {list.map((entry, i) => (
               <EventRow
-                key={`${entry.seq}-${entry.chain ?? entry.lane}-${i}`}
+                key={`evt-${entry.seq}-${entry.event}-${entry.chain ?? entry.lane}-${i}`}
                 entry={entry}
                 expanded={expandedSeq === entry.seq}
                 onToggle={() =>

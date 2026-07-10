@@ -10,12 +10,18 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ports = JSON.parse(readFileSync(join(root, "config/ports.json"), "utf8"));
 
+const staging = ports.staging || {};
+const bind = ports.backend.bind || `${ports.backend.host}:${ports.backend.port}`;
+
 const lines = [
   `ETH_L2_FRONTEND_PORT=${ports.frontend.port}`,
   `ETH_L2_FRONTEND_URL=${ports.frontend.url}`,
   `ETH_L2_BACKEND_PORT=${ports.backend.port}`,
   `ETH_L2_BACKEND_URL=${ports.backend.url}`,
+  `ETH_L2_BACKEND_BIND=${bind}`,
   `ETH_L2_BACKEND_WS_URL=${ports.backend.url.replace(/^http/, "ws")}${ports.backend.wsPath}`,
+  `ETH_L2_PUBLIC_API_ORIGIN=${staging.publicApiOrigin || ""}`,
+  `ETH_L2_VERCEL_ORIGIN=${staging.vercelOrigin || ""}`,
   `L1_RPC=${ports.anvil.l1.rpc}`,
   `OP_L2_RPC=${ports.anvil.opL2.rpc}`,
   `ZK_L2_RPC=${ports.anvil.zkL2.rpc}`,

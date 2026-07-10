@@ -18,10 +18,48 @@ var upgrader = websocket.Upgrader{
 type Hub struct {
 	mu      sync.RWMutex
 	clients map[*websocket.Conn]struct{}
+	onCount func(n int)
 }
 
 func NewHub() *Hub {
 	return &Hub{clients: make(map[*websocket.Conn]struct{})}
+}
+
+// SetOnClientCountChanged registers a callback invoked after connect/disconnect
+// with the current client count. Used to idle-stop the session when nobody is watching.
+func (h *Hub) SetOnClientCountChanged(fn func(n int)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onCount = fn
+}
+
+// ClientCount returns the number of connected WebSocket clients.
+func (h *Hub) ClientCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients)
+}
+
+func (h *Hub) addClient(conn *websocket.Conn) {
+	h.mu.Lock()
+	h.clients[conn] = struct{}{}
+	n := len(h.clients)
+	cb := h.onCount
+	h.mu.Unlock()
+	if cb != nil {
+		cb(n)
+	}
+}
+
+func (h *Hub) removeClient(conn *websocket.Conn) {
+	h.mu.Lock()
+	delete(h.clients, conn)
+	n := len(h.clients)
+	cb := h.onCount
+	h.mu.Unlock()
+	if cb != nil {
+		cb(n)
+	}
 }
 
 // Run subscribes to bus events and broadcasts them until ctx is canceled.
@@ -63,14 +101,9 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.mu.Lock()
-	h.clients[conn] = struct{}{}
-	h.mu.Unlock()
-
+	h.addClient(conn)
 	defer func() {
-		h.mu.Lock()
-		delete(h.clients, conn)
-		h.mu.Unlock()
+		h.removeClient(conn)
 		conn.Close()
 	}()
 

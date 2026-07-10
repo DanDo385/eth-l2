@@ -143,12 +143,13 @@ export function useSessionControls() {
     return () => clearInterval(timer);
   }, [active, paused, expired]);
 
-  // Pause when the session timer hits zero — must not dispatch from inside a
+  // Stop when the session timer hits zero — tears down Anvil so a forgotten
+  // tab does not keep the MacBook mining. Must not dispatch from inside a
   // setState updater (that updates AppStoreProvider during this provider's render).
   useEffect(() => {
     if (!active || paused || expired || remainingSeconds > 0) return;
     setExpired(true);
-    void call("/api/pause");
+    void call("/api/stop");
   }, [remainingSeconds, active, paused, expired, call]);
 
   return {

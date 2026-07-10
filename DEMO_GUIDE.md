@@ -33,7 +33,7 @@ Record with the built-in **Screenshot** app — not a separate capture service.
 Tips for a clean take:
 
 - Resize the browser so the lab fills the frame; `/op` and `/zk` are separate routes — switch tabs or windows between OP and ZK beats.
-- Use the **60s session timer** in the control panel to pause without losing state between takes.
+- Use the **60s session timer** in the control panel to auto-stop between takes (tears down Anvil; Start again for the next take).
 - Proof overlays never auto-open — click when you are ready so the recording stays deliberate.
 
 Playwright still captures static PNGs under `public/screenshots/` via `make test-e2e`; that is for layout regression, not portfolio video.
@@ -114,7 +114,7 @@ In the tour, expand **Public inputs and L1 commitments** (header hash, roots, ba
 
 ## Tips
 
-- Seed **17** at **4×** speed for a tight fraud arc; the **60s session timer** pauses without wiping state.
+- Seed **17** at **4×** speed for a tight fraud arc; the **60s session timer** auto-stops so the MacBook is not left mining.
 - At 4×, a 60s run usually surfaces **1–2 suspicious OP batches** to verify and challenge (not auto-challenged).
 - Proof overlays never auto-open — click from Inspector, canvas batch cards, or Proof lab when you are ready.
 - See [README.md](README.md) for `make test-e2e`.

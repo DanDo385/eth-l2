@@ -100,3 +100,10 @@ func (s *Session) Client(name string) *chain.Client {
 	defer s.mu.Unlock()
 	return s.clients[name]
 }
+
+// IsActive reports whether a demo session is running or paused (Anvil still up).
+func (s *Session) IsActive() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.st != stateIdle
+}

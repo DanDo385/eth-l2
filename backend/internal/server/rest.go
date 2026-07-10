@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -25,6 +26,23 @@ func Handler(sess *engine.Session, hub *Hub) http.Handler {
 			"service": "eth-l2",
 			"status":  "up",
 		})
+	})
+
+	// Liveness: process is serving HTTP.
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	// Readiness: Foundry anvil is on PATH so a lab session can start.
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, _ *http.Request) {
+		if _, err := exec.LookPath("anvil"); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("NOT_READY"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("READY"))
 	})
 
 	mux.HandleFunc("/stream", hub.ServeWS)

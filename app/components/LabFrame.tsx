@@ -8,6 +8,7 @@ import { AppStoreProvider, useAppStore } from "../lib/store";
 import { parseUrlHash } from "../lib/url";
 import { apiPost } from "../lib/ws";
 import { OpcodeRace } from "./OpcodeRace";
+import { SiteChrome } from "./SiteChrome";
 import { ZkInspect } from "./ZkInspect";
 
 export type LabMode = "optimistic" | "zk";
@@ -52,8 +53,9 @@ function LabHeader({ mode }: HeaderProps) {
           </Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500 sm:gap-3">
-          <span className="hidden text-[10px] text-zinc-600 md:block">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs text-zinc-500 sm:gap-3">
+          <SiteChrome />
+          <span className="hidden text-[10px] text-zinc-600 lg:block">
             {state.running
               ? state.paused
                 ? "simulation paused"
