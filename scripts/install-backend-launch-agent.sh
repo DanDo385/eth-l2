@@ -53,7 +53,7 @@ cat >"$PLIST" <<EOF
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <string>/Users/openclaw/.foundry/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>GOAPI_ADDR</key>
     <string>${ETH_L2_BACKEND_BIND}</string>
     <key>REPO_ROOT</key>
