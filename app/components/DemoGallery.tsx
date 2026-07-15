@@ -53,7 +53,7 @@ export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
               : `Fault injection is ~1 in 8 batches. In a 60s run at 4× expect ${OP_SUSPICIOUS_60S} suspicious batches; in 120s expect ${OP_SUSPICIOUS_120S}. Bonds make cheating unprofitable. Cards start at the speed set in controls.`}
           </InfoTip>
         </div>
-        <p className="mt-0.5 text-[11px] leading-snug text-zinc-600">
+        <p className="mt-0.5 text-sm leading-snug text-zinc-600">
           Pick a scenario. Seed 88 is the suggested entry point.
         </p>
       </div>
@@ -102,7 +102,7 @@ export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
                   </span>
                   {status && <StatusBadge kind={status} />}
                 </div>
-                <p className="text-[10px] leading-snug text-zinc-500">
+                <p className="text-xs leading-snug text-zinc-500">
                   {demo.caption}
                 </p>
               </button>
