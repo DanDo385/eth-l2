@@ -4,7 +4,7 @@ import type { NextConfig } from "next";
 const DEFAULT_BACKEND_ORIGIN = "https://api-staging-eth-l2.magro.dev";
 
 const nextConfig: NextConfig = {
-  // Serverful Next on Vercel so we can same-origin-proxy REST to the MBP tunnel.
+  // Serverful Next on Vercel so we can same-origin-proxy REST to the staging tunnel.
   // (Static export cannot use rewrites / route handlers.)
   devIndicators: false,
 

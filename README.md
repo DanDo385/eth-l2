@@ -90,7 +90,7 @@ The frontend needs the Go backend on the **backend.port** from the same file (RE
 | **backend offline** after `vercel env pull` | `.env.local` has `NEXT_PUBLIC_API_URL=same-origin` / tunnel WS, but local Next does not proxy `/api` | Clear those vars from `.env.local` (local `next dev` now ignores them unless `ETH_L2_ENABLE_API_PROXY=1`) and hard-refresh |
 | Red **disconnected** in header | Same — nothing listening on `:8080` | `lsof -nP -iTCP:8080 -sTCP:LISTEN` should show the Go `server` process |
 | Stale port after a crash | Old node/go process still bound | `make stop` then `make dev` |
-| Hosted frontend, MacBook API offline | Tunnel / Go not running | UI still loads as an explainer; status shows **backend offline**; Start stays disabled until `https://api-staging-eth-l2.magro.dev/health/ready` returns `READY` |
+| Hosted frontend, Ubuntu API offline | Tunnel / Go not running | UI still loads as an explainer; status shows **backend offline**; Start stays disabled until `https://api-staging-eth-l2.magro.dev/health/ready` returns `READY` |
 
 Smoke-check the API:
 
@@ -110,30 +110,30 @@ curl -s http://127.0.0.1:8080/api/state
 
 **E2E tests:** backend + frontend running, then `make test-e2e` (or `pnpm test:e2e` — Playwright starts the frontend automatically if configured in `playwright.config.ts`).
 
-## Hosted split (Vercel + MacBook)
+## Hosted split (Vercel + Ubuntu)
 
-Long-running work (Go API, Anvil L1/OP/ZK, WebSocket `/stream`, fraud/ZK compute) stays on the MacBook. The interactive UI deploys to Vercel and reaches the API only through the public Cloudflare Tunnel hostname — never a LAN IP.
+Long-running work (Go API, Anvil L1/OP/ZK, WebSocket `/stream`, fraud/ZK compute) runs on the Ubuntu VPS. The interactive UI deploys to Vercel and reaches the API only through the public Cloudflare Tunnel hostname — never a LAN IP.
 
 ```
 Visitor browser
   → Vercel (Next.js UI)
   → same-origin /api/* + /health*  (Next rewrites)
   → https://api-staging-eth-l2.magro.dev
-  → http://127.0.0.1:8080 on MacBook
+  → http://127.0.0.1:8080 on Ubuntu (systemd eth-l2 + cloudflared-eth-l2)
 ```
 
 WebSockets use `wss://api-staging-eth-l2.magro.dev/stream` directly (Vercel rewrites do not proxy WS upgrades).
 
-### MacBook backend
+### Ubuntu backend
 
-```bash
-./scripts/start-staging-backend.sh
-# or: make backend-mbp
-# durable across logins/crashes:
-./scripts/install-backend-launch-agent.sh
-```
+Durable units on the VPS (repo at `/home/deploy/Code/eth-l2`):
 
-Requires Foundry (`anvil`) on `PATH`. Binds `127.0.0.1:8080` by default.
+| Unit | Role |
+|------|------|
+| `eth-l2.service` | Go API on `127.0.0.1:8080` (spawns Anvil on session start) |
+| `cloudflared-eth-l2.service` | Tunnel `eth-l2-ubuntu` → public hostname |
+
+Requires Foundry (`anvil`) on the service `PATH` (e.g. `/home/deploy/.foundry/bin`). Env: `/etc/eth-l2/eth-l2.env`.
 
 | Probe | Expect |
 |-------|--------|
@@ -141,15 +141,23 @@ Requires Foundry (`anvil`) on `PATH`. Binds `127.0.0.1:8080` by default.
 | `GET /health/live` | `OK` |
 | `GET /health/ready` | `READY` (anvil on PATH) |
 
-Logs when using launchd: `~/Library/Logs/eth-l2/`.
+```bash
+sudo systemctl status eth-l2 cloudflared-eth-l2
+curl -s http://127.0.0.1:8080/health/ready   # on the VPS
+journalctl -u eth-l2 -f
+```
+
+Local Mac scripts (`./scripts/start-staging-backend.sh`, launchd helpers) remain for laptop-only demos; hosted traffic does **not** use them.
 
 ### Cloudflare Tunnel
 
-Point the public hostname at localhost (credentials stay outside the repo):
+Public hostname is routed to the Ubuntu tunnel (credentials stay outside the repo):
 
 ```bash
-# after tunnel create + DNS route for api-staging-eth-l2.magro.dev
-cloudflared tunnel run --url http://127.0.0.1:8080 <TUNNEL_NAME>
+# one-time on a machine with the Cloudflare origin cert:
+cloudflared tunnel create eth-l2-ubuntu
+cloudflared tunnel route dns --overwrite-dns eth-l2-ubuntu api-staging-eth-l2.magro.dev
+# on Ubuntu: cloudflared-eth-l2.service runs the tunnel
 ```
 
 See [docs/cloudflare-tunnel.example.yml](docs/cloudflare-tunnel.example.yml). Acceptance: `curl -s https://api-staging-eth-l2.magro.dev/health/ready` returns `READY`.
@@ -164,7 +172,7 @@ Set project env from [.env.example](.env.example) (public values only):
 | `NEXT_PUBLIC_API_URL` | `same-origin` |
 | `NEXT_PUBLIC_WS_URL` | `wss://api-staging-eth-l2.magro.dev/stream` |
 
-Optional on the MacBook: `ETH_L2_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app` to lock CORS.
+Optional on the VPS: `ETH_L2_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app` to lock CORS.
 
 If the tunnel is down, the Vercel UI still loads; home/lab show an explicit **backend offline** state and interactive Start/demo controls stay disabled.
 
@@ -200,9 +208,9 @@ Default speed: **3×**. Default seed: **42**. Optional **60s / 120s session time
 | `make dev` | Go backend + Next.js frontend (recommended) |
 | `make stop` | Kill stale processes on all ports from `config/ports.json` |
 | `make backend` | Go backend only |
-| `make backend-mbp` | Go on `127.0.0.1` for Cloudflare Tunnel staging |
-| `make install-launch-agent` | Durable launchd agent (`KeepAlive` + `RunAtLoad`) |
-| `make uninstall-launch-agent` | Remove the launchd agent |
+| `make backend-mbp` | Local Go on `127.0.0.1` (laptop demos; hosted uses Ubuntu systemd) |
+| `make install-launch-agent` | Optional Mac launchd agent for laptop-only demos |
+| `make uninstall-launch-agent` | Remove the local launchd agent |
 | `make frontend` | Next.js on `config/ports.json` → `frontend.port` |
 | `make build` | Contracts + Go + Next.js |
 | `make test` | `forge test` + `go test ./...` |

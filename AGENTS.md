@@ -64,20 +64,19 @@ Related files: `site/agent.ts`, `site/constants.ts`, `site/theme.ts`, `app/compo
 - Toggle: `app/components/ThemeToggle.tsx` via Display control in `SiteChrome`
 - No `next-themes` / ThemeProvider
 
-## Durable staging backend (MacBook + tunnel)
+## Durable staging backend (Ubuntu + tunnel)
 
-Mirror of the eth-tx-lifecycle pattern:
+Hosted Go + Anvil run on the Ubuntu VPS; Vercel UI talks only to the public tunnel hostname.
 
 | Piece | Path / command |
 |-------|----------------|
 | Ports + staging origins | `config/ports.json` (`staging.publicApiOrigin`, `vercelOrigin`) |
-| Shell exports | `scripts/lib/ports.sh` |
-| Foreground staging | `./scripts/start-staging-backend.sh` (or `make backend-mbp`) |
-| Durable launchd | `./scripts/install-backend-launch-agent.sh` (`KeepAlive` + `RunAtLoad`) |
-| Uninstall | `./scripts/uninstall-backend-launch-agent.sh` |
-| Logs | `~/Library/Logs/eth-l2/` |
+| VPS units | `eth-l2.service` + `cloudflared-eth-l2.service` |
+| VPS env | `/etc/eth-l2/eth-l2.env` (non-secret); API token via systemd credentials |
+| Public API | `https://api-staging-eth-l2.magro.dev` → `127.0.0.1:8080` on Ubuntu |
 | Ready probe | `GET /health/ready` → plaintext `READY` |
 | Idle stop | After last lab WebSocket disconnects, wait `ETH_L2_IDLE_STOP_SECONDS` (default 45) then `Session.Stop()` |
+| Local Mac helpers (optional) | `./scripts/start-staging-backend.sh`, launchd install/uninstall — laptop demos only |
 
 Do not put LAN IPs or tunnel credentials in Agent Mode / docs beyond the public hostname.
 
@@ -87,7 +86,7 @@ Keep these in sync when behaviour changes:
 
 | File | Role |
 |------|------|
-| [README.md](README.md) | Setup, architecture, protocol constants, tests, Vercel + MacBook tunnel split |
+| [README.md](README.md) | Setup, architecture, protocol constants, tests, Vercel + Ubuntu tunnel split |
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Suggested live demo flow + macOS screen recording |
 | [PLAN.md](PLAN.md) | Historical implementation plan + work-order archive |
 | [docs/rollup-education-audit.md](docs/rollup-education-audit.md) | UX/education audit (findings + fix checklist) |

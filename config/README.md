@@ -27,7 +27,7 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 | `NEXT_PUBLIC_WS_URL` | Browser WebSocket URL (use `wss://api-staging-eth-l2.magro.dev/stream` on Vercel). Ignored during local `next dev` unless `ETH_L2_ENABLE_API_PROXY=1`. |
 | `ETH_L2_BACKEND_ORIGIN` | Server-only rewrite target on Vercel (default public tunnel hostname) |
 | `ETH_L2_ENABLE_API_PROXY` | Set `1` to force Vercel-style same-origin rewrites + remote API URLs during local Next |
-| `GOAPI_ADDR` | Backend listen `host:port` (prefer `127.0.0.1:8080` on the MacBook) |
+| `GOAPI_ADDR` | Backend listen `host:port` (prefer `127.0.0.1:8080` on staging) |
 | `PORT` | Backend listen `127.0.0.1:port` |
 | `ETH_L2_FRONTEND_PORT` | `make frontend` / Playwright when set |
 | `ETH_L2_ALLOWED_ORIGINS` | Comma-separated CORS allowlist (staging scripts default to `staging.vercelOrigin`) |
@@ -35,28 +35,24 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 | `ETH_L2_TRUST_X_FORWARDED_FOR` | Set `1` to use `X-Forwarded-For` for rate-limit client IP (trusted proxy only) |
 | `ETH_L2_IDLE_STOP_SECONDS` | Seconds after last lab WebSocket disconnect before `Stop()` (default `45`; `0` disables) |
 
-## Hosted split (Vercel UI + MacBook API)
+## Hosted split (Vercel UI + Ubuntu API)
 
 | | |
 |--|--|
 | Public API | `https://api-staging-eth-l2.magro.dev` |
-| Tunnel origin | `http://127.0.0.1:8080` |
+| Tunnel origin | `http://127.0.0.1:8080` on Ubuntu |
 | Vercel UI | `https://eth-l2.vercel.app` |
 | Vercel env | `ETH_L2_BACKEND_ORIGIN`, `NEXT_PUBLIC_API_URL=same-origin`, `NEXT_PUBLIC_WS_URL=wss://…/stream` |
 
-See [README.md](../README.md#hosted-split-vercel--macbook) and [.env.example](../.env.example). Never document LAN IPs or tunnel credentials in the repo.
+See [README.md](../README.md#hosted-split-vercel--ubuntu) and [.env.example](../.env.example). Never document LAN IPs or tunnel credentials in the repo.
 
-When adding another project on the same machine, give it its own `config/ports.json` with a non-overlapping block (e.g. frontend `3000`, backend `8081` for eth-tx-lifecycle).
+## Durable backend (Ubuntu systemd)
 
-## Durable backend (launchd)
+| Unit | Role |
+|------|------|
+| `eth-l2.service` | Go API + Anvil session manager |
+| `cloudflared-eth-l2.service` | Cloudflare Tunnel → public hostname |
 
-```bash
-./scripts/start-staging-backend.sh          # foreground
-./scripts/install-backend-launch-agent.sh   # KeepAlive + RunAtLoad
-./scripts/uninstall-backend-launch-agent.sh
-# or: make install-launch-agent / make uninstall-launch-agent
-```
+Ready probe: `curl -s http://127.0.0.1:8080/health/ready` → `READY` (on the VPS), or `curl -s https://api-staging-eth-l2.magro.dev/health/ready`.
 
-- Label: `com.danmagro.eth-l2.backend`
-- Logs: `~/Library/Logs/eth-l2/`
-- Ready probe: `curl -s http://127.0.0.1:8080/health/ready` → `READY`
+Optional local Mac helpers (laptop demos only): `./scripts/start-staging-backend.sh`, launchd install/uninstall.
