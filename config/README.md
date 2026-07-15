@@ -40,9 +40,11 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 | | |
 |--|--|
 | Public API | `https://api-staging-eth-l2.magro.dev` |
-| Tunnel origin | `http://127.0.0.1:8080` on Ubuntu |
+| Tunnel | `eth-l2-ubuntu` via `cloudflared-eth-l2.service` |
+| Tunnel origin | `http://127.0.0.1:8080` on Ubuntu (`eth-l2.service`) |
 | Vercel UI | `https://eth-l2.vercel.app` |
 | Vercel env | `ETH_L2_BACKEND_ORIGIN`, `NEXT_PUBLIC_API_URL=same-origin`, `NEXT_PUBLIC_WS_URL=wss://…/stream` |
+| Public auth | `ETH_L2_API_TOKEN` **unset** (browser WS cannot carry a secret safely) |
 
 See [README.md](../README.md#hosted-split-vercel--ubuntu) and [.env.example](../.env.example). Never document LAN IPs or tunnel credentials in the repo.
 
@@ -50,9 +52,11 @@ See [README.md](../README.md#hosted-split-vercel--ubuntu) and [.env.example](../
 
 | Unit | Role |
 |------|------|
-| `eth-l2.service` | Go API + Anvil session manager |
+| `eth-l2.service` | Go API + Anvil session manager (`WorkingDirectory=/home/deploy/Code/eth-l2`) |
 | `cloudflared-eth-l2.service` | Cloudflare Tunnel → public hostname |
+
+Env file: `/etc/eth-l2/eth-l2.env` (loopback bind, CORS allowlist, Foundry on `PATH`, idle stop). Anvil listeners appear only after `/api/start`.
 
 Ready probe: `curl -s http://127.0.0.1:8080/health/ready` → `READY` (on the VPS), or `curl -s https://api-staging-eth-l2.magro.dev/health/ready`.
 
-Optional local Mac helpers (laptop demos only): `./scripts/start-staging-backend.sh`, launchd install/uninstall.
+Optional local helpers (laptop demos only): `./scripts/start-staging-backend.sh`, launchd install/uninstall.

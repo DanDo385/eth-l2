@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Start eth-l2 Go API + Anvil chains on the canonical staging bind (loopback only).
-# Pair with Cloudflare Tunnel → https://api-staging-eth-l2.magro.dev
+# Start eth-l2 Go API + Anvil on the canonical loopback bind (laptop demos).
+# Hosted production uses Ubuntu systemd (eth-l2.service + cloudflared-eth-l2.service)
+# → https://api-staging-eth-l2.magro.dev
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

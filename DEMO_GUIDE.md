@@ -114,7 +114,7 @@ In the tour, expand **Public inputs and L1 commitments** (header hash, roots, ba
 
 ## Tips
 
-- Seed **17** at **4×** speed for a tight fraud arc; the **60s session timer** auto-stops so the MacBook is not left mining.
+- Seed **17** at **4×** speed for a tight fraud arc; the **60s session timer** auto-stops so Anvil is not left mining on the Ubuntu backend.
 - At 4×, a 60s run usually surfaces **1-2 suspicious OP batches** to verify and challenge (not auto-challenged).
 - Proof overlays never auto-open - click from Inspector, canvas batch cards, or Proof lab when you are ready.
 - See [README.md](README.md) for `make test-e2e`.

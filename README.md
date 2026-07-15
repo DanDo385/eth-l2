@@ -130,24 +130,37 @@ Durable units on the VPS (repo at `/home/deploy/Code/eth-l2`):
 
 | Unit | Role |
 |------|------|
-| `eth-l2.service` | Go API on `127.0.0.1:8080` (spawns Anvil on session start) |
-| `cloudflared-eth-l2.service` | Tunnel `eth-l2-ubuntu` → public hostname |
+| `eth-l2.service` | Go API on `127.0.0.1:8080` (spawns Anvil L1/OP/ZK only after a lab session starts) |
+| `cloudflared-eth-l2.service` | Tunnel `eth-l2-ubuntu` → `api-staging-eth-l2.magro.dev` |
 
-Requires Foundry (`anvil`) on the service `PATH` (e.g. `/home/deploy/.foundry/bin`). Env: `/etc/eth-l2/eth-l2.env`.
+Non-secret env: `/etc/eth-l2/eth-l2.env`. Typical hosted values:
+
+| Variable | Hosted value |
+|----------|----------------|
+| `GOAPI_ADDR` | `127.0.0.1:8080` |
+| `ETH_L2_ALLOWED_ORIGINS` | `https://eth-l2.vercel.app` |
+| `ETH_L2_TRUST_X_FORWARDED_FOR` | `1` (behind Cloudflare) |
+| `ETH_L2_IDLE_STOP_SECONDS` | `45` |
+| `PATH` | must include Foundry (`anvil` / `forge`), e.g. `/home/deploy/.foundry/bin:...` |
+
+**Public portfolio mode:** leave `ETH_L2_API_TOKEN` **unset** so the Vercel browser can open `/stream` and call `POST /api/*` without embedding a secret in frontend JS. Optional bearer auth remains available for private deployments (see [backend/README.md](backend/README.md)); enabling it on the public tunnel will 401 the hosted UI.
+
+Anvil ports (`8545` / `9545` / `10545`) stay loopback-only and appear only while a session is running. After the last lab WebSocket disconnects, idle stop tears them down.
+
+```bash
+sudo systemctl status eth-l2 cloudflared-eth-l2
+curl -s http://127.0.0.1:8080/health/ready   # on the VPS → READY
+curl -s https://api-staging-eth-l2.magro.dev/health/ready
+journalctl -u eth-l2 -f
+```
 
 | Probe | Expect |
 |-------|--------|
 | `GET /health` | JSON `ok` / `up` |
 | `GET /health/live` | `OK` |
-| `GET /health/ready` | `READY` (anvil on PATH) |
+| `GET /health/ready` | `READY` (`anvil` on service `PATH`) |
 
-```bash
-sudo systemctl status eth-l2 cloudflared-eth-l2
-curl -s http://127.0.0.1:8080/health/ready   # on the VPS
-journalctl -u eth-l2 -f
-```
-
-Local Mac scripts (`./scripts/start-staging-backend.sh`, launchd helpers) remain for laptop-only demos; hosted traffic does **not** use them.
+Local laptop scripts (`./scripts/start-staging-backend.sh`, optional launchd helpers) are for offline demos only; **hosted traffic does not use the MacBook**.
 
 ### Cloudflare Tunnel
 
@@ -172,7 +185,7 @@ Set project env from [.env.example](.env.example) (public values only):
 | `NEXT_PUBLIC_API_URL` | `same-origin` |
 | `NEXT_PUBLIC_WS_URL` | `wss://api-staging-eth-l2.magro.dev/stream` |
 
-Optional on the VPS: `ETH_L2_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app` to lock CORS.
+Optional on the VPS: `ETH_L2_ALLOWED_ORIGINS=https://eth-l2.vercel.app` (already the hosted default). Do **not** set `ETH_L2_API_TOKEN` for the public Vercel demo.
 
 If the tunnel is down, the Vercel UI still loads; home/lab show an explicit **backend offline** state and interactive Start/demo controls stay disabled.
 
@@ -252,7 +265,7 @@ app/                Next.js 16
 config/             ports.json - canonical dev ports
 ```
 
-Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS`, `ETH_L2_API_TOKEN` (see [backend/README.md](backend/README.md)). Frontend / Vercel: see [.env.example](.env.example).
+Backend env (hosted Ubuntu): see `/etc/eth-l2/eth-l2.env` and the [Ubuntu backend](#ubuntu-backend) section. Optional vars: `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS`, `ETH_L2_API_TOKEN` (leave unset for public Vercel), `ETH_L2_TRUST_X_FORWARDED_FOR`, `ETH_L2_IDLE_STOP_SECONDS` - details in [backend/README.md](backend/README.md). Frontend / Vercel: see [.env.example](.env.example).
 
 ## Seeds
 

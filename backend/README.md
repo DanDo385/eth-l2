@@ -18,8 +18,13 @@ Default listen address: `127.0.0.1:8080` (see `config/ports.json`).
 | `ETH_L2_RATE_LIMIT_MUTATION` | `10` | Per-IP requests/minute for POST `/api/*` and `/stream` |
 | `ETH_L2_IDLE_STOP_SECONDS` | `45` | Idle stop after last WebSocket disconnect (`0` disables) |
 
-Inject `ETH_L2_API_TOKEN` through a secret manager or host environment.
-**Do not commit the token to Git, and do not embed it in frontend JavaScript.**
+Inject `ETH_L2_API_TOKEN` through a secret manager or host environment when you need
+authenticated mutations. **Do not commit the token to Git, and do not embed it in
+frontend JavaScript.**
+
+The public Vercel + Ubuntu demo leaves this variable **unset** so browsers can use
+`/stream` and Start/Stop without a client-side secret. CORS
+(`ETH_L2_ALLOWED_ORIGINS`) and rate limits still apply.
 
 ## Authenticated mutations
 

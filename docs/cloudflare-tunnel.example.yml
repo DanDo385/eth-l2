@@ -1,21 +1,23 @@
-# Cloudflare Tunnel — eth-l2 staging API (example only; do not commit secrets)
+# Cloudflare Tunnel - eth-l2 staging API (example only; do not commit secrets)
 #
 # Public hostname: https://api-staging-eth-l2.magro.dev
 # Origin on Ubuntu VPS: http://127.0.0.1:8080  (see config/ports.json → backend / staging)
 #
 # Tunnel name in production: eth-l2-ubuntu
 # systemd: cloudflared-eth-l2.service (config under /etc/cloudflared/)
+# Go API: eth-l2.service (WorkingDirectory=/home/deploy/Code/eth-l2)
 #
-# Sibling demos may still use a MacBook tunnel for other hostnames, e.g.:
-#   api-staging-eth-tx.magro.dev → MacBook :8081
-#   api-staging-eth-amm-sim.magro.dev → (separate origin)
+# Sibling demos may use other tunnels/hosts, e.g.:
+#   api-staging-eth-tx.magro.dev → separate origin (often still MacBook :8081)
+#   api-staging-eth-amm-sim.magro.dev → separate origin
 #
 # One-time (Cloudflare Zero Trust dashboard or CLI):
 #   cloudflared tunnel create eth-l2-ubuntu
 #   cloudflared tunnel route dns --overwrite-dns eth-l2-ubuntu api-staging-eth-l2.magro.dev
 #
-# Keep the Go API up on Ubuntu:
+# Keep the Go API + tunnel up on Ubuntu:
 #   sudo systemctl enable --now eth-l2 cloudflared-eth-l2
+#   curl -s https://api-staging-eth-l2.magro.dev/health/ready   # → READY
 
 tunnel: <TUNNEL_UUID>
 credentials-file: /etc/cloudflared/<TUNNEL_UUID>.json

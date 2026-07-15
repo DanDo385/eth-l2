@@ -71,12 +71,12 @@ Hosted Go + Anvil run on the Ubuntu VPS; Vercel UI talks only to the public tunn
 | Piece | Path / command |
 |-------|----------------|
 | Ports + staging origins | `config/ports.json` (`staging.publicApiOrigin`, `vercelOrigin`) |
-| VPS units | `eth-l2.service` + `cloudflared-eth-l2.service` |
-| VPS env | `/etc/eth-l2/eth-l2.env` (non-secret); API token via systemd credentials |
+| VPS units | `eth-l2.service` + `cloudflared-eth-l2.service` (`eth-l2-ubuntu` tunnel) |
+| VPS env | `/etc/eth-l2/eth-l2.env` (`GOAPI_ADDR`, CORS, `PATH` with Foundry; **no** `ETH_L2_API_TOKEN` on the public demo) |
 | Public API | `https://api-staging-eth-l2.magro.dev` → `127.0.0.1:8080` on Ubuntu |
 | Ready probe | `GET /health/ready` → plaintext `READY` |
 | Idle stop | After last lab WebSocket disconnects, wait `ETH_L2_IDLE_STOP_SECONDS` (default 45) then `Session.Stop()` |
-| Local Mac helpers (optional) | `./scripts/start-staging-backend.sh`, launchd install/uninstall - laptop demos only |
+| Local helpers (optional) | `./scripts/start-staging-backend.sh` / launchd - laptop demos only; not the hosted path |
 
 Do not put LAN IPs or tunnel credentials in Agent Mode / docs beyond the public hostname.
 
