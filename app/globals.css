@@ -62,8 +62,8 @@ html {
 }
 
 /*
- * Most lab copy uses Tailwind arbitrary px sizes (text-[10px], etc.) which ignore
- * the rem root. Bump those so the hosted UI actually reads larger.
+ * Global bump for arbitrary px utilities (sidebar + main).
+ * Dense lab copy still reads smaller than sidebar text-xs — see .lab-main below.
  */
 .text-\[7px\] {
   font-size: 9px;
@@ -79,6 +79,23 @@ html {
 }
 .text-\[11px\] {
   font-size: 13px;
+}
+
+/*
+ * Main lab column (Chain activity, scoreboard, tracker, inspector, event log,
+ * proof lab). Sidebar Demo gallery / controls already use mostly text-xs — lift
+ * the fixed-px utilities here to that same rem scale so both columns match.
+ */
+.lab-main .text-\[7px\],
+.lab-main .text-\[8px\],
+.lab-main .text-\[9px\] {
+  font-size: 0.75rem; /* = text-xs */
+}
+.lab-main .text-\[10px\] {
+  font-size: 0.8125rem; /* between xs and sm */
+}
+.lab-main .text-\[11px\] {
+  font-size: 0.875rem; /* = text-sm */
 }
 
 html[data-theme="light"] {

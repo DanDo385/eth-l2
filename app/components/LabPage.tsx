@@ -43,7 +43,7 @@ function LabContent({ mode }: { mode: LabMode }) {
         <AccountSidebar mode={mode} showEventLog={false} />
       </aside>
 
-      <section className="flex min-w-0 flex-col gap-4">
+      <section className="lab-main flex min-w-0 flex-col gap-4">
         {!state.running && <WelcomeBanner mode={mode} />}
 
         {isOptimistic ? (
