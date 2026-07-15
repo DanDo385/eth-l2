@@ -76,7 +76,7 @@ function honestExhibit(): EngineSourceExhibit {
     file: "contracts/l2/HonestSwapEngine.sol",
     contract: "HonestSwapEngine",
     role: "honest",
-    caption: "Verified swap math — fee applied before crediting token-B",
+    caption: "Verified swap math - fee applied before crediting token-B",
     lines: HONEST_SWAP_MATH,
   };
 }
@@ -100,7 +100,7 @@ export function engineCompareBundle(
           file: "contracts/l2/LyingSwapEngineObvious.sol",
           contract: "LyingSwapEngineObvious",
           role: "lying",
-          caption: "Obvious lie — flatly wrong output amount",
+          caption: "Obvious lie - flatly wrong output amount",
           lines: OBVIOUS_SWAP_MATH,
         },
       };
@@ -114,7 +114,7 @@ export function engineCompareBundle(
           file: "contracts/l2/LyingSwapEngineSubtle.sol",
           contract: "LyingSwapEngineSubtle",
           role: "lying",
-          caption: "Subtle lie — 0.30% fee silently skipped",
+          caption: "Subtle lie - 0.30% fee silently skipped",
           lines: SUBTLE_SWAP_MATH,
         },
       };
@@ -122,13 +122,13 @@ export function engineCompareBundle(
       return {
         title: "Honest engine vs BuggySwapEngine",
         summary:
-          "Not a deliberate lie — a precision bug. Dividing before multiplying truncates the per-unit rate, undercrediting the trader. A validity gate still rejects it.",
+          "Not a deliberate lie - a precision bug. Dividing before multiplying truncates the per-unit rate, undercrediting the trader. A validity gate still rejects it.",
         honest: honestExhibit(),
         lying: {
           file: "contracts/l2/BuggySwapEngine.sol",
           contract: "BuggySwapEngine",
           role: "lying",
-          caption: "Bug — early division truncates netRatePerUnit",
+          caption: "Bug - early division truncates netRatePerUnit",
           lines: BUGGY_SWAP_MATH,
         },
       };

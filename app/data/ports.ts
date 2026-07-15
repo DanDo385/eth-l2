@@ -1,6 +1,6 @@
 import portsFile from "../../config/ports.json";
 
-/** Canonical dev ports — keep in sync via config/ports.json only. */
+/** Canonical dev ports - keep in sync via config/ports.json only. */
 export const PORTS = portsFile;
 
 /** Public Cloudflare Tunnel hostname (no LAN IPs). */

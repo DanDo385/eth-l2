@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-/** Public Cloudflare Tunnel hostname — never a LAN IP. */
+/** Public Cloudflare Tunnel hostname - never a LAN IP. */
 const DEFAULT_BACKEND_ORIGIN = "https://api-staging-eth-l2.magro.dev";
 
 const nextConfig: NextConfig = {

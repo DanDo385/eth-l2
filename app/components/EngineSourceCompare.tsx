@@ -41,7 +41,7 @@ function CodeBlock({
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-zinc-800/80 px-2.5 py-1.5">
         <p className={`font-mono text-[10px] ${headerTone}`}>
           {shortFile(exhibit.file)}
-          {resolved ? `:${resolved.line}` : ""} —{" "}
+          {resolved ? `:${resolved.line}` : ""} -{" "}
           {tone === "honest" ? "honest engine" : "this batch's engine"}
         </p>
         <p className="text-[9px] text-zinc-600">{exhibit.caption}</p>
@@ -109,7 +109,7 @@ export function EngineSourceCompare({
         )}
         {!bundle && (
           <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
-            Resolved from the deployed bytecode source map — honest engine vs the
+            Resolved from the deployed bytecode source map - honest engine vs the
             engine this batch actually ran.
           </p>
         )}
@@ -162,7 +162,7 @@ function FallbackLine({
   return (
     <div className={`rounded-lg border p-2.5 ${classes}`}>
       <p className={`mb-1 font-mono text-[10px] ${labelClass}`}>
-        {shortFile(source.file)}:{source.line} — {label}
+        {shortFile(source.file)}:{source.line} - {label}
       </p>
       <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed">
         {source.lineText}

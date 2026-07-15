@@ -346,7 +346,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             )}
             {batch.flagged && !batch.resolved && batch.challenged && (
               <p className="text-[10px] text-zinc-600 text-center">
-                Dispute in progress — see Optimistic Tracker for swap rollback and bond ledger.
+                Dispute in progress - see Optimistic Tracker for swap rollback and bond ledger.
               </p>
             )}
           </div>

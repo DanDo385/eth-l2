@@ -124,6 +124,6 @@ export const ZK_DA_CAVEAT =
 export function zkOneLiner(data: ZkInspectPayload): string {
   const swaps = data.txCount ? ` · ${data.txCount} swap${data.txCount === 1 ? "" : "s"}` : "";
   return data.accepted
-    ? `Batch #${data.batchId}: verifier accepted${swaps} — root advances in this simplified model.`
-    : `Batch #${data.batchId}: verifier rejected${swaps} — canonical root unchanged.`;
+    ? `Batch #${data.batchId}: verifier accepted${swaps} - root advances in this simplified model.`
+    : `Batch #${data.batchId}: verifier rejected${swaps} - canonical root unchanged.`;
 }

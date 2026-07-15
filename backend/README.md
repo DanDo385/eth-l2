@@ -10,7 +10,7 @@ Default listen address: `127.0.0.1:8080` (see `config/ports.json`).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `GOAPI_ADDR` | from `ports.json` | Full bind address (`host:port`) |
-| `PORT` | — | Bind `127.0.0.1:<PORT>` when `GOAPI_ADDR` unset |
+| `PORT` | - | Bind `127.0.0.1:<PORT>` when `GOAPI_ADDR` unset |
 | `ETH_L2_ALLOWED_ORIGINS` | unset (permissive `*`) | Comma-separated CORS allowlist. When set, GET `/api/*` requires an allowlisted `Origin` or no `Origin` (server-to-server). Never restores `*` once configured. |
 | `ETH_L2_API_TOKEN` | unset | Bearer token for mutations + `/stream`. Unset = local-dev mode (auth disabled; startup warns). |
 | `ETH_L2_TRUST_X_FORWARDED_FOR` | unset | Set `1`/`true` to take client IP from `X-Forwarded-For` for rate limiting. Otherwise `RemoteAddr` only. |
@@ -39,10 +39,10 @@ curl -sS -X POST http://127.0.0.1:8080/api/pause \
 ## WebSocket authentication
 
 Browsers cannot set `Authorization` on `WebSocket`. Pass the token as a
-**subprotocol** (never as a query parameter — query strings hit access logs):
+**subprotocol** (never as a query parameter - query strings hit access logs):
 
 ```js
-// token from secret manager / server injection — not from committed JS
+// token from secret manager / server injection - not from committed JS
 const ws = new WebSocket(WS_URL, [`eth-l2.bearer.${token}`]);
 ```
 

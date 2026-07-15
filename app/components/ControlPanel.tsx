@@ -62,7 +62,7 @@ export function ControlPanel() {
         <p className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-2.5 py-2 text-[10px] leading-relaxed text-amber-400/90">
           {IS_REMOTE_BACKEND ? (
             <>
-              Backend offline — the explainer UI still works. Live simulation needs
+              Backend offline - the explainer UI still works. Live simulation needs
               the Ubuntu Go API reachable via the Cloudflare Tunnel (
               <span className="font-mono text-amber-200">
                 api-staging-eth-l2.magro.dev
@@ -201,7 +201,7 @@ export function ControlPanel() {
               On expiry the simulation stops and tears down Anvil (same as
               Stop). 60s usually surfaces {OP_SUSPICIOUS_60S} suspicious OP
               batches; 120s usually surfaces {OP_SUSPICIOUS_120S}. The app never
-              auto-challenges — you decide.
+              auto-challenges - you decide.
             </>
           }
           trailing={
@@ -233,7 +233,7 @@ export function ControlPanel() {
         </div>
         {expired && (
           <p className="text-[10px] text-amber-300/90">
-            Session expired — simulation stopped. Start or pick a demo to run again.
+            Session expired - simulation stopped. Start or pick a demo to run again.
           </p>
         )}
       </div>

@@ -16,7 +16,7 @@ function traderLabel(index: number): string {
 
 function traderAddr(index: number): string {
   const acct = DEMO_ACCOUNTS[3 + index];
-  return acct ? acct.addr : "—";
+  return acct ? acct.addr : "-";
 }
 
 function netDelta(s: SwapSummary): number {
@@ -117,7 +117,7 @@ export function SwapDetailList({
                       {delta > 0 ? `+${delta}` : delta}
                     </td>
                     <td className="py-1.5 pr-2 text-right font-mono text-zinc-500">
-                      {s.gasUsed != null && s.gasUsed > 0 ? s.gasUsed.toLocaleString() : "—"}
+                      {s.gasUsed != null && s.gasUsed > 0 ? s.gasUsed.toLocaleString() : "-"}
                     </td>
                     <td className="py-1.5 pr-2 font-mono text-zinc-500" title={s.txHash}>
                       {shortHash(s.txHash)}

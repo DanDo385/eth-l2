@@ -63,7 +63,7 @@ function BatchChip({
     <button
       type="button"
       onClick={onClick}
-      title={`${status.short} · L2 ${batch.l2StartBlock}–${batch.l2EndBlock} · ${batch.txCount} swaps`}
+      title={`${status.short} · L2 ${batch.l2StartBlock}-${batch.l2EndBlock} · ${batch.txCount} swaps`}
       className={`shrink-0 rounded-md border px-2 py-1 text-left transition-all hover:brightness-110 ${status.border} ${status.bg} ${
         selected ? "ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-950" : ""
       }`}
@@ -78,7 +78,7 @@ function BatchChip({
         )}
       </div>
       <p className="mt-0.5 font-mono text-[8px] text-zinc-500">
-        {batch.l2StartBlock}–{batch.l2EndBlock} · {batch.txCount}tx
+        {batch.l2StartBlock}-{batch.l2EndBlock} · {batch.txCount}tx
       </p>
     </button>
   );
@@ -86,7 +86,7 @@ function BatchChip({
 
 /**
  * Dispute phase for the reroute diagram. Only "rejected" (fraud proven on L1)
- * may show rollback/slash outcomes — a watcher flag is off-chain detection,
+ * may show rollback/slash outcomes - a watcher flag is off-chain detection,
  * not an L1 rejection, and a live challenge has no outcome yet.
  */
 function reroutePhase(batch: BatchInfo): "rejected" | "disputing" | "flagged" | "open" {
@@ -205,7 +205,7 @@ function RerouteDiagram({ batch, swaps }: { batch: BatchInfo; swaps: ReturnType<
           {phase === "open" && batch.engineType === "honest" && (
             <div className="rounded border border-emerald-800 bg-emerald-950/20 p-2">
               <p className="text-emerald-400 font-semibold">All canonical</p>
-              <p className="text-zinc-500">No rollback — root matches honest replay.</p>
+              <p className="text-zinc-500">No rollback - root matches honest replay.</p>
             </div>
           )}
           {phase === "open" && batch.engineType !== "honest" && (
@@ -302,7 +302,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
           Optimistic rollup lifecycle
         </p>
         <p className="text-sm text-zinc-600 leading-relaxed">
-          Start a simulation to track every OP batch here — including batches that scroll off the
+          Start a simulation to track every OP batch here - including batches that scroll off the
           canvas. Swaps, L1 bonds, rollbacks, and balance changes stay visible for the whole session.
         </p>
       </div>
@@ -317,7 +317,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
             Optimistic rollup lifecycle
           </p>
           <InfoTip label="About the lifecycle tracker" placement="panel">
-            Full session history — batches never disappear when they leave the canvas.
+            Full session history - batches never disappear when they leave the canvas.
             Suspicious roots wait until you verify locally and choose whether to challenge.
             In this lab, &ldquo;output root&rdquo;, &ldquo;state root&rdquo;, and
             &ldquo;assertion&rdquo; all mean the sequencer&rsquo;s posted L2 commitment.
@@ -381,7 +381,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
             exit={{ opacity: 0, y: -8 }}
             className="grid grid-cols-1 items-start gap-3 border-t border-zinc-800 pt-4 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-3"
           >
-            {/* Pack to content height — avoid equal-height column stretch / blank patches */}
+            {/* Pack to content height - avoid equal-height column stretch / blank patches */}
             <div className="space-y-3">
               <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
                 <p className="mb-2 text-[10px] font-semibold text-blue-400">
@@ -394,7 +394,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
                 <SwapDetailList
                   swaps={swaps}
                   layout="table"
-                  note={`One state root covers every swap below. If any transition is wrong, the entire batch is invalid — ${
+                  note={`One state root covers every swap below. If any transition is wrong, the entire batch is invalid - ${
                     swaps.filter((s) => !s.isDivergent).length
                   } good swap${
                     swaps.filter((s) => !s.isDivergent).length === 1 ? "" : "s"
@@ -624,7 +624,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
         </div>
         <p className="text-[9px] text-zinc-700 mt-2 leading-relaxed">
           Bonds are {PORTAL_BOND_ETH} ETH per post/challenge in this lab. Production rollups use
-          similar economics at larger scale — the challenger must be right or they lose their bond too.
+          similar economics at larger scale - the challenger must be right or they lose their bond too.
         </p>
       </details>
     </div>

@@ -32,7 +32,7 @@ function shortHash(h: string): string {
 }
 
 function weiToEth(wei?: string): string {
-  if (!wei) return "—";
+  if (!wei) return "-";
   return `${(Number(wei) / 1e18).toFixed(4)} ETH`;
 }
 
@@ -92,7 +92,7 @@ function OpBatchDetail({ batch }: { batch: BatchInfo }) {
       <div className="grid grid-cols-[5.5rem_1fr] gap-x-2 gap-y-1 font-mono">
         <DetailRow label="engine">{batch.engineType}</DetailRow>
         <DetailRow label="L2 range">
-          #{batch.l2StartBlock}–#{batch.l2EndBlock}
+          #{batch.l2StartBlock}-#{batch.l2EndBlock}
         </DetailRow>
         <DetailRow label="tx count">{batch.txCount} swap(s)</DetailRow>
         {batch.status && <DetailRow label="status">{batch.status}</DetailRow>}
@@ -292,7 +292,7 @@ export function EventLogPanel({ mode }: { mode: LabMode }) {
           Recent
         </p>
         {recent.length === 0 ? (
-          <p className="text-xs text-zinc-600">No events yet — start a demo.</p>
+          <p className="text-xs text-zinc-600">No events yet - start a demo.</p>
         ) : (
           <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-5">
             {recent.map((entry, i) => (

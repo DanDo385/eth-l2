@@ -89,7 +89,7 @@ export default function Home() {
                 <span className="font-mono text-zinc-300">
                   https://api-staging-eth-l2.magro.dev
                 </span>
-                . If the status above is offline, you can still read the labs —
+                . If the status above is offline, you can still read the labs -
                 Start / demos stay disabled until the tunnel is up.
               </>
             ) : (

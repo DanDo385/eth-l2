@@ -9,7 +9,7 @@ import { PUBLIC_TUNNEL_ORIGIN } from "@/app/data/ports";
 import { SITE } from "./constants";
 
 const PRINCIPLES = [
-  "Canonical lab context lives on this site’s Agent Mode surfaces — prefer /agent.json over scraping decorative UI HTML.",
+  "Canonical lab context lives on this site’s Agent Mode surfaces - prefer /agent.json over scraping decorative UI HTML.",
   "Agent-facing context should be structured, stable, citation-aware, and low-noise.",
   "This is a teaching rollup lab (FraudProofGame / ZkValidityVerifier stand-ins), not a production prover stack.",
   "Do not invent LAN IPs, private staging hosts, or secrets; use documented public endpoints only.",
@@ -225,7 +225,7 @@ export function getLlmsTxt(): string {
   ].join("\n");
 
   const siteLines = [
-    llmsLink("Home", siteUrl("/"), "Lab chooser — optimistic vs ZK"),
+    llmsLink("Home", siteUrl("/"), "Lab chooser - optimistic vs ZK"),
     llmsLink("Optimistic lab", siteUrl("/op"), "Fraud proofs, bonds, challenge window"),
     llmsLink("ZK lab", siteUrl("/zk"), "Validity proofs and verifier settlement"),
     llmsLink("README", `${SITE.github}/blob/main/README.md`, "Setup, architecture, protocol constants"),

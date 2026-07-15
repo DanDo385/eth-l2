@@ -85,7 +85,7 @@ export function Scoreboard({ mode = "all" }: Props) {
             </span>
             <InfoTip label="About watcher vs resolution rates" placement="panel">
               Flagging reaches 100% because this demo&apos;s honest watcher replays every
-              batch. Resolution only rises when a user verifies and challenges — detection
+              batch. Resolution only rises when a user verifies and challenges - detection
               alone rejects nothing on L1.
             </InfoTip>
           </div>
@@ -143,7 +143,7 @@ export function Scoreboard({ mode = "all" }: Props) {
                 label="Resolved fraud"
                 value={resolved}
                 valueClass="text-red-400"
-                title="Disputes finished — sequencer lost bond, batch rejected"
+                title="Disputes finished - sequencer lost bond, batch rejected"
               />
             </div>
             <p className="text-[10px] leading-snug text-zinc-600">

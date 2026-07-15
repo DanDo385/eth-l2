@@ -205,7 +205,7 @@ export function batchLedgerLines(batch: BatchInfo): LedgerLine[] {
     account: seq.role,
     role: seq.addr,
     deltaEth: `−${PORTAL_BOND_ETH.toFixed(2)}`,
-    note: `postBatch #${batch.batchId} — bond locked on L1`,
+    note: `postBatch #${batch.batchId} - bond locked on L1`,
   });
 
   for (const swap of swaps) {
@@ -220,7 +220,7 @@ export function batchLedgerLines(batch: BatchInfo): LedgerLine[] {
         role: trader.addr,
         deltaTokenA: `−${swap.amountIn}`,
         deltaTokenB: `+${honest}`,
-        note: `Swap L2 block ${swap.l2Block} — honest execution`,
+        note: `Swap L2 block ${swap.l2Block} - honest execution`,
       });
     } else if (batch.resolved) {
       lines.push({
@@ -229,7 +229,7 @@ export function batchLedgerLines(batch: BatchInfo): LedgerLine[] {
         deltaTokenA: "0",
         deltaTokenB: swap.isDivergent ? `+${claimed} → 0` : `+${claimed} → +${honest}`,
         note: swap.isDivergent
-          ? "Fraud pin — balanceB write reverted with batch"
+          ? "Fraud pin - balanceB write reverted with batch"
           : "Rolled back then re-queued with honest amountOut",
       });
     } else {
@@ -239,8 +239,8 @@ export function batchLedgerLines(batch: BatchInfo): LedgerLine[] {
         deltaTokenA: `−${swap.amountIn}`,
         deltaTokenB: `+${claimed}${claimed !== honest ? ` (honest would be +${honest})` : ""}`,
         note: swap.isDivergent
-          ? "Divergence target — wrong balanceB credited"
-          : "Bundled with bad root — will roll back if challenged",
+          ? "Divergence target - wrong balanceB credited"
+          : "Bundled with bad root - will roll back if challenged",
       });
     }
   }
@@ -254,20 +254,20 @@ export function batchLedgerLines(batch: BatchInfo): LedgerLine[] {
         account: chal.role,
         role: chal.addr,
         deltaEth: `−${PORTAL_BOND_ETH.toFixed(2)} then +${payout}`,
-        note: `Won dispute — ${burn} ETH burned from loser's stake`,
+        note: `Won dispute - ${burn} ETH burned from loser's stake`,
       });
       lines.push({
         account: seq.role,
         role: seq.addr,
         deltaEth: `−${PORTAL_BOND_ETH.toFixed(2)}`,
-        note: "Sequencer bond forfeited — fraud proven",
+        note: "Sequencer bond forfeited - fraud proven",
       });
     } else {
       lines.push({
         account: seq.role,
         role: seq.addr,
         deltaEth: `+${payout}`,
-        note: "Challenge window expired — bond returned",
+        note: "Challenge window expired - bond returned",
       });
     }
   } else if (batch.challenged && !batch.resolved) {

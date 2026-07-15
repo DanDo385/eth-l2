@@ -41,7 +41,7 @@ export function challengeWindowNote(batch: BatchInfo): string | null {
   const left = challengeWindowRemaining(batch.submittedAt);
   if (left === null) return null;
   if (left === 0) {
-    return "Challenge window closed — an honest batch can finalize and return the sequencer bond.";
+    return "Challenge window closed - an honest batch can finalize and return the sequencer bond.";
   }
   return `Challenge window: ${left}s remaining. Anyone can dispute before it closes; after that, an honest batch finalizes on L1.`;
 }
@@ -52,7 +52,7 @@ export function bondSettlementNote(batch: BatchInfo): string | null {
   const payoutEth = (Number(b.payoutWei) / 1e18).toFixed(3);
   const burnEth = (Number(b.burnedWei) / 1e18).toFixed(3);
   if (b.outcome === "unchallenged") {
-    return `No challenge within ${CHALLENGE_WINDOW_SECONDS}s — sequencer recovered ${payoutEth} ETH bond.`;
+    return `No challenge within ${CHALLENGE_WINDOW_SECONDS}s - sequencer recovered ${payoutEth} ETH bond.`;
   }
   const winner = b.winner === "challenger" ? "Challenger" : "Sequencer";
   return `${winner} won the bond pot: ${payoutEth} ETH paid out, ${burnEth} ETH burned from the loser's stake (${SLASH_BURN_BPS / 100}% anti-griefing).`;
@@ -265,7 +265,7 @@ export const HOW_IT_WORKS_STEPS = [
   {
     n: "3",
     title: "Honest watcher checks",
-    body: "An independent node replays every swap in the batch using the verified engine. If its computed state root doesn't match the sequencer's posted root, it flags the batch yellow. A flag is off-chain detection only — L1 does not reject anything until someone challenges.",
+    body: "An independent node replays every swap in the batch using the verified engine. If its computed state root doesn't match the sequencer's posted root, it flags the batch yellow. A flag is off-chain detection only - L1 does not reject anything until someone challenges.",
     color: "text-yellow-400",
     border: "border-yellow-800",
   },

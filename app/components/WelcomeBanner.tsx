@@ -101,7 +101,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
               <p className="border-t border-zinc-800 pt-3 text-[11px] leading-relaxed text-zinc-600">
                 {isZk
                   ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
-                  : "A watcher flag is not a challenge — nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
+                  : "A watcher flag is not a challenge - nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}
               </p>
             </div>
           </motion.div>

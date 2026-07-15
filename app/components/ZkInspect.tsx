@@ -14,7 +14,7 @@ import {
 } from "../data/zkEducation";
 
 function shortHash(h?: string) {
-  if (!h) return "—";
+  if (!h) return "-";
   return h.length > 14 ? h.slice(0, 10) + "…" + h.slice(-4) : h;
 }
 
@@ -117,7 +117,7 @@ export function ZkInspect({ data, onClose }: Props) {
             </div>
             <div>
               <p className="text-zinc-500">Witness accounts (demo)</p>
-              <p className="font-mono text-zinc-300">{data.witnessAccounts ?? "—"}</p>
+              <p className="font-mono text-zinc-300">{data.witnessAccounts ?? "-"}</p>
             </div>
           </div>
         </div>

@@ -61,7 +61,7 @@ function LabHeader({ mode }: HeaderProps) {
                 ? "simulation paused"
                 : "simulation running"
               : state.connected
-                ? "ready — pick a demo to start"
+                ? "ready - pick a demo to start"
                 : ""}
           </span>
           <span

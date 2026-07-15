@@ -33,7 +33,7 @@ export const MAINNET_SIMPLIFICATIONS = [
     title: "Fraud proof",
     sim: "Single swap VM step on L1",
     mainnet: "Full Cannon / MIPS bisection over millions of steps",
-    note: "Same idea — narrow to one instruction — scaled down for teaching.",
+    note: "Same idea - narrow to one instruction - scaled down for teaching.",
   },
   {
     title: "Withdrawals & bridges",
@@ -45,7 +45,7 @@ export const MAINNET_SIMPLIFICATIONS = [
     title: "Re-sequencing",
     sim: "Good swaps shown rolling into the next canonical batch",
     mainnet: "Sequencer re-includes txs; users may see reordering",
-    note: "Visual shorthand — we don't replay every tx on-chain in the UI.",
+    note: "Visual shorthand - we don't replay every tx on-chain in the UI.",
   },
 ] as const;
 
@@ -82,15 +82,15 @@ export function swapStatusLabel(status: SwapLifecycleStatus): string {
     case "challenge_window":
       return "Soft-confirmed (window open)";
     case "suspicious":
-      return "Flagged — awaiting challenge";
+      return "Flagged - awaiting challenge";
     case "in_dispute":
-      return "Frozen — dispute live";
+      return "Frozen - dispute live";
     case "rolled_back":
       return "Rolled back with batch";
     case "resequenced":
       return "Re-queued for next batch";
     case "invalid":
-      return "Fraud pin — proof target";
+      return "Fraud pin - proof target";
   }
 }
 
@@ -170,7 +170,7 @@ export function batchPipelineStage(batch: BatchInfo): {
   if (batch.flagged) {
     return {
       stage: "Flagged by watcher (off-chain)",
-      detail: "Watcher found a root mismatch by local replay. L1 does not know yet — someone must challenge before the window closes.",
+      detail: "Watcher found a root mismatch by local replay. L1 does not know yet - someone must challenge before the window closes.",
       pct: 50,
     };
   }
@@ -205,7 +205,7 @@ export function finalityImpact(batch: BatchInfo): {
     return {
       label: "Finality frozen",
       blocksDelayed: span,
-      explanation: "Neither accepted nor rejected yet — users should not rely on this batch for withdrawals or cross-chain actions.",
+      explanation: "Neither accepted nor rejected yet - users should not rely on this batch for withdrawals or cross-chain actions.",
     };
   }
   return {
@@ -244,7 +244,7 @@ export function l1ImpactLines(batch: BatchInfo): string[] {
     lines.push("Challenger bond is slashed/transferred for an invalid challenge");
   }
   if (batch.finalized && batch.engineType === "honest") {
-    lines.push("finalizeBatch — challenge window expired; bond returned to sequencer");
+    lines.push("finalizeBatch - challenge window expired; bond returned to sequencer");
     lines.push("Withdrawals may finalize against this accepted root");
   }
   return lines;
@@ -257,13 +257,13 @@ export function rerouteNarrative(batch: BatchInfo, swaps: SwapSummary[]): string
     return "All swaps in this batch share one honest state root. After the challenge window they remain canonical.";
   }
   if (!batch.resolved && !batch.flagged && !batch.challenged) {
-    return "If fraud is proven, every swap in the batch rolls back together — even swaps that would have been valid in isolation.";
+    return "If fraud is proven, every swap in the batch rolls back together - even swaps that would have been valid in isolation.";
   }
   if (!batch.resolved && batch.challenged) {
     return "Challenge submitted on L1: both bonds are locked while FraudProofGame narrows the disagreement. If the challenger wins the one-step proof, every swap here rolls back together.";
   }
   if (!batch.resolved && batch.flagged) {
-    return "Watcher flagged this root off-chain. Nothing has been rejected on L1 yet — a participant must verify locally and submit a challenge before the window closes, or the bad root finalizes.";
+    return "Watcher flagged this root off-chain. Nothing has been rejected on L1 yet - a participant must verify locally and submit a challenge before the window closes, or the bad root finalizes.";
   }
   const goodN = good.length;
   const badN = bad.length;
@@ -271,7 +271,7 @@ export function rerouteNarrative(batch: BatchInfo, swaps: SwapSummary[]): string
   if (goodN === 0) {
     return "Fraud batch rejected entirely on L1.";
   }
-  return `${goodN} swap${goodN === 1 ? "" : "s"} had valid intent but were bundled with ${badN} fraudulent state transition${badN === 1 ? "" : "s"}. They roll into batch #${nextBatch} (next window) after the bad root is rejected — finality for those users is delayed by at least one batch.`;
+  return `${goodN} swap${goodN === 1 ? "" : "s"} had valid intent but were bundled with ${badN} fraudulent state transition${badN === 1 ? "" : "s"}. They roll into batch #${nextBatch} (next window) after the bad root is rejected - finality for those users is delayed by at least one batch.`;
 }
 
 export function honestAmountOut(amountIn: number): number {
@@ -295,7 +295,7 @@ export function claimedAmountOut(
   }
 }
 
-/** Fallback when /api/state predates swap summaries — deterministic teaching stand-in. */
+/** Fallback when /api/state predates swap summaries - deterministic teaching stand-in. */
 export function synthesizeSwaps(batch: BatchInfo): SwapSummary[] {
   const count = Math.max(batch.txCount, 1);
   const swaps: SwapSummary[] = [];

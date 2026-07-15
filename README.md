@@ -19,10 +19,10 @@ A live interactive demo of **optimistic and ZK rollup mechanics**: trades on L2,
 1. **Three local chains** (L1 + OP-L2 + ZK-L2) are spawned by the Go backend using Anvil.
 2. **Bots** send swap transactions to L2 swap engines.
 3. The **OP sequencer** (seeded PRNG) batches txs, posts state roots to L1 with a **0.1 ETH bond**.
-4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged` (off-chain detection only — L1 does not reject until someone challenges).
+4. The **honest watcher** replays each batch; root mismatches emit `batch_flagged` (off-chain detection only - L1 does not reject until someone challenges).
 5. The user opens a suspicious batch, clicks **Verify locally**, then chooses whether to post the L1 challenge bond and open `FraudProofGame` (Merkle bisection + on-chain step re-execution). The app never auto-challenges.
 6. **Honest batches** finalize after a **120s challenge window** if undisputed; failed challenges slash the challenger and successful challenges reject the bad root.
-7. The **ZK sequencer** batches L2 swaps, posts a header + witness to `ZkRollupMock`, and `ZkValidityVerifier` re-executes the witness on L1 (stand-in for a succinct proof) — no challenge window.
+7. The **ZK sequencer** batches L2 swaps, posts a header + witness to `ZkRollupMock`, and `ZkValidityVerifier` re-executes the witness on L1 (stand-in for a succinct proof) - no challenge window.
 8. The **frontend** opens to a lab chooser, then streams WebSocket events into focused optimistic (`/op`, alias `/optimistic`) and ZK (`/zk`) labs. OP: grouped batch canvas, Block Inspector, Optimistic Tracker (swap lifecycle + bond ledger), opcode walkthroughs. ZK: grouped proof-batch canvas (click to open concept tour), public-input panel in `ZkInspect`, validity/DA caveats.
 
 ## Protocol summary
@@ -80,7 +80,7 @@ All local ports live in **[config/ports.json](config/ports.json)** (see [config/
 
 Open the frontend URL from that file (default [http://127.0.0.1:3001](http://127.0.0.1:3001)), then choose **Optimistic Rollup Lab** or **ZK Rollup Lab**. Direct routes: `/op`, `/optimistic`, `/zk`.
 
-The frontend needs the Go backend on the **backend.port** from the same file (REST + WebSocket). If the control panel stays on “connecting to backend…” or shows a red **disconnected** dot, the API is not running — use `make dev` (both processes) or `make backend` alongside `make frontend`.
+The frontend needs the Go backend on the **backend.port** from the same file (REST + WebSocket). If the control panel stays on “connecting to backend…” or shows a red **disconnected** dot, the API is not running - use `make dev` (both processes) or `make backend` alongside `make frontend`.
 
 ### Troubleshooting connection
 
@@ -88,7 +88,7 @@ The frontend needs the Go backend on the **backend.port** from the same file (RE
 |---------|----------------|-----|
 | “connecting to backend…” then **backend unreachable** | Only Next.js is running (`pnpm dev`) | `make dev` or `make backend` in a second terminal |
 | **backend offline** after `vercel env pull` | `.env.local` has `NEXT_PUBLIC_API_URL=same-origin` / tunnel WS, but local Next does not proxy `/api` | Clear those vars from `.env.local` (local `next dev` now ignores them unless `ETH_L2_ENABLE_API_PROXY=1`) and hard-refresh |
-| Red **disconnected** in header | Same — nothing listening on `:8080` | `lsof -nP -iTCP:8080 -sTCP:LISTEN` should show the Go `server` process |
+| Red **disconnected** in header | Same - nothing listening on `:8080` | `lsof -nP -iTCP:8080 -sTCP:LISTEN` should show the Go `server` process |
 | Stale port after a crash | Old node/go process still bound | `make stop` then `make dev` |
 | Hosted frontend, Ubuntu API offline | Tunnel / Go not running | UI still loads as an explainer; status shows **backend offline**; Start stays disabled until `https://api-staging-eth-l2.magro.dev/health/ready` returns `READY` |
 
@@ -108,11 +108,11 @@ curl -s http://127.0.0.1:8080/api/state
 
 **2 terminals (debugging):** `make backend` + `make frontend`
 
-**E2E tests:** backend + frontend running, then `make test-e2e` (or `pnpm test:e2e` — Playwright starts the frontend automatically if configured in `playwright.config.ts`).
+**E2E tests:** backend + frontend running, then `make test-e2e` (or `pnpm test:e2e` - Playwright starts the frontend automatically if configured in `playwright.config.ts`).
 
 ## Hosted split (Vercel + Ubuntu)
 
-Long-running work (Go API, Anvil L1/OP/ZK, WebSocket `/stream`, fraud/ZK compute) runs on the Ubuntu VPS. The interactive UI deploys to Vercel and reaches the API only through the public Cloudflare Tunnel hostname — never a LAN IP.
+Long-running work (Go API, Anvil L1/OP/ZK, WebSocket `/stream`, fraud/ZK compute) runs on the Ubuntu VPS. The interactive UI deploys to Vercel and reaches the API only through the public Cloudflare Tunnel hostname - never a LAN IP.
 
 ```
 Visitor browser
@@ -178,7 +178,7 @@ If the tunnel is down, the Vercel UI still loads; home/lab show an explicit **ba
 
 ### Idle stop (no viewers)
 
-When the last lab WebSocket client disconnects (tab closed, left `/op` or `/zk`), the backend waits **45s** then calls `Stop()` — Anvil chains and the tick loop shut down so a forgotten Vercel session does not keep mining. Reconnect within the grace window cancels the stop (tab refresh / brief tunnel blip).
+When the last lab WebSocket client disconnects (tab closed, left `/op` or `/zk`), the backend waits **45s** then calls `Stop()` - Anvil chains and the tick loop shut down so a forgotten Vercel session does not keep mining. Reconnect within the grace window cancels the stop (tab refresh / brief tunnel blip).
 
 Override: `ETH_L2_IDLE_STOP_SECONDS` (default `45`; `0` disables).
 
@@ -197,9 +197,9 @@ Default speed: **3×**. Default seed: **42**. Optional **60s / 120s session time
 
 ## Prerequisites
 
-- **Foundry** — [getfoundry.sh](https://getfoundry.sh) or `brew install foundry`
-- **Go 1.22+** — [go.dev](https://go.dev/dl/)
-- **Node.js 20+ + pnpm** — `npm install -g pnpm`
+- **Foundry** - [getfoundry.sh](https://getfoundry.sh) or `brew install foundry`
+- **Go 1.22+** - [go.dev](https://go.dev/dl/)
+- **Node.js 20+ + pnpm** - `npm install -g pnpm`
 
 ## Makefile targets
 
@@ -249,7 +249,7 @@ app/                Next.js 16
                     WelcomeBanner, ResearchPanel, Scoreboard, EventLogPanel, …
   data/             batchEducation, opTrackerEducation, traceNarrative, zkEducation, protocol, ports
   lib/              WS client, reducer, opLedger, URL helpers
-config/             ports.json — canonical dev ports
+config/             ports.json - canonical dev ports
 ```
 
 Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS`, `ETH_L2_API_TOKEN` (see [backend/README.md](backend/README.md)). Frontend / Vercel: see [.env.example](.env.example).
@@ -275,7 +275,7 @@ make test-e2e          # Playwright layout tests for /, /op, /zk (+ mobile/table
 ## Why this tech stack?
 
 ### Foundry
-Rollup mechanics live on-chain. **Foundry** compiles Solidity mocks (`FraudProofGame`, `ZkValidityVerifier`, swap engines) and runs `forge test` in one command — same language family as OP Stack / zkSync.
+Rollup mechanics live on-chain. **Foundry** compiles Solidity mocks (`FraudProofGame`, `ZkValidityVerifier`, swap engines) and runs `forge test` in one command - same language family as OP Stack / zkSync.
 
 ### Anvil
 Three chains with instant finality. **`--steps-tracing`** and `debug_traceCall` power the watcher and opcode diff.
@@ -287,7 +287,7 @@ One binary coordinates Anvil, bots, sequencers, watcher, local verification, use
 Client-side reducer over a WebSocket event stream; motion for block entry and proof overlays.
 
 ### Seeded PRNG
-`keccak256`-chain PRNG with fork-safe sub-streams — same seed ⇒ same fraud pattern for repeatable demo sessions.
+`keccak256`-chain PRNG with fork-safe sub-streams - same seed ⇒ same fraud pattern for repeatable demo sessions.
 
 ### Playwright
 Layout regressions for the home chooser, OP lab, and ZK lab across idle, mobile (375px), and tablet (768px) viewports; screenshots under `public/screenshots/`.

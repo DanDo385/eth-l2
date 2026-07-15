@@ -4,7 +4,7 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 
 | Service | Port | Notes |
 |---------|------|--------|
-| Frontend (Next.js) | **3001** | Not Next's default `3000` — leaves room for other apps |
+| Frontend (Next.js) | **3001** | Not Next's default `3000` - leaves room for other apps |
 | Backend (Go REST + WS) | **8080** | eth-tx-lifecycle uses **8081**; override bind with `GOAPI_ADDR` or `PORT` |
 | Anvil L1 | **8545** | Foundry default |
 | Anvil OP L2 | **9545** | `+1000` from L1 |
@@ -12,12 +12,12 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 
 ## Consumers
 
-- `app/data/ports.ts` — frontend URLs (override API with `NEXT_PUBLIC_API_URL`)
-- `backend/internal/config/ports.go` — load at server start; seeds `chain.Chains`
-- `scripts/lib/ports.sh` — shell exports for staging / launchd scripts
-- `Makefile` — `make dev` / `make stop` read ports via `node`
-- `bin/.env.sh` — chain RPC env vars
-- `foundry.toml` `[rpc_endpoints]` — keep in sync manually (same host/ports)
+- `app/data/ports.ts` - frontend URLs (override API with `NEXT_PUBLIC_API_URL`)
+- `backend/internal/config/ports.go` - load at server start; seeds `chain.Chains`
+- `scripts/lib/ports.sh` - shell exports for staging / launchd scripts
+- `Makefile` - `make dev` / `make stop` read ports via `node`
+- `bin/.env.sh` - chain RPC env vars
+- `foundry.toml` `[rpc_endpoints]` - keep in sync manually (same host/ports)
 
 ## Overrides
 

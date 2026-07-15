@@ -58,7 +58,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           keepalive: true,
         });
       } catch {
-        // ignore — idle-stop watchdog still applies
+        // ignore - idle-stop watchdog still applies
       }
     };
     window.addEventListener("pagehide", stopOnLeave);

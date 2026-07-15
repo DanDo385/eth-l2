@@ -19,7 +19,7 @@ export function useSessionControls() {
   const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [awaitingBackend, setAwaitingBackend] = useState(true);
-  /** Seed of the last successful start — highlights the matching demo card. */
+  /** Seed of the last successful start - highlights the matching demo card. */
   const [activeSeed, setActiveSeed] = useState<number | null>(null);
 
   const connected = state.connected;
@@ -143,7 +143,7 @@ export function useSessionControls() {
     return () => clearInterval(timer);
   }, [active, paused, expired]);
 
-  // Stop when the session timer hits zero — tears down Anvil so a forgotten
+  // Stop when the session timer hits zero - tears down Anvil so a forgotten
   // tab does not keep the Ubuntu Anvil session mining. Must not dispatch from inside a
   // setState updater (that updates AppStoreProvider during this provider's render).
   useEffect(() => {

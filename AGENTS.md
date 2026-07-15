@@ -20,7 +20,7 @@ The technical hook is: bad batch → watcher flags (off-chain) → user verifies
 
 ## Agent Mode (product surface)
 
-This repo ships **Agent Mode** for AI systems — structured, low-noise context alongside the human UI. Keep it updated in the same change as site/content updates.
+This repo ships **Agent Mode** for AI systems - structured, low-noise context alongside the human UI. Keep it updated in the same change as site/content updates.
 
 | Surface | Path | Source |
 |---------|------|--------|
@@ -34,13 +34,13 @@ This repo ships **Agent Mode** for AI systems — structured, low-noise context 
 
 - Demo scenarios (OP/ZK seeds, titles, captions) from `app/data/demoGallery.ts`
 - Protocol constants from `app/data/protocol.ts`
-- Public tunnel origin for demo health notes from `app/data/ports.ts` (`PUBLIC_TUNNEL_ORIGIN` only — never LAN)
+- Public tunnel origin for demo health notes from `app/data/ports.ts` (`PUBLIC_TUNNEL_ORIGIN` only - never LAN)
 
 ### Hand-maintain in `site/agent.ts` / `site/constants.ts`
 
 When these change, edit the generator (not only the UI):
 
-1. **`navigation`** — must match real nav (Home / Optimistic / ZK / Agent Mode)
+1. **`navigation`** - must match real nav (Home / Optimistic / ZK / Agent Mode)
 2. **`about` / `contact` / `canonicalTopics` / `PRINCIPLES`**
 3. **`agentMode.preferredEntryPoints`**
 4. **`SITE`** in `site/constants.ts` (name, description, public URL, owner)
@@ -76,7 +76,7 @@ Hosted Go + Anvil run on the Ubuntu VPS; Vercel UI talks only to the public tunn
 | Public API | `https://api-staging-eth-l2.magro.dev` → `127.0.0.1:8080` on Ubuntu |
 | Ready probe | `GET /health/ready` → plaintext `READY` |
 | Idle stop | After last lab WebSocket disconnects, wait `ETH_L2_IDLE_STOP_SECONDS` (default 45) then `Session.Stop()` |
-| Local Mac helpers (optional) | `./scripts/start-staging-backend.sh`, launchd install/uninstall — laptop demos only |
+| Local Mac helpers (optional) | `./scripts/start-staging-backend.sh`, launchd install/uninstall - laptop demos only |
 
 Do not put LAN IPs or tunnel credentials in Agent Mode / docs beyond the public hostname.
 
@@ -103,16 +103,16 @@ Keep these in sync when behaviour changes:
 ## Frontend rules
 
 - Demo-facing surfaces: `WelcomeBanner`, `BlockchainCanvas`, `OpBatchGroup`, `ZkBatchGroup`, `BlockInspector`, `OptimisticTracker`, `OpcodeRace`, `ResearchPanel` (Proof lab), `ZkInspect`, `DemoGallery`, `Scoreboard`, `EventLogPanel`, `BackendStatus`.
-- Dense protocol copy belongs in `InfoTip` (hover/click expand) — keep default controls scannable.
+- Dense protocol copy belongs in `InfoTip` (hover/click expand) - keep default controls scannable.
 - Fraud verdict Solidity: prefer multi-line exhibits in `engineSourceExhibits.ts` / `EngineSourceCompare` (honest vs lying engines), not a single source-map line alone.
 - Keep protocol vocabulary accurate; define mechanisms when introduced (`app/data/batchEducation.ts`, `opTrackerEducation.ts`, `traceNarrative.ts`, `zkEducation.ts`).
-- Overlays (opcode proof, ZK inspect) open from Proof lab, Block Inspector, or ZK batch cards — never auto-popup.
+- Overlays (opcode proof, ZK inspect) open from Proof lab, Block Inspector, or ZK batch cards - never auto-popup.
 - Do not place source files under `app/lib/`; this repo's ignore rules can hide `lib/` paths. Prefer `site/` for theme/agent generators and keep runtime store code where it already lives.
 
 ## Contract / artifact rules
 
 - Mock contracts stay mechanism-focused (`FraudProofGame`, `ZkValidityVerifier` are teaching stand-ins, not production provers).
-- `broadcast/` is gitignored — deployments are reproduced at `make dev` / backend start.
+- `broadcast/` is gitignored - deployments are reproduced at `make dev` / backend start.
 - Generated artifacts should be reproducible from repo commands (`forge build`, `make build`).
 - Do not commit accidental package manager lockfiles that conflict with the repo's package manager convention.
 
@@ -130,5 +130,5 @@ E2E (optional): `pnpm exec playwright install chromium` then `make test-e2e`.
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes - APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->

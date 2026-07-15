@@ -25,7 +25,7 @@
     0 18px 40px -28px rgba(0, 0, 0, 0.55);
   --radius: 12px;
 
-  /* Zinc scale — components use Tailwind zinc-* utilities */
+  /* Zinc scale - components use Tailwind zinc-* utilities */
   --zinc-50: #fafafa;
   --zinc-100: #f4f4f5;
   --zinc-200: #e4e4e7;
@@ -58,7 +58,7 @@
 html {
   color-scheme: dark;
   /* Slightly larger base so rem-based Tailwind text is easier to read */
-  font-size: 106.25%; /* 17px when browser default is 16px — original lab scale */
+  font-size: 106.25%; /* 17px when browser default is 16px - original lab scale */
 }
 
 /*
