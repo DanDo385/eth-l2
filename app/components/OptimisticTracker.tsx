@@ -301,7 +301,7 @@ export function OptimisticTracker({ onBatchClick, onShowOpcodeRace }: Props) {
         <p className="text-xs text-zinc-500 uppercase tracking-wide mb-2">
           Optimistic rollup lifecycle
         </p>
-        <p className="text-[11px] text-zinc-600 leading-relaxed">
+        <p className="text-sm text-zinc-600 leading-relaxed">
           Start a simulation to track every OP batch here — including batches that scroll off the
           canvas. Swaps, L1 bonds, rollbacks, and balance changes stay visible for the whole session.
         </p>

@@ -278,7 +278,7 @@ export function EventLogPanel({ mode }: { mode: LabMode }) {
               at the fraud divergence when available.
             </InfoTip>
           </div>
-          <p className="mt-0.5 text-xs leading-snug text-zinc-600">
+          <p className="mt-0.5 text-sm leading-snug text-zinc-600">
             {laneLabel} lane · click any event for details
           </p>
         </div>

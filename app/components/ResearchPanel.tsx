@@ -40,7 +40,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
     <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-4">
       <div>
         <p className="text-xs uppercase tracking-wide text-zinc-500">Proof lab</p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
+        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
           {mode === "zk"
             ? "Open a ZK proof when you want to inspect witness inputs, proof cost, and L1 verifier output."
             : "Open a proof when you want to study it. Overlays never auto-popup."}
@@ -48,7 +48,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
       </div>
 
       {!hasContent && (
-        <p className="text-xs text-zinc-600 italic py-2">
+        <p className="text-sm text-zinc-600 italic py-2">
           {mode === "zk"
             ? "Start a demo and wait for a ZK batch submission. Validity proof tours appear here."
             : "Start a demo and wait for batches to resolve. Proof artifacts appear here for you to explore on your schedule."}
@@ -148,10 +148,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showOp && (
       <section className="border-t border-zinc-800 pt-3 space-y-2">
-        <p className="text-xs font-semibold text-amber-300 uppercase tracking-wide">
+        <p className="text-sm font-semibold text-amber-300 uppercase tracking-wide">
           What happens when an optimistic root is challenged?
         </p>
-        <ol className="space-y-1.5 text-xs text-zinc-500 leading-relaxed list-decimal list-inside">
+        <ol className="space-y-1.5 text-sm text-zinc-500 leading-relaxed list-decimal list-inside">
           <li>The challenge targets a claimed L2 output root or assertion, not usually one transaction directly.</li>
           <li>The challenger verifies locally first by deriving the expected state from posted L1 data.</li>
           <li>The challenger posts a bond so invalid challenges are costly.</li>
@@ -167,10 +167,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showZk && (
       <section className="border-t border-zinc-800 pt-3 space-y-2">
-        <p className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">
+        <p className="text-sm font-semibold text-emerald-300 uppercase tracking-wide">
           What happens when a ZK proof reaches L1?
         </p>
-        <ol className="space-y-1.5 text-xs text-zinc-500 leading-relaxed list-decimal list-inside">
+        <ol className="space-y-1.5 text-sm text-zinc-500 leading-relaxed list-decimal list-inside">
           <li>The prover builds a witness from the L2 execution trace and public inputs.</li>
           <li>The operator pays proving cost off-chain and submits proof data to L1.</li>
           <li>The verifier contract checks the proof against the claimed state transition.</li>
