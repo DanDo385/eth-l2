@@ -44,8 +44,8 @@ Playwright still captures static PNGs under `public/screenshots/` via `make test
 |-------|------|-------|
 | Screenshots | `public/screenshots/*.png` | Source frames for the rotating GIF |
 | Preview GIF | `public/gif/preview.gif` | 1280x720 letterboxed slideshow from screenshots |
-| Short clip | `public/short-clip/short.mov` | ~31s local recording |
-| Long clip | `public/long-clip/long.mov` | ~74s local recording |
+| Short clip | `public/videos/short.mov` | ~31s local recording |
+| Long clip | `public/videos/long.mov` | ~74s local recording |
 | Short YouTube | https://www.youtube.com/watch?v=3Rrlpz-vEFE | Unlisted short walkthrough |
 | Full YouTube | https://www.youtube.com/watch?v=SEpEn8fTjmk | Unlisted full walkthrough |
 

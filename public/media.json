@@ -4,14 +4,14 @@
   "previewGif": "/gif/preview.gif",
   "screenshotsDir": "/screenshots",
   "shortClip": {
-    "file": "/short-clip/short.mov",
+    "file": "/videos/short.mov",
     "youtubeUrl": "https://www.youtube.com/watch?v=IxHch1u15q0",
     "youtubeId": "IxHch1u15q0",
     "privacy": "unlisted",
     "title": "L2 Fraud Proof Settlement Simulator - Short Walkthrough"
   },
   "longClip": {
-    "file": "/long-clip/long.mov",
+    "file": "/videos/long.mov",
     "youtubeUrl": "https://www.youtube.com/watch?v=SEpEn8fTjmk",
     "youtubeId": "SEpEn8fTjmk",
     "privacy": "unlisted",
