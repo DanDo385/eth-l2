@@ -58,7 +58,7 @@
 html {
   color-scheme: dark;
   /* Slightly larger base so rem-based Tailwind text is easier to read */
-  font-size: 106.25%; /* 17px when browser default is 16px */
+  font-size: 112.5%; /* 18px when browser default is 16px (~+1pt from 17px) */
 }
 
 html[data-theme="light"] {
