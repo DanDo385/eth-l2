@@ -40,7 +40,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
     <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3 sm:p-4">
       <div>
         <p className="text-xs uppercase tracking-wide text-zinc-500">Proof lab</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-zinc-600">
+        <p className="mt-1 text-xs leading-relaxed text-zinc-600">
           {mode === "zk"
             ? "Open a ZK proof when you want to inspect witness inputs, proof cost, and L1 verifier output."
             : "Open a proof when you want to study it. Overlays never auto-popup."}
@@ -57,7 +57,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showOp && opProofs.length > 0 && (
         <section className="space-y-2">
-          <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
             Optimistic: opcode fraud proofs
           </p>
           <ul className="space-y-1.5">
@@ -72,12 +72,12 @@ export function ResearchPanel({ mode = "all" }: Props) {
                     <p className="text-xs text-zinc-200 font-medium">
                       Batch #{b.batchId}
                       {isNew && (
-                        <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-800">
+                        <span className="ml-1.5 text-xs px-1 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-800">
                           new
                         </span>
                       )}
                     </p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-500 mt-0.5">
                       Blocks {b.l2StartBlock}→{b.l2EndBlock} · diverged at{" "}
                       {b.divergence?.op} (step #{b.divergence?.divergenceIdx})
                     </p>
@@ -85,7 +85,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
                   <button
                     type="button"
                     onClick={() => openOpProof(b.batchId)}
-                    className="shrink-0 text-[10px] px-2 py-1 rounded border border-emerald-800 text-emerald-300 hover:bg-emerald-950/40"
+                    className="shrink-0 text-xs px-2 py-1 rounded border border-emerald-800 text-emerald-300 hover:bg-emerald-950/40"
                   >
                     Opcode proof
                   </button>
@@ -98,10 +98,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showZk && zkProofs.length > 0 && (
         <section className="space-y-2">
-          <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
             ZK: 3-step concept tour
           </p>
-          <p className="text-[10px] text-zinc-600 leading-snug">
+          <p className="text-xs text-zinc-600 leading-snug">
             Claim → prove off-chain → verify on L1. Each batch is a live example.
           </p>
           <ul className="space-y-1.5">
@@ -116,12 +116,12 @@ export function ResearchPanel({ mode = "all" }: Props) {
                     <p className="text-xs text-zinc-200 font-medium">
                       Batch #{z.batchId}
                       {isNew && (
-                        <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-800">
+                        <span className="ml-1.5 text-xs px-1 py-0.5 rounded bg-emerald-900/50 text-emerald-400 border border-emerald-800">
                           new
                         </span>
                       )}
                     </p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5">
+                    <p className="text-xs text-zinc-500 mt-0.5">
                       Blocks {z.l2StartBlock ?? "?"}→{z.l2EndBlock}
                       {z.txCount != null ? ` · ${z.txCount} swap${z.txCount === 1 ? "" : "s"}` : ""}
                       {" · "}
@@ -135,7 +135,7 @@ export function ResearchPanel({ mode = "all" }: Props) {
                   <button
                     type="button"
                     onClick={() => openZkProof(z.batchId)}
-                    className="shrink-0 text-[10px] px-2 py-1 rounded border border-emerald-800 text-emerald-300 hover:bg-emerald-950/40"
+                    className="shrink-0 text-xs px-2 py-1 rounded border border-emerald-800 text-emerald-300 hover:bg-emerald-950/40"
                   >
                     Concept tour
                   </button>
@@ -148,10 +148,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showOp && (
       <section className="border-t border-zinc-800 pt-3 space-y-2">
-        <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-amber-300 uppercase tracking-wide">
           What happens when an optimistic root is challenged?
         </p>
-        <ol className="space-y-1.5 text-[10px] text-zinc-500 leading-relaxed list-decimal list-inside">
+        <ol className="space-y-1.5 text-xs text-zinc-500 leading-relaxed list-decimal list-inside">
           <li>The challenge targets a claimed L2 output root or assertion, not usually one transaction directly.</li>
           <li>The challenger verifies locally first by deriving the expected state from posted L1 data.</li>
           <li>The challenger posts a bond so invalid challenges are costly.</li>
@@ -167,10 +167,10 @@ export function ResearchPanel({ mode = "all" }: Props) {
 
       {showZk && (
       <section className="border-t border-zinc-800 pt-3 space-y-2">
-        <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">
           What happens when a ZK proof reaches L1?
         </p>
-        <ol className="space-y-1.5 text-[10px] text-zinc-500 leading-relaxed list-decimal list-inside">
+        <ol className="space-y-1.5 text-xs text-zinc-500 leading-relaxed list-decimal list-inside">
           <li>The prover builds a witness from the L2 execution trace and public inputs.</li>
           <li>The operator pays proving cost off-chain and submits proof data to L1.</li>
           <li>The verifier contract checks the proof against the claimed state transition.</li>
