@@ -85,7 +85,7 @@ export default function Home() {
           <p>
             {IS_REMOTE_BACKEND ? (
               <>
-                UI is on Vercel; live simulation needs the MacBook backend via{" "}
+                UI is on Vercel; live simulation needs the Ubuntu backend via{" "}
                 <span className="font-mono text-zinc-300">
                   https://api-staging-eth-l2.magro.dev
                 </span>

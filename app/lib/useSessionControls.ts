@@ -144,7 +144,7 @@ export function useSessionControls() {
   }, [active, paused, expired]);
 
   // Stop when the session timer hits zero — tears down Anvil so a forgotten
-  // tab does not keep the MacBook mining. Must not dispatch from inside a
+  // tab does not keep the Ubuntu Anvil session mining. Must not dispatch from inside a
   // setState updater (that updates AppStoreProvider during this provider's render).
   useEffect(() => {
     if (!active || paused || expired || remainingSeconds > 0) return;

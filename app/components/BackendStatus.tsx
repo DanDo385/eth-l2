@@ -63,7 +63,7 @@ export function BackendStatus({ className = "" }: { className?: string }) {
       {status === "offline" && (
         <span className="text-amber-400/90">
           {IS_REMOTE_BACKEND
-            ? "— lab UI still works; live sim needs the MacBook tunnel"
+            ? "— lab UI still works; live sim needs the Ubuntu tunnel"
             : "— run make backend"}
         </span>
       )}

@@ -63,7 +63,7 @@ export function ControlPanel() {
           {IS_REMOTE_BACKEND ? (
             <>
               Backend offline — the explainer UI still works. Live simulation needs
-              the MacBook Go API reachable via the Cloudflare Tunnel (
+              the Ubuntu Go API reachable via the Cloudflare Tunnel (
               <span className="font-mono text-amber-200">
                 api-staging-eth-l2.magro.dev
               </span>
