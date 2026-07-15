@@ -57,45 +57,19 @@
 
 html {
   color-scheme: dark;
-  /* Larger rem base; dense lab UI still uses many fixed px utilities (overridden below). */
-  font-size: 125%; /* 20px when browser default is 16px */
+  /* Slightly larger base so rem-based Tailwind text is easier to read */
+  font-size: 106.25%; /* 17px when browser default is 16px — original lab scale */
 }
 
 /*
- * Global bump for arbitrary px utilities (sidebar + main).
- * Dense lab copy still reads smaller than sidebar text-xs — see .lab-main below.
+ * /op and /zk: lift only the densest fixed-px utilities up to the Demo gallery
+ * caption size (10px). Do not inflate text-xs / rem root — that made both
+ * columns too large.
  */
-.text-\[7px\] {
-  font-size: 9px;
-}
-.text-\[8px\] {
+.lab-page .text-\[7px\],
+.lab-page .text-\[8px\],
+.lab-page .text-\[9px\] {
   font-size: 10px;
-}
-.text-\[9px\] {
-  font-size: 11px;
-}
-.text-\[10px\] {
-  font-size: 12px;
-}
-.text-\[11px\] {
-  font-size: 13px;
-}
-
-/*
- * Main lab column (Chain activity, scoreboard, tracker, inspector, event log,
- * proof lab). Sidebar Demo gallery / controls already use mostly text-xs — lift
- * the fixed-px utilities here to that same rem scale so both columns match.
- */
-.lab-main .text-\[7px\],
-.lab-main .text-\[8px\],
-.lab-main .text-\[9px\] {
-  font-size: 0.75rem; /* = text-xs */
-}
-.lab-main .text-\[10px\] {
-  font-size: 0.8125rem; /* between xs and sm */
-}
-.lab-main .text-\[11px\] {
-  font-size: 0.875rem; /* = text-sm */
 }
 
 html[data-theme="light"] {
@@ -220,7 +194,7 @@ body {
 
 .nav-control-label {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -460,7 +434,7 @@ html[data-theme="light"] .text-amber-200 {
 
 .section-label {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--text-muted);

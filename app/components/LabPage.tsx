@@ -36,14 +36,14 @@ function LabContent({ mode }: { mode: LabMode }) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-start gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
+    <div className="lab-page mx-auto grid w-full max-w-[1600px] grid-cols-1 items-start gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
       <aside className="flex min-w-0 flex-col gap-3 overflow-y-auto lg:sticky lg:top-4 lg:max-h-[calc(100vh-49px-2rem)]">
         <DemoGallery mode={mode} />
         <ControlPanel />
         <AccountSidebar mode={mode} showEventLog={false} />
       </aside>
 
-      <section className="lab-main flex min-w-0 flex-col gap-4">
+      <section className="flex min-w-0 flex-col gap-4">
         {!state.running && <WelcomeBanner mode={mode} />}
 
         {isOptimistic ? (
