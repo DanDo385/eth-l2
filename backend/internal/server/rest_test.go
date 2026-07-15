@@ -13,6 +13,16 @@ import (
 
 func newHandler(t *testing.T) http.Handler {
 	t.Helper()
+	// Isolate from developer/staging env so local-dev behavior is what we assert.
+	for _, k := range []string{
+		"ETH_L2_API_TOKEN",
+		"ETH_L2_ALLOWED_ORIGINS",
+		"ETH_L2_TRUST_X_FORWARDED_FOR",
+		"ETH_L2_RATE_LIMIT_READ",
+		"ETH_L2_RATE_LIMIT_MUTATION",
+	} {
+		t.Setenv(k, "")
+	}
 	sess := engine.NewSession(".")
 	hub := server.NewHub()
 	return server.Handler(sess, hub)

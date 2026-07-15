@@ -244,7 +244,7 @@ app/                Next.js 16
 config/             ports.json — canonical dev ports
 ```
 
-Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS` (CORS allowlist). Frontend / Vercel: see [.env.example](.env.example).
+Backend env (optional): `GOAPI_ADDR`, `PORT`, `ETH_L2_ALLOWED_ORIGINS`, `ETH_L2_API_TOKEN` (see [backend/README.md](backend/README.md)). Frontend / Vercel: see [.env.example](.env.example).
 
 ## Seeds
 

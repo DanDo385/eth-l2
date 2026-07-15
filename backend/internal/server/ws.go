@@ -10,19 +10,23 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
 // Hub fans out bus events to all connected WebSocket clients.
 type Hub struct {
-	mu      sync.RWMutex
-	clients map[*websocket.Conn]struct{}
-	onCount func(n int)
+	mu          sync.RWMutex
+	clients     map[*websocket.Conn]struct{}
+	onCount     func(n int)
+	checkOrigin func(*http.Request) bool
 }
 
 func NewHub() *Hub {
 	return &Hub{clients: make(map[*websocket.Conn]struct{})}
+}
+
+// SetCheckOrigin configures the WebSocket origin check (defaults to allow all).
+func (h *Hub) SetCheckOrigin(fn func(*http.Request) bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.checkOrigin = fn
 }
 
 // SetOnClientCountChanged registers a callback invoked after connect/disconnect
@@ -94,8 +98,25 @@ func (h *Hub) broadcast(ev events.Event) {
 }
 
 // ServeWS upgrades the request and registers the connection.
+// When the client offers eth-l2.bearer.<token>, that subprotocol is selected so
+// browsers can authenticate without putting credentials in the URL.
 func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	h.mu.RLock()
+	checkOrigin := h.checkOrigin
+	h.mu.RUnlock()
+	if checkOrigin == nil {
+		checkOrigin = func(*http.Request) bool { return true }
+	}
+
+	upgrader := websocket.Upgrader{CheckOrigin: checkOrigin}
+
+	var respHeader http.Header
+	if proto := selectedWSBearerProtocol(r); proto != "" {
+		respHeader = http.Header{}
+		respHeader.Set("Sec-WebSocket-Protocol", proto)
+	}
+
+	conn, err := upgrader.Upgrade(w, r, respHeader)
 	if err != nil {
 		log.Printf("ws upgrade: %v", err)
 		return

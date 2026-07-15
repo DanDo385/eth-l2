@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -12,7 +11,17 @@ import (
 )
 
 // Handler builds an http.ServeMux wired to the session and hub.
+// Security settings are loaded from the environment on each call (see LoadSecurityConfig).
 func Handler(sess *engine.Session, hub *Hub) http.Handler {
+	return HandlerWithSecurity(sess, hub, LoadSecurityConfig())
+}
+
+// HandlerWithSecurity is like Handler but uses an explicit security config (tests).
+func HandlerWithSecurity(sess *engine.Session, hub *Hub, cfg SecurityConfig) http.Handler {
+	logAuthDisabledWarning(cfg)
+	hub.SetCheckOrigin(checkOrigin(cfg))
+	limiter := newIPRateLimiter(cfg.ReadRPM, cfg.MutationRPM, cfg.TrustXForwardedFor)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -57,7 +66,7 @@ func Handler(sess *engine.Session, hub *Hub) http.Handler {
 	mux.HandleFunc("/api/state", requireGet(handleState(sess)))
 	mux.HandleFunc("/api/batch/", requireGet(handleBatch(sess)))
 
-	return cors(mux)
+	return wrapSecurity(cfg, limiter, mux)
 }
 
 func handleStart(sess *engine.Session) http.HandlerFunc {
@@ -229,47 +238,6 @@ func requireGet(h http.HandlerFunc) http.HandlerFunc {
 		}
 		h(w, r)
 	}
-}
-
-// allowedOrigins is the CORS allowlist parsed once from ETH_L2_ALLOWED_ORIGINS
-// (comma-separated). When empty, CORS stays permissive (the dev default). With
-// same-origin nginx routing in production a permissive value is harmless because
-// browsers do not send cross-origin requests; set the allowlist to lock the demo
-// to your frontend origin if you ever serve the API from a separate host.
-var allowedOrigins = parseAllowedOrigins()
-
-func parseAllowedOrigins() map[string]struct{} {
-	raw := strings.TrimSpace(os.Getenv("ETH_L2_ALLOWED_ORIGINS"))
-	if raw == "" {
-		return nil
-	}
-	set := make(map[string]struct{})
-	for _, o := range strings.Split(raw, ",") {
-		if o = strings.TrimSpace(o); o != "" {
-			set[o] = struct{}{}
-		}
-	}
-	return set
-}
-
-func cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if allowedOrigins == nil {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-		} else if origin := r.Header.Get("Origin"); origin != "" {
-			if _, ok := allowedOrigins[origin]; ok {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Add("Vary", "Origin")
-			}
-		}
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

@@ -31,6 +31,8 @@ Single source of truth for **eth-l2** local services. Avoids drift between Next.
 | `PORT` | Backend listen `127.0.0.1:port` |
 | `ETH_L2_FRONTEND_PORT` | `make frontend` / Playwright when set |
 | `ETH_L2_ALLOWED_ORIGINS` | Comma-separated CORS allowlist (staging scripts default to `staging.vercelOrigin`) |
+| `ETH_L2_API_TOKEN` | Optional bearer token for POST `/api/*` + WebSocket `/stream` (see [backend/README.md](../backend/README.md)) |
+| `ETH_L2_TRUST_X_FORWARDED_FOR` | Set `1` to use `X-Forwarded-For` for rate-limit client IP (trusted proxy only) |
 | `ETH_L2_IDLE_STOP_SECONDS` | Seconds after last lab WebSocket disconnect before `Stop()` (default `45`; `0` disables) |
 
 ## Hosted split (Vercel UI + MacBook API)
