@@ -271,28 +271,30 @@ export function EventLogPanel({ mode }: { mode: LabMode }) {
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Event log</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              Event log
+            </p>
             <InfoTip label="About the event log" placement="panel">
               Session events for the {laneLabel} lab only (plus shared L1/session
               messages). Expand a row for swaps, amounts, gas/bond costs, and Solidity
               at the fraud divergence when available.
             </InfoTip>
           </div>
-          <p className="mt-0.5 text-sm leading-snug text-zinc-600">
+          <p className="mt-0.5 text-sm leading-snug text-zinc-400">
             {laneLabel} lane · click any event for details
           </p>
         </div>
-        <span className="shrink-0 font-mono text-xs text-zinc-600">
+        <span className="shrink-0 font-mono text-xs text-zinc-400">
           {entries.length} event{entries.length === 1 ? "" : "s"}
         </span>
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Recent
         </p>
         {recent.length === 0 ? (
-          <p className="text-xs text-zinc-600">No events yet - start a demo.</p>
+          <p className="text-xs text-zinc-400">No events yet - start a demo.</p>
         ) : (
           <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-5">
             {recent.map((entry, i) => (

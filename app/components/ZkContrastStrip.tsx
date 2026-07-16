@@ -18,7 +18,7 @@ export function ZkContrastStrip() {
         <p className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">
           ZK in three beats
         </p>
-        <p className="text-sm text-zinc-600 mt-0.5 leading-snug">
+        <p className="text-sm text-zinc-400 mt-0.5 leading-snug">
           Same batch window as OP, opposite trust model, validity is proved, not assumed.
         </p>
       </div>
@@ -31,13 +31,13 @@ export function ZkContrastStrip() {
           >
             <p className="text-sm font-bold text-emerald-400">{beat.num}</p>
             <p className="text-sm font-semibold text-zinc-200">{beat.label}</p>
-            <p className="text-sm text-zinc-500 mt-0.5 leading-snug">{beat.hint}</p>
+            <p className="text-sm text-zinc-400 mt-0.5 leading-snug">{beat.hint}</p>
           </div>
         ))}
       </div>
 
       <div className="rounded-lg border border-zinc-800 overflow-hidden text-sm">
-        <div className="grid grid-cols-[4.5rem_1fr_1fr] bg-zinc-950/80 px-2 py-1 text-zinc-500 font-medium">
+        <div className="grid grid-cols-[4.5rem_1fr_1fr] bg-zinc-950/80 px-2 py-1 text-zinc-400 font-medium">
           <span />
           <span className="text-blue-400">Optimistic</span>
           <span className="text-emerald-400">ZK</span>
@@ -47,7 +47,7 @@ export function ZkContrastStrip() {
             key={row.topic}
             className="grid grid-cols-[4.5rem_1fr_1fr] gap-x-2 px-2 py-1.5 border-t border-zinc-800/80 text-zinc-400 leading-snug"
           >
-            <span className="text-zinc-500 font-medium">{row.topic}</span>
+            <span className="font-medium">{row.topic}</span>
             <span>{row.optimistic}</span>
             <span>{row.zk}</span>
           </div>
@@ -67,7 +67,7 @@ export function ZkContrastStrip() {
           {latest.accepted ? " (verified)" : " (rejected)"}
         </button>
       ) : (
-        <p className="text-sm text-zinc-600 italic text-center">
+        <p className="text-sm text-zinc-400 text-center">
           Start the demo, a live ZK batch tour appears here.
         </p>
       )}

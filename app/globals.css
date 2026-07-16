@@ -84,9 +84,9 @@ html[data-theme="light"] {
   --border: #e4e4e7;
   --border-subtle: #d4d4d8;
   --border-active: #a1a1aa;
-  --text-primary: #09090b;
-  --text-secondary: #18181b;
-  --text-muted: #3f3f46;
+  --text-primary: #18181b;
+  --text-secondary: var(--text-floor, #27272a);
+  --text-muted: var(--text-floor, #27272a);
   --accent: #059669;
   --accent-light: #047857;
   --accent-dim: rgba(5, 150, 105, 0.1);
@@ -98,16 +98,18 @@ html[data-theme="light"] {
 
   /*
    * Light surfaces: white cards on a soft grey page.
-   * Midtones stay dark so text-zinc-* remains readable.
+   * Text floor = OP vs ZK table body ("Default assumption" / cell copy).
+   * No zinc text utility may render lighter than --text-floor.
    */
-  --zinc-50: #09090b;
-  --zinc-100: #09090b;
+  --text-floor: #27272a;
+  --zinc-50: #18181b;
+  --zinc-100: #18181b;
   --zinc-200: #18181b;
-  --zinc-300: #27272a;
-  --zinc-400: #27272a; /* secondary body */
-  --zinc-500: #3f3f46; /* muted labels */
-  --zinc-600: #18181b; /* primary body / captions */
-  --zinc-700: #27272a; /* faintest labels */
+  --zinc-300: var(--text-floor);
+  --zinc-400: var(--text-floor); /* OP vs ZK table body - lightness floor */
+  --zinc-500: var(--text-floor);
+  --zinc-600: var(--text-floor);
+  --zinc-700: var(--text-floor);
   --zinc-800: #f4f4f5; /* borders / input fills (lighter grey) */
   --zinc-900: #ffffff; /* panel cards (Event Log, Proof Lab, gallery) */
   --zinc-950: #fafafa; /* page + nested wells */
@@ -257,6 +259,21 @@ body {
 .nav-agent-toggle.active:hover {
   color: var(--accent-light);
   border-color: var(--accent);
+}
+
+/*
+ * Light-mode text floor: match OP vs ZK contrast table body (text-zinc-400).
+ * Nothing in the zinc text scale may render lighter than this.
+ */
+html[data-theme="light"] .text-zinc-50,
+html[data-theme="light"] .text-zinc-100,
+html[data-theme="light"] .text-zinc-200,
+html[data-theme="light"] .text-zinc-300,
+html[data-theme="light"] .text-zinc-400,
+html[data-theme="light"] .text-zinc-500,
+html[data-theme="light"] .text-zinc-600,
+html[data-theme="light"] .text-zinc-700 {
+  color: var(--text-floor);
 }
 
 /* Light-mode contrast tweaks where remapped fills leave mid-tone text weak */
