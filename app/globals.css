@@ -61,18 +61,6 @@ html {
   font-size: 106.25%; /* 17px when browser default is 16px - original lab scale */
 }
 
-/*
- * Floor: nothing smaller than the Chain activity helper
- * ("OP batches group L2 blocks…") which uses text-[11px].
- */
-.text-\[7px\],
-.text-\[8px\],
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 11px;
-}
-
 html[data-theme="light"] {
   color-scheme: light;
 
@@ -259,6 +247,15 @@ body {
 .nav-agent-toggle.active:hover {
   color: var(--accent-light);
   border-color: var(--accent);
+}
+
+/*
+ * Dark-mode muted labels (Demo gallery, Scoreboard, welcome copy, etc.):
+ * text-zinc-500/600 used to render mid-grey; force white for readability.
+ */
+html:not([data-theme="light"]) .text-zinc-500,
+html:not([data-theme="light"]) .text-zinc-600 {
+  color: #ffffff;
 }
 
 /*

@@ -35,7 +35,7 @@ function Metric({
       title={title}
       className="rounded-lg border border-zinc-800 bg-zinc-950/50 px-2.5 py-2"
     >
-      <p className="text-[9px] leading-tight text-zinc-500">{label}</p>
+      <p className="text-xs leading-tight text-zinc-500">{label}</p>
       <p className={`mt-0.5 font-mono text-sm tabular-nums ${valueClass}`}>{value}</p>
     </div>
   );
@@ -74,7 +74,7 @@ export function Scoreboard({ mode = "all" }: Props) {
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs uppercase tracking-wide text-zinc-500">Scoreboard</p>
         {showOp && (
-          <div className="flex items-center gap-3 font-mono text-[10px]">
+          <div className="flex items-center gap-3 font-mono text-xs">
             <span title="Watcher flag rate on fraudulent batches">
               <span className="text-zinc-600">Watcher flagged </span>
               <span className="text-yellow-400">{flagRate}%</span>
@@ -101,7 +101,7 @@ export function Scoreboard({ mode = "all" }: Props) {
           <div className="min-w-0 space-y-2">
             <div className="flex items-baseline gap-2">
               <p className="text-xs font-semibold text-blue-400">OP: Optimistic</p>
-              <p className="text-[9px] text-zinc-600">Trust first, prove fraud after</p>
+              <p className="text-xs text-zinc-600">Trust first, prove fraud after</p>
             </div>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
               <Metric
@@ -146,7 +146,7 @@ export function Scoreboard({ mode = "all" }: Props) {
                 title="Disputes finished - sequencer lost bond, batch rejected"
               />
             </div>
-            <p className="text-[10px] leading-snug text-zinc-600">
+            <p className="text-xs leading-snug text-zinc-600">
               Fault rate ~1 in {Math.round(1 / OPTIMISTIC_SUSPICION_PROBABILITY)}. Suspicious
               roots wait for you to verify and challenge during the{" "}
               {CHALLENGE_WINDOW_SECONDS}s window.
@@ -158,7 +158,7 @@ export function Scoreboard({ mode = "all" }: Props) {
           <div className="min-w-0 space-y-2">
             <div className="flex items-baseline gap-2">
               <p className="text-xs font-semibold text-emerald-400">ZK: Validity</p>
-              <p className="text-[9px] text-zinc-600">Prove first, accept after</p>
+              <p className="text-xs text-zinc-600">Prove first, accept after</p>
             </div>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
               <Metric
@@ -185,7 +185,7 @@ export function Scoreboard({ mode = "all" }: Props) {
                 title="ZK batches are final the moment the proof verifies"
               />
             </div>
-            <p className="text-[10px] leading-snug text-zinc-600">
+            <p className="text-xs leading-snug text-zinc-600">
               Invalid claims ~1 in {Math.round(1 / ZK_SUSPICION_PROBABILITY)}. They fail at
               proof verification, not through a fraud-proof game.
             </p>

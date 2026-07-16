@@ -51,7 +51,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
       >
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-zinc-100">How this lab works</h2>
-          <p className="mt-0.5 text-[11px] leading-snug text-zinc-500">
+          <p className="mt-0.5 text-xs leading-snug text-zinc-500">
             {isZk
               ? "Pick a demo, then inspect how verifier checks gate finality."
               : "Pick a demo, then catch a lying sequencer in real time."}
@@ -90,7 +90,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
                     </span>
                     <div className="min-w-0">
                       <p className={`text-xs font-semibold ${s.color}`}>{s.title}</p>
-                      <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
+                      <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
                         {s.body}
                       </p>
                     </div>
@@ -98,7 +98,7 @@ export function WelcomeBanner({ mode = "optimistic" }: { mode?: LabMode }) {
                 ))}
               </ol>
 
-              <p className="border-t border-zinc-800 pt-3 text-[11px] leading-relaxed text-zinc-600">
+              <p className="border-t border-zinc-800 pt-3 text-xs leading-relaxed text-zinc-600">
                 {isZk
                   ? "Invalid proofs are rejected by the L1 verifier in this teaching model. Click a demo card to start."
                   : "A watcher flag is not a challenge - nothing is rejected until you verify locally and post a challenge bond on L1. Click a demo card to start."}

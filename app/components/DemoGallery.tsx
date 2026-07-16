@@ -27,7 +27,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${styles}`}
+      className={`shrink-0 rounded border px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${styles}`}
     >
       {label}
     </span>
@@ -93,7 +93,7 @@ export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] ${demo.badge}`}
+                    className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-xs ${demo.badge}`}
                   >
                     #{demo.seed}
                   </span>
@@ -112,7 +112,7 @@ export function DemoGallery({ mode = "optimistic" }: { mode?: LabMode }) {
                   <span className="font-medium text-zinc-300">Why this seed: </span>
                   {demo.detail}
                 </InfoTip>
-                <span className="truncate text-[9px] text-zinc-700">
+                <span className="truncate text-xs text-zinc-700">
                   more detail
                 </span>
               </div>

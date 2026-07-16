@@ -92,7 +92,7 @@ export function AccountSidebar({
             <span className="text-red-400">Rejected</span>
             <span className="text-red-300 font-mono">{zkRejected}</span>
           </div>
-          <p className="text-[10px] text-zinc-600 leading-relaxed">
+          <p className="text-xs text-zinc-600 leading-relaxed">
             ZK settlement is gated by verifier output, so failed claims stop before L1 accepts the state root.
           </p>
         </div>
@@ -115,17 +115,17 @@ export function AccountSidebar({
         <p className="text-xs text-zinc-500 uppercase tracking-wide">Event log</p>
         <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
           {filteredLog.length === 0 ? (
-            <p className="text-[10px] text-zinc-600">No events yet.</p>
+            <p className="text-xs text-zinc-600">No events yet.</p>
           ) : (
             filteredLog.slice(-30).reverse().map((entry, index) => (
               <div key={`sidebar-${entry.seq}-${entry.event}-${entry.chain ?? entry.lane}-${index}`} className="rounded border border-zinc-800 bg-zinc-950/50 px-2 py-1.5">
-                <div className="flex justify-between gap-2 text-[9px] font-mono">
+                <div className="flex justify-between gap-2 text-xs font-mono">
                   <span className="text-zinc-500">#{entry.seq}</span>
                   <span className={entry.layer === "L1" ? "text-violet-400" : entry.layer === "L2" ? "text-blue-400" : "text-amber-400"}>
                     {entry.layer}
                   </span>
                 </div>
-                <p className="text-[10px] text-zinc-300 leading-snug">{entry.summary}</p>
+                <p className="text-xs text-zinc-300 leading-snug">{entry.summary}</p>
               </div>
             ))
           )}

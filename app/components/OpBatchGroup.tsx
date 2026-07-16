@@ -44,23 +44,23 @@ export function OpBatchGroup({ batch, blockNums, dimmed, selected, onClick }: Pr
       `}
     >
       <div className="flex items-center justify-between gap-1 mb-1">
-        <span className="text-[10px] font-semibold text-zinc-200">Batch #{batch.batchId}</span>
-        <span className="text-[10px] font-bold text-zinc-300">{status.short}</span>
+        <span className="text-xs font-semibold text-zinc-200">Batch #{batch.batchId}</span>
+        <span className="text-xs font-bold text-zinc-300">{status.short}</span>
       </div>
 
       <div className="flex gap-0.5 mb-1.5">
         {blockNums.map((n) => (
           <span
             key={n}
-            className="flex-1 min-w-0 h-7 rounded bg-black/30 border border-zinc-700/80 flex items-center justify-center text-[9px] font-mono text-zinc-400"
+            className="flex-1 min-w-0 h-7 rounded bg-black/30 border border-zinc-700/80 flex items-center justify-center text-xs font-mono text-zinc-400"
           >
             {n}
           </span>
         ))}
       </div>
 
-      <p className="text-[9px] leading-snug text-zinc-400 line-clamp-3">{status.explanation}</p>
-      <p className="text-[8px] mt-1 text-zinc-500 italic line-clamp-2">
+      <p className="text-xs leading-snug text-zinc-400 line-clamp-3">{status.explanation}</p>
+      <p className="text-xs mt-1 text-zinc-500 italic line-clamp-2">
         {engineExplanation(batch.engineType)}
       </p>
 
@@ -88,10 +88,10 @@ export function OpPendingBlock({ blockNum }: PendingProps) {
   return (
     <div
       title="Swaps in this block accumulate toward the next batch. One state root will cover the whole window."
-      className="w-10 h-10 rounded border border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center text-[9px] font-mono text-zinc-500 shrink-0"
+      className="w-10 h-10 rounded border border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center text-xs font-mono text-zinc-500 shrink-0"
     >
       <span>{blockNum}</span>
-      <span className="text-[7px] text-zinc-600">…</span>
+      <span className="text-xs text-zinc-600">…</span>
     </div>
   );
 }

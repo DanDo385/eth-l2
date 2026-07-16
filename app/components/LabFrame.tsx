@@ -28,7 +28,7 @@ function LabHeader({ mode }: HeaderProps) {
           <h1 className="text-base font-bold leading-tight tracking-tight sm:text-lg">
             {isOptimistic ? "Optimistic Rollup Lab" : "ZK Rollup Lab"}
           </h1>
-          <p className="mt-0.5 hidden text-[10px] leading-none text-zinc-600 sm:block">
+          <p className="mt-0.5 hidden text-xs leading-none text-zinc-600 sm:block">
             {isOptimistic
               ? "Output roots · local verification · user challenges · bond settlement"
               : "Witnesses · proof generation · L1 verifier · validity settlement"}
@@ -55,7 +55,7 @@ function LabHeader({ mode }: HeaderProps) {
 
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-xs text-zinc-500 sm:gap-3">
           <SiteChrome />
-          <span className="hidden text-[10px] text-zinc-600 lg:block">
+          <span className="hidden text-xs text-zinc-600 lg:block">
             {state.running
               ? state.paused
                 ? "simulation paused"

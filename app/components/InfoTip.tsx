@@ -108,7 +108,7 @@ export function InfoTip({
           if (next instanceof Node && rootRef.current?.contains(next)) return;
           close();
         }}
-        className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] font-semibold leading-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/60 ${
+        className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs font-semibold leading-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/60 ${
           open
             ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
             : "border-zinc-600 bg-zinc-800/80 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
@@ -133,7 +133,7 @@ export function InfoTip({
                 : "mt-1.5 block w-full max-w-prose overflow-hidden"
             }
           >
-            <span className="block rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-[10px] leading-relaxed text-zinc-400 shadow-lg shadow-black/40">
+            <span className="block rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-xs leading-relaxed text-zinc-400 shadow-lg shadow-black/40">
               {children}
             </span>
           </motion.span>

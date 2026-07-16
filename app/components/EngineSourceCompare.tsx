@@ -39,20 +39,20 @@ function CodeBlock({
   return (
     <div className={`overflow-hidden rounded-lg border ${borderTone} ${bgTone}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-zinc-800/80 px-2.5 py-1.5">
-        <p className={`font-mono text-[10px] ${headerTone}`}>
+        <p className={`font-mono text-xs ${headerTone}`}>
           {shortFile(exhibit.file)}
           {resolved ? `:${resolved.line}` : ""} -{" "}
           {tone === "honest" ? "honest engine" : "this batch's engine"}
         </p>
-        <p className="text-[9px] text-zinc-600">{exhibit.caption}</p>
+        <p className="text-xs text-zinc-600">{exhibit.caption}</p>
       </div>
-      <pre className="overflow-x-auto p-2 font-mono text-[11px] leading-relaxed">
+      <pre className="overflow-x-auto p-2 font-mono text-xs leading-relaxed">
         {exhibit.lines.map((line) => (
           <div
             key={`${exhibit.file}-${line.n}`}
             className={`flex gap-2 px-1.5 py-0.5 ${lineClass(line, tone)}`}
           >
-            <span className="w-6 shrink-0 select-none text-right text-[9px] text-zinc-600">
+            <span className="w-6 shrink-0 select-none text-right text-xs text-zinc-600">
               {line.n}
             </span>
             <span className="min-w-0 whitespace-pre-wrap break-all">{line.text}</span>
@@ -60,7 +60,7 @@ function CodeBlock({
         ))}
       </pre>
       {resolved?.lineText && (
-        <p className="border-t border-zinc-800/80 px-2.5 py-1.5 text-[9px] leading-snug text-zinc-600">
+        <p className="border-t border-zinc-800/80 px-2.5 py-1.5 text-xs leading-snug text-zinc-600">
           Source map hit:{" "}
           <span className="font-mono text-zinc-400">{resolved.lineText.trim()}</span>
         </p>
@@ -93,7 +93,7 @@ export function EngineSourceCompare({
   return (
     <div className={compact ? "space-y-2" : "space-y-3"}>
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+        <p className="text-xs uppercase tracking-widest text-zinc-500">
           {bundle?.title ?? "The offending Solidity"}
           {typeof onchainDivergenceStep === "number" && (
             <span className="text-zinc-600">
@@ -103,12 +103,12 @@ export function EngineSourceCompare({
           )}
         </p>
         {bundle && (
-          <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">
+          <p className="mt-1 text-xs leading-relaxed text-zinc-400">
             {bundle.summary}
           </p>
         )}
         {!bundle && (
-          <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
             Resolved from the deployed bytecode source map - honest engine vs the
             engine this batch actually ran.
           </p>
@@ -161,10 +161,10 @@ function FallbackLine({
 
   return (
     <div className={`rounded-lg border p-2.5 ${classes}`}>
-      <p className={`mb-1 font-mono text-[10px] ${labelClass}`}>
+      <p className={`mb-1 font-mono text-xs ${labelClass}`}>
         {shortFile(source.file)}:{source.line} - {label}
       </p>
-      <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed">
+      <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed">
         {source.lineText}
       </pre>
     </div>

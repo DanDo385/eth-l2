@@ -46,15 +46,15 @@ export function SwapDetailList({
   if (layout === "table") {
     return (
       <div className={`space-y-2 ${className}`}>
-        <p className="text-[10px] font-semibold text-zinc-300">
+        <p className="text-xs font-semibold text-zinc-300">
           Swaps in this batch ({swaps.length})
         </p>
-        <p className="text-[9px] leading-relaxed text-zinc-600">
+        <p className="text-xs leading-relaxed text-zinc-600">
           {note ??
             "Each row is one L2 swap covered by the batch state root. Token A → Token B via SwapRouter. Net is claimed out minus honest out (0 when the sequencer matches)."}
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full text-[9px]">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-zinc-800 text-zinc-600">
                 <th className="py-1 pr-2 text-left">L2</th>
@@ -87,7 +87,7 @@ export function SwapDetailList({
                           ✦
                         </span>
                       )}
-                      <span className="mt-0.5 block font-mono text-[8px] text-zinc-600">
+                      <span className="mt-0.5 block font-mono text-xs text-zinc-600">
                         {shortHash(traderAddr(s.traderIndex))}
                       </span>
                     </td>
@@ -135,10 +135,10 @@ export function SwapDetailList({
 
   return (
     <div className={`space-y-1.5 ${className}`}>
-      <p className="text-[9px] font-semibold uppercase tracking-wide text-zinc-600">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
         Swaps ({swaps.length})
       </p>
-      <p className="text-[9px] leading-relaxed text-zinc-600">
+      <p className="text-xs leading-relaxed text-zinc-600">
         Token A → Token B through SwapRouter. One state root covers every swap below.
       </p>
       <div className="space-y-2">
@@ -147,7 +147,7 @@ export function SwapDetailList({
           return (
             <div
               key={`${s.txHash}-${i}`}
-              className={`rounded border px-2 py-1.5 font-mono text-[9px] leading-relaxed ${
+              className={`rounded border px-2 py-1.5 font-mono text-xs leading-relaxed ${
                 s.isDivergent
                   ? "border-red-900/50 bg-red-950/20"
                   : "border-zinc-800/80 bg-zinc-950/40"

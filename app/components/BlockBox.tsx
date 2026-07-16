@@ -39,7 +39,7 @@ export function BlockBox({ blockNum, batch, onClick, dimmed, selected }: Props) 
       title={title}
       className={`
         relative w-10 h-10 rounded border flex flex-col items-center justify-center
-        text-[9px] font-mono leading-tight select-none shrink-0
+        text-xs font-mono leading-tight select-none shrink-0
         ${statusColor(batch)}
         ${clickable ? "cursor-pointer hover:brightness-125" : ""}
         ${selected ? "ring-2 ring-zinc-300 ring-offset-1 ring-offset-zinc-950" : ""}
@@ -47,7 +47,7 @@ export function BlockBox({ blockNum, batch, onClick, dimmed, selected }: Props) 
     >
       <span className="text-zinc-400">{blockNum}</span>
       {batch && (
-        <span className="text-[10px] font-bold text-zinc-300">{statusLabel(batch)}</span>
+        <span className="text-xs font-bold text-zinc-300">{statusLabel(batch)}</span>
       )}
     </motion.div>
   );

@@ -54,7 +54,7 @@ export function BackendStatus({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`inline-flex items-center gap-2 text-[11px] text-zinc-400 ${className}`}
+      className={`inline-flex items-center gap-2 text-xs text-zinc-400 ${className}`}
       role="status"
       aria-live="polite"
     >

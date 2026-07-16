@@ -141,21 +141,21 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
             className={`rounded-lg border p-2.5 space-y-1 ${status.border} ${status.bg}`}
           >
             <p className="text-xs font-semibold text-zinc-200">{status.label}</p>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">{status.explanation}</p>
+            <p className="text-xs text-zinc-400 leading-relaxed">{status.explanation}</p>
           </div>
 
-          <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-zinc-700 pl-2">
+          <p className="text-xs text-zinc-500 leading-relaxed border-l-2 border-zinc-700 pl-2">
             {batchWindowNote(batch)}
           </p>
 
           {challengeWindowNote(batch) && (
-            <p className="text-[10px] text-blue-300/90 leading-relaxed border-l-2 border-blue-800 pl-2">
+            <p className="text-xs text-blue-300/90 leading-relaxed border-l-2 border-blue-800 pl-2">
               {challengeWindowNote(batch)}
             </p>
           )}
 
           {bondSettlementNote(batch) && (
-            <p className="text-[10px] text-emerald-300/90 leading-relaxed border-l-2 border-emerald-800 pl-2">
+            <p className="text-xs text-emerald-300/90 leading-relaxed border-l-2 border-emerald-800 pl-2">
               {bondSettlementNote(batch)}
             </p>
           )}
@@ -165,7 +165,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
               <span className="text-zinc-500">Engine</span>
               {engineBadge(batch.engineType)}
             </div>
-            <p className="text-[10px] text-zinc-600 leading-snug">
+            <p className="text-xs text-zinc-600 leading-snug">
               {engineExplanation(batch.engineType)}
             </p>
 
@@ -176,7 +176,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                   {batch.l2StartBlock} → {batch.l2EndBlock}
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-700 leading-snug">
+              <p className="text-xs text-zinc-700 leading-snug">
                 These L2 blocks' swaps are all covered by the single state root below. If any swap was wrong, the entire batch is invalid.
               </p>
 
@@ -187,11 +187,11 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
 
               <div className="flex justify-between">
                 <span className="text-zinc-500" title="32-byte hash committing to all balances after this batch">State root</span>
-                <span className="font-mono text-zinc-400 text-[10px]">
+                <span className="font-mono text-zinc-400 text-xs">
                   {hex(batch.postStateRoot)}
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-700 leading-snug">
+              <p className="text-xs text-zinc-700 leading-snug">
                 The state root is a single 32-byte hash of all account balances after the batch ran. The sequencer posts this to L1, if it&apos;s wrong, a challenger can prove it on-chain.
               </p>
             </div>
@@ -206,22 +206,22 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
           {batch.flagged && batch.postedRoot && batch.expectedRoot && (
             <div className="border-t border-zinc-800 pt-3 space-y-2 text-xs">
               <p className="text-zinc-400 font-semibold">State root mismatch detected</p>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">
+              <p className="text-xs text-zinc-600 leading-relaxed">
                 The honest watcher replayed every swap in this batch using the verified engine and got a different answer than the sequencer posted.
               </p>
               <div>
                 <span className="text-red-400">Sequencer posted</span>
-                <p className="font-mono text-zinc-400 break-all text-[10px]">
+                <p className="font-mono text-zinc-400 break-all text-xs">
                   {hex(batch.postedRoot)}
                 </p>
               </div>
               <div>
                 <span className="text-emerald-400">Honest watcher computed</span>
-                <p className="font-mono text-zinc-400 break-all text-[10px]">
+                <p className="font-mono text-zinc-400 break-all text-xs">
                   {hex(batch.expectedRoot)}
                 </p>
               </div>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">
+              <p className="text-xs text-zinc-600 leading-relaxed">
                 A challenger must post a {PORTAL_BOND_ETH} ETH bond to open a dispute on L1. The bond is returned if the challenge succeeds and the sequencer loses theirs.
               </p>
             </div>
@@ -235,10 +235,10 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                   {batch.verification.result === "verified_mismatch" ? "mismatch found" : "claim appears valid"}
                 </span>
               </p>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">
+              <p className="text-xs text-zinc-600 leading-relaxed">
                 User/watcher spent {weiToEth(batch.verification.costWei)} ETH-equivalent in local compute and L1 gas budget to replay the batch before risking a challenge bond.
               </p>
-              <p className="text-[10px] text-zinc-500 leading-relaxed">
+              <p className="text-xs text-zinc-500 leading-relaxed">
                 {batch.verification.reason}
               </p>
             </div>
@@ -247,11 +247,11 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
           {batch.divergence && (
             <div className="border-t border-zinc-800 pt-3 space-y-1.5 text-xs">
               <p className="text-zinc-400 font-semibold">Fraud proof committed on L1</p>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">
+              <p className="text-xs text-zinc-600 leading-relaxed">
                 Bisection narrowed all swaps in the batch down to one instruction. That instruction&apos;s hash is now permanently recorded on L1 as proof of fraud.
               </p>
               {batch.divergence.rawHonestLen ? (
-                <p className="text-[10px] text-zinc-600 leading-relaxed">
+                <p className="text-xs text-zinc-600 leading-relaxed">
                   The transaction ran{" "}
                   <span className="font-mono text-zinc-400">
                     {batch.divergence.rawHonestLen.toLocaleString()}
@@ -306,13 +306,13 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                 >
                   Verify locally (0.02 ETH compute/gas)
                 </button>
-                <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
+                <p className="text-xs text-zinc-500 text-center leading-relaxed">
                   Normal mode never auto-challenges. Verify first, then decide whether to risk the L1 challenge bond.
                 </p>
               </>
             )}
             {batch.txCount === 0 && (
-              <p className="text-[10px] text-zinc-600 text-center leading-relaxed">
+              <p className="text-xs text-zinc-600 text-center leading-relaxed">
                 Empty batch: no transaction hashes, no fraud-proof trace, challenge disabled.
               </p>
             )}
@@ -326,7 +326,7 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
                 <button onClick={handleChallenge} className="w-full btn-red text-xs">
                   Challenge anyway ({PORTAL_BOND_ETH} ETH bond at risk)
                 </button>
-                <p className="text-[10px] text-amber-400/90 text-center leading-relaxed">
+                <p className="text-xs text-amber-400/90 text-center leading-relaxed">
                   Verification found no mismatch. This demonstrates a failed challenge where the challenger bond is slashed.
                 </p>
               </>
@@ -340,12 +340,12 @@ export function BlockInspector({ onShowOpcodeRace }: Props) {
               </button>
             )}
             {batch.resolved && batch.divergence && (
-              <p className="text-[10px] text-zinc-600 text-center">
+              <p className="text-xs text-zinc-600 text-center">
                 Also listed in Proof lab below when you want to revisit.
               </p>
             )}
             {batch.flagged && !batch.resolved && batch.challenged && (
-              <p className="text-[10px] text-zinc-600 text-center">
+              <p className="text-xs text-zinc-600 text-center">
                 Dispute in progress - see Optimistic Tracker for swap rollback and bond ledger.
               </p>
             )}

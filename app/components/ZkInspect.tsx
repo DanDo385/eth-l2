@@ -88,13 +88,13 @@ export function ZkInspect({ data, onClose }: Props) {
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 space-y-2">
-          <p className="text-[10px] font-semibold text-zinc-300 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
             Public inputs and L1 commitments
           </p>
-          <p className="text-[10px] text-zinc-500 leading-relaxed">
+          <p className="text-xs text-zinc-500 leading-relaxed">
             Public inputs bind the proof to visible commitments. If any value changes, the proof no longer verifies.
           </p>
-          <div className="grid gap-2 sm:grid-cols-2 text-[10px]">
+          <div className="grid gap-2 sm:grid-cols-2 text-xs">
             <div>
               <p className="text-zinc-500">Header hash</p>
               <p className="font-mono text-zinc-300 break-all">{shortHash(data.headerHash)}</p>
@@ -123,12 +123,12 @@ export function ZkInspect({ data, onClose }: Props) {
         </div>
 
         <div className="rounded-lg border border-amber-900/50 bg-amber-950/15 px-3 py-2 space-y-1">
-          <p className="text-[10px] font-semibold text-amber-300">What this demo does not model</p>
-          <p className="text-[10px] text-zinc-500 leading-relaxed">{ZK_VALIDITY_CAVEAT}</p>
-          <p className="text-[10px] text-zinc-600 leading-relaxed">{ZK_DA_CAVEAT}</p>
+          <p className="text-xs font-semibold text-amber-300">What this demo does not model</p>
+          <p className="text-xs text-zinc-500 leading-relaxed">{ZK_VALIDITY_CAVEAT}</p>
+          <p className="text-xs text-zinc-600 leading-relaxed">{ZK_DA_CAVEAT}</p>
         </div>
 
-        <p className="text-[11px] text-zinc-500 leading-relaxed border-l-2 border-emerald-800 pl-3">
+        <p className="text-xs text-zinc-500 leading-relaxed border-l-2 border-emerald-800 pl-3">
           Three ideas that separate ZK rollups from optimistic ones. Click through at your
           pace, same rhythm as the opcode proof walkthrough.
         </p>
@@ -140,7 +140,7 @@ export function ZkInspect({ data, onClose }: Props) {
               key={s.id}
               type="button"
               onClick={() => setStep(i)}
-              className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-xs font-mono px-2.5 py-1 rounded-full border transition-colors ${
                 i === step
                   ? "border-emerald-400 bg-emerald-950/50 text-emerald-200"
                   : i < step
@@ -168,10 +168,10 @@ export function ZkInspect({ data, onClose }: Props) {
             </p>
 
             <div className="rounded-lg bg-black/30 border border-emerald-900/40 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-emerald-500/80 mb-1">
+              <p className="text-xs uppercase tracking-widest text-emerald-500/80 mb-1">
                 From first principles
               </p>
-              <p className="text-[11px] text-zinc-400 leading-relaxed">{current.deepDive}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">{current.deepDive}</p>
             </div>
 
             {current.id === "prove" && (
@@ -220,10 +220,10 @@ export function ZkInspect({ data, onClose }: Props) {
 
         {step === lastStep && (
           <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 p-3 space-y-2">
-            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
               Why this lane feels different from OP
             </p>
-            <div className="space-y-1.5 text-[11px]">
+            <div className="space-y-1.5 text-xs">
               {OP_VS_ZK_ROWS.map((row) => (
                 <div key={row.topic} className="grid grid-cols-[5rem_1fr] gap-2">
                   <span className="text-zinc-500">{row.topic}</span>

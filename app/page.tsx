@@ -35,7 +35,7 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-300">
                 Optimistic Rollup Lab
               </p>
-              <span className="rounded-full border border-blue-700 px-2 py-1 text-[10px] font-mono text-blue-200">
+              <span className="rounded-full border border-blue-700 px-2 py-1 text-xs font-mono text-blue-200">
                 /op
               </span>
             </div>
@@ -60,7 +60,7 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
                 ZK Rollup Lab
               </p>
-              <span className="rounded-full border border-emerald-700 px-2 py-1 text-[10px] font-mono text-emerald-200">
+              <span className="rounded-full border border-emerald-700 px-2 py-1 text-xs font-mono text-emerald-200">
                 /zk
               </span>
             </div>

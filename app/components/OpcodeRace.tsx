@@ -66,13 +66,13 @@ function OpcodeCard({ step, side, match, isClash, engineType }: CardProps) {
 
   return (
     <div className={`flex-1 min-w-0 rounded-xl border-2 p-4 ${base} ${opAccent(step.op)} ${ring}`}>
-      <p className="text-[10px] uppercase tracking-widest opacity-70 mb-1">
+      <p className="text-xs uppercase tracking-widest opacity-70 mb-1">
         {side === "honest" ? "Honest replay" : "Sequencer execution"}
       </p>
       <p className="text-xl font-mono font-bold">{step.op}</p>
-      <p className="text-[11px] opacity-80 mt-0.5">{opHeadline(step.op)}</p>
+      <p className="text-xs opacity-80 mt-0.5">{opHeadline(step.op)}</p>
       {entries.length > 0 && (
-        <div className="mt-2 text-[10px] font-mono space-y-1 opacity-90">
+        <div className="mt-2 text-xs font-mono space-y-1 opacity-90">
           {entries.slice(0, 2).map(([slot, val]) => {
             const m = slotMeaning(slot, engineType);
             const d = decodeWord(val);
@@ -218,7 +218,7 @@ export function OpcodeRace({ data, onClose }: Props) {
           /* ── Chapter 0: what this proof is ─────────────────────────────── */
           <div className="space-y-4">
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+              <p className="text-xs uppercase tracking-widest text-zinc-500">
                 ① Why so few steps?
               </p>
               <p className="text-xs text-zinc-300 leading-relaxed">
@@ -230,26 +230,26 @@ export function OpcodeRace({ data, onClose }: Props) {
                     <p className="text-lg font-mono text-zinc-200">
                       {rawHonestLen.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-zinc-500">instructions executed</p>
+                    <p className="text-xs text-zinc-500">instructions executed</p>
                   </div>
                   <span className="text-zinc-600 text-lg">→</span>
                   <div className="flex-1 rounded-lg bg-black/40 border border-blue-900/60 p-2">
                     <p className="text-lg font-mono text-blue-300">{totalSteps}</p>
-                    <p className="text-[10px] text-zinc-500">state-touching steps</p>
+                    <p className="text-xs text-zinc-500">state-touching steps</p>
                   </div>
                 </div>
               ) : null}
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+              <p className="text-xs uppercase tracking-widest text-zinc-500">
                 ② Two columns
               </p>
               <p className="text-xs text-zinc-300 leading-relaxed">{TWO_COLUMNS_NOTE}</p>
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+              <p className="text-xs uppercase tracking-widest text-zinc-500">
                 ③ What you&apos;ll find
               </p>
               <p className="text-xs text-zinc-300 leading-relaxed">
@@ -298,7 +298,7 @@ export function OpcodeRace({ data, onClose }: Props) {
                       setStep(i);
                       setShowVerdict(i === divergenceIdx && Boolean(isFraudStep));
                     }}
-                    className={`text-[10px] font-mono px-2 py-1 rounded-full border transition-colors ${
+                    className={`text-xs font-mono px-2 py-1 rounded-full border transition-colors ${
                       active
                         ? "border-zinc-300 bg-zinc-800 text-zinc-100"
                         : isFraudStep
@@ -317,7 +317,7 @@ export function OpcodeRace({ data, onClose }: Props) {
               })}
             </div>
 
-            <p className="text-[10px] text-zinc-600 leading-snug">
+            <p className="text-xs text-zinc-600 leading-snug">
               ✓ identical on both sides · ✗ first fraud step · ↳ later steps differ only
               because state already diverged
             </p>
@@ -333,7 +333,7 @@ export function OpcodeRace({ data, onClose }: Props) {
                     engineType={engineType}
                   />
                   <div className="flex flex-col items-center justify-center px-1 shrink-0 min-w-[2.5rem]">
-                    <span className="text-[10px] uppercase tracking-widest text-zinc-600">
+                    <span className="text-xs uppercase tracking-widest text-zinc-600">
                       vs
                     </span>
                     {matched ? (
@@ -341,7 +341,7 @@ export function OpcodeRace({ data, onClose }: Props) {
                     ) : isClash ? (
                       <span className="text-xs text-red-400 font-bold mt-1">clash</span>
                     ) : isDownstream ? (
-                      <span className="text-[10px] text-amber-400/90 font-semibold mt-1 text-center leading-tight">
+                      <span className="text-xs text-amber-400/90 font-semibold mt-1 text-center leading-tight">
                         after fraud
                       </span>
                     ) : (
@@ -359,7 +359,7 @@ export function OpcodeRace({ data, onClose }: Props) {
 
                 {/* Plain-English narration of the current step */}
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 space-y-1.5">
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+                  <p className="text-xs uppercase tracking-widest text-zinc-500">
                     {honest.op}: {opHeadline(honest.op)}
                   </p>
                   <p className="text-xs text-zinc-300 leading-relaxed">
@@ -368,7 +368,7 @@ export function OpcodeRace({ data, onClose }: Props) {
                       : describeStep(honest, engineType)}
                   </p>
                   {matched && !isClash && (
-                    <p className="text-[11px] text-emerald-400/90">
+                    <p className="text-xs text-emerald-400/90">
                       ✓ Both sides agree here, same opcode, same stack, same storage. No
                       fraud yet; bisection keeps going.
                     </p>

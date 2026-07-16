@@ -124,7 +124,7 @@ function StandardLane({ chain, latestBlock }: LaneProps) {
         {blocks.map((n) => (
           <span
             key={n}
-            className="w-10 h-10 rounded border border-zinc-700 bg-zinc-900/80 flex items-center justify-center text-[9px] font-mono text-zinc-400"
+            className="w-10 h-10 rounded border border-zinc-700 bg-zinc-900/80 flex items-center justify-center text-xs font-mono text-zinc-400"
           >
             {n}
           </span>
@@ -150,7 +150,7 @@ function OpLane({ latestBlock, batches, onBatchClick, inspectedBatch }: OpLanePr
     <div className="space-y-2">
       <div className={`flex flex-wrap items-center gap-2 border-b pb-2 ${colorCls}`}>
         <span className="text-sm font-semibold text-blue-400">OP L2</span>
-        <span className="text-[10px] text-zinc-500 hidden sm:inline">
+        <span className="text-xs text-zinc-500 hidden sm:inline">
           batches of {BATCH_WINDOW} blocks → one L1 state root
         </span>
         <span className="text-xs text-zinc-500 font-mono ml-auto">#{latestBlock}</span>
@@ -194,7 +194,7 @@ function ZkLane({ latestBlock, rollups, onBatchClick, inspectedBatch }: ZkLanePr
     <div className="space-y-2">
       <div className={`flex flex-wrap items-center gap-2 border-b pb-2 ${colorCls}`}>
         <span className="text-sm font-semibold text-emerald-400">ZK L2</span>
-        <span className="text-[10px] text-zinc-500 hidden sm:inline">
+        <span className="text-xs text-zinc-500 hidden sm:inline">
           batches of {BATCH_WINDOW} blocks → one validity proof on L1
         </span>
         <span className="text-xs text-zinc-500 font-mono ml-auto">#{latestBlock}</span>
@@ -244,7 +244,7 @@ function ColorLegend({ mode }: { mode: "all" | "optimistic" | "zk" }) {
         <div
           key={item.label}
           title={item.description}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] ${item.border} ${item.bg}`}
+          className={`flex items-center gap-1.5 px-2 py-1 rounded border text-xs ${item.border} ${item.bg}`}
         >
           <span className="font-mono text-zinc-300">{item.short}</span>
           <span className="text-zinc-400">{item.label}</span>
@@ -262,10 +262,10 @@ function ZkPipelineStrip() {
           key={beat.label}
           className="rounded-lg border border-emerald-900/50 bg-emerald-950/15 px-3 py-2"
         >
-          <p className="text-[10px] font-semibold text-emerald-300">
+          <p className="text-xs font-semibold text-emerald-300">
             {beat.num} {beat.label}
           </p>
-          <p className="text-[10px] text-zinc-500 mt-0.5">{beat.hint}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">{beat.hint}</p>
         </div>
       ))}
     </div>
@@ -288,21 +288,21 @@ export function BlockchainCanvas({ onBatchClick, onZkBatchClick, mode = "all" }:
       <div className="space-y-2">
         <div className="flex flex-wrap items-baseline gap-3">
           <p className="text-xs text-zinc-500 uppercase tracking-wide">Chain activity</p>
-          <p className="text-[10px] text-zinc-600">
+          <p className="text-xs text-zinc-600">
             {mode === "zk"
               ? "click a proof batch to open the concept tour"
               : "click a batch to inspect · hover a legend chip to see what each color means"}
           </p>
         </div>
         <ColorLegend mode={mode} />
-        <p className="text-[11px] text-zinc-600 leading-relaxed">{helper}</p>
+        <p className="text-xs text-zinc-600 leading-relaxed">{helper}</p>
         {mode === "zk" && (
           <>
             <ZkPipelineStrip />
             <div className="rounded-lg border border-amber-900/50 bg-amber-950/15 px-3 py-2 space-y-1">
-              <p className="text-[10px] font-semibold text-amber-300">Validity, not privacy or DA</p>
-              <p className="text-[10px] text-zinc-500 leading-relaxed">{ZK_VALIDITY_CAVEAT}</p>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">{ZK_DA_CAVEAT}</p>
+              <p className="text-xs font-semibold text-amber-300">Validity, not privacy or DA</p>
+              <p className="text-xs text-zinc-500 leading-relaxed">{ZK_VALIDITY_CAVEAT}</p>
+              <p className="text-xs text-zinc-600 leading-relaxed">{ZK_DA_CAVEAT}</p>
             </div>
           </>
         )}

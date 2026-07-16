@@ -59,7 +59,7 @@ export function ControlPanel() {
       </div>
 
       {!connected && !awaitingBackend && (
-        <p className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-2.5 py-2 text-[10px] leading-relaxed text-amber-400/90">
+        <p className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-2.5 py-2 text-xs leading-relaxed text-amber-400/90">
           {IS_REMOTE_BACKEND ? (
             <>
               Backend offline - the explainer UI still works. Live simulation needs
@@ -206,7 +206,7 @@ export function ControlPanel() {
           }
           trailing={
             !active ? (
-              <span className="font-mono text-[10px] text-zinc-500">
+              <span className="font-mono text-xs text-zinc-500">
                 {remainingSeconds}s ready
               </span>
             ) : null
@@ -232,7 +232,7 @@ export function ControlPanel() {
           ))}
         </div>
         {expired && (
-          <p className="text-[10px] text-amber-300/90">
+          <p className="text-xs text-amber-300/90">
             Session expired - simulation stopped. Start or pick a demo to run again.
           </p>
         )}
