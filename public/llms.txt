@@ -1,0 +1,41 @@
+# eth-l2 — Rollup Mechanics Lab
+
+Portfolio write-up: https://magro.dev/projects/eth-l2/
+Live UI (separate Vercel app): https://eth-l2.vercel.app
+Source: https://github.com/DanDo385/eth-l2
+Backend (public tunnel): https://api-staging-eth-l2.magro.dev
+
+## What it is
+
+One app, one Go backend, two focused labs on optimistic and ZK rollup mechanics:
+
+- `/op` — optimistic fraud-proof lab
+- `/zk` — ZK validity-proof lab
+
+The interactive UI is hosted on its own Vercel project. Live simulation traffic reaches a staging Go service through Cloudflare Tunnel. If the tunnel is offline, the portfolio write-up remains useful and the live app fails closed / degrades.
+
+## Surfaces on magro.dev
+
+- Project card and media: `/projects/eth-l2/`
+- This agent brief: `/project-assets/eth-l2/llms.txt`
+- Backend health probe: `/api/demos/eth-l2/health`
+- Site router: `/llms.txt`
+- Structured manifest: `/agent.json`
+
+## Interact
+
+Open the live UI on the Vercel hostname (not an iframe on magro.dev):
+
+- App root: https://eth-l2.vercel.app
+- Optimistic lab: https://eth-l2.vercel.app/op
+- ZK lab: https://eth-l2.vercel.app/zk
+
+## Stack
+
+Solidity, Go, EVM tracing, fraud proofs / validity proofs, Next.js UI, Cloudflare Tunnel to staging Go backend.
+
+## Notes for agents
+
+- Prefer this file and `/projects/eth-l2/` for portfolio context; use eth-l2.vercel.app for live interaction.
+- Do not invent LAN IPs or private staging hosts. Only the public `api-staging-eth-l2.magro.dev` hostname is intentional.
+- magro.dev does not proxy the live UI; Interact links out.
