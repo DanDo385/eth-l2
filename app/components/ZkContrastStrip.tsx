@@ -15,10 +15,10 @@ export function ZkContrastStrip() {
   return (
     <div className="border-t border-zinc-800 pt-3 space-y-3">
       <div>
-        <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wide">
+        <p className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">
           ZK in three beats
         </p>
-        <p className="text-[10px] text-zinc-600 mt-0.5 leading-snug">
+        <p className="text-sm text-zinc-600 mt-0.5 leading-snug">
           Same batch window as OP, opposite trust model, validity is proved, not assumed.
         </p>
       </div>
@@ -30,13 +30,13 @@ export function ZkContrastStrip() {
             className="rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-2 py-2 text-center"
           >
             <p className="text-sm font-bold text-emerald-400">{beat.num}</p>
-            <p className="text-[10px] font-semibold text-zinc-200">{beat.label}</p>
-            <p className="text-[9px] text-zinc-500 mt-0.5 leading-snug">{beat.hint}</p>
+            <p className="text-sm font-semibold text-zinc-200">{beat.label}</p>
+            <p className="text-sm text-zinc-500 mt-0.5 leading-snug">{beat.hint}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-lg border border-zinc-800 overflow-hidden text-[10px]">
+      <div className="rounded-lg border border-zinc-800 overflow-hidden text-sm">
         <div className="grid grid-cols-[4.5rem_1fr_1fr] bg-zinc-950/80 px-2 py-1 text-zinc-500 font-medium">
           <span />
           <span className="text-blue-400">Optimistic</span>
@@ -61,13 +61,13 @@ export function ZkContrastStrip() {
             dispatch({ type: "SHOW_ZK_INSPECT", batchId: latest.batchId });
             dispatch({ type: "MARK_EXPLORED", lane: "zk", batchId: latest.batchId });
           }}
-          className="w-full text-[11px] py-2 rounded-lg border border-emerald-800 text-emerald-300 hover:bg-emerald-950/30"
+          className="w-full text-sm py-2 rounded-lg border border-emerald-800 text-emerald-300 hover:bg-emerald-950/30"
         >
           Walk ZK concept tour: Batch #{latest.batchId}
           {latest.accepted ? " (verified)" : " (rejected)"}
         </button>
       ) : (
-        <p className="text-[10px] text-zinc-600 italic text-center">
+        <p className="text-sm text-zinc-600 italic text-center">
           Start the demo, a live ZK batch tour appears here.
         </p>
       )}
